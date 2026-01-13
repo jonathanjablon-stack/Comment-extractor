@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Comment Editor</title>
+    
+    <script src="jszip.min.js"></script>
+    <script src="xlsx.bundle.js"></script>
+    <script src="FileSaver.min.js"></script>
+
+<style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background-color: #e9ecef; color: #333; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
+        h1 { margin: 0; color: #2c3e50; }
+        p { color: #666; margin-top: 5px; }
+
+        .drop-zone { 
+            border: 3px dashed #cbd5e0; padding: 40px; text-align: center; color: #6c757d; 
+            cursor: pointer; margin-bottom: 20px; transition: 0.3s; border-radius: 6px; background: #f8f9fa;
+        }
+        .drop-zone:hover { border-color: #007bff; background-color: #eef7ff; color: #007bff; }
+
+        .toolbar { display: none; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #e2e6ea; }
+        .btn { 
+            border: none; padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: 600;
+            border-radius: 4px; color: white; transition: all 0.2s; flex: 1; display: flex; align-items: center; justify-content: center;
+        }
+        .btn:hover { transform: translateY(-1px); }
+        .btn-copy { background-color: #6c757d; }
+        .btn-excel { background-color: #28a745; }
+        .btn-word { background-color: #6f42c1; } 
+        .btn-reset { background-color: #dc3545; max-width: 100px; }
+
+        .table-wrap { overflow-x: auto; max-height: 70vh; border: 1px solid #dee2e6; display: none; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        
+        th { background-color: #343a40; color: white; position: sticky; top: 0; z-index: 10; padding: 12px; text-align: left; }
+        td { padding: 8px; border-bottom: 1px solid #dee2e6; vertical-align: top; font-size: 14px; }
+        
+        .editable { background-color: #fff3cd; cursor: text; transition: background 0.2s; border: 1px solid transparent; }
+        .editable:hover { background-color: #ffeeba; border: 1px solid #d39e00; }
+        .editable:focus { background-color: #fff; outline: 2px solid #007bff; }
+        
+        .meta-editable { background-color: #d4edda; }
+        .meta-editable:hover { background-color: #c3e6cb; border: 1px solid #155724; }
+        
+        .read-only { background-color: #f8f9fa; color: #666; font-style: italic; user-select: none; }
+
+        #status { font-weight: bold; margin-bottom: 10px; text-align: center; height: 20px; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Word Comment Editor Pro</h1>
+        <p>Edit comments, authors, and dates. Saves with full compression to keep files small.</p>
+    </div>
+
+    <div id="drop-zone" class="drop-zone">
+        Drag & Drop .docx file here<br>(or click to browse)
+    </div>
+    <input type="file" id="file-input" accept=".docx" style="display: none;">
+    
+    <div id="status"></div>
+
+    <div class="toolbar" id="toolbar">
+        <button class="btn btn-copy" onclick="copyTable()">📋 Copy Table</button>
+        <button class="btn btn-excel" onclick="downloadExcel()">📊 Download Excel</button>
+        <button class="btn btn-word" onclick="downloadWord()">💾 Save New .docx</button>
+        <button class="btn btn-reset" onclick="location.reload()">Reset</button>
+    </div>
+
+    <div class="table-wrap" id="table-container">
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th style="width: 50px;">Pg</th>
+                    <th style="width: 40%;">Comment Text <small>(Editable)</small></th>
+                    <th style="width: 30%;">Quoted Text <small>(Ref Only)</small></th>
+                    <th style="width: 15%;">Author <small>(Editable)</small></th>
+                    <th style="width: 130px;">Date <small>(Editable)</small></th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // --- GLOBAL STATE ---
+    let originalDocBuffer = null;
+    let originalFileName = "";
+    let commentsData = [];
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const statusDiv = document.getElementById('status');
+    const toolbar = document.getElementById('toolbar');
+    const tableContainer = document.getElementById('table-container');
+    const tableBody = document.getElementById('table-body');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#007bff'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#cbd5e0'; });
+    dropZone.addEventListener('drop', (e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); });
+    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+    async function handleFile(file) {
+        if (!file || !file.name.endsWith(".docx")) {
+            statusDiv.innerHTML = '<span class="error">Error: Please upload a valid .docx file.</span>';
+            return;
+        }
+
+        originalFileName = file.name;
+        statusDiv.innerHTML = "Processing document...";
+        
+        try {
+            originalDocBuffer = await file.arrayBuffer();
+            const zip = await JSZip.loadAsync(originalDocBuffer);
+
+            if (!zip.file("word/comments.xml")) {
+                statusDiv.innerHTML = '<span class="error">No comments found.</span>';
+                return;
+            }
+
+            const commentsXml = await zip.file("word/comments.xml").async("string");
+            const docXml = await zip.file("word/document.xml").async("string");
+            
+            const parser = new DOMParser();
+            const commentsDoc = parser.parseFromString(commentsXml, "text/xml");
+            const mainDoc = parser.parseFromString(docXml, "text/xml");
+
+            const contextMap = mapDocumentContext(mainDoc);
+            const commentNodes = commentsDoc.getElementsByTagNameNS("*", "comment");
+            commentsData = [];
+
+            for (let i = 0; i < commentNodes.length; i++) {
+                const c = commentNodes[i];
+                const id = c.getAttribute("w:id");
+                
+                let text = "";
+                const ps = c.getElementsByTagNameNS("*", "p");
+                for (let j=0; j<ps.length; j++) text += ps[j].textContent;
+
+                commentsData.push({
+                    id: id,
+                    page: contextMap.pages[id] || 1,
+                    text: text,
+                    quote: contextMap.quotes[id] || "",
+                    author: c.getAttribute("w:author") || "Unknown",
+                    date: c.getAttribute("w:date") || new Date().toISOString()
+                });
+            }
+
+            renderTable();
+            dropZone.style.display = 'none';
+            toolbar.style.display = 'flex';
+            tableContainer.style.display = 'block';
+            statusDiv.innerHTML = `<span class="success">Loaded ${commentsData.length} comments.</span>`;
+
+        } catch (err) {
+            console.error(err);
+            statusDiv.innerHTML = '<span class="error">Fatal Error: Could not parse document.</span>';
+        }
+    }
+
+    function mapDocumentContext(xmlDoc) {
+        const all = xmlDoc.getElementsByTagName("*");
+        let page = 1;
+        let activeComments = new Set();
+        let pages = {};
+        let quotes = {};
+
+        for (let i = 0; i < all.length; i++) {
+            const el = all[i];
+            if (el.localName === "lastRenderedPageBreak" || (el.localName === "br" && el.getAttribute("w:type") === "page")) {
+                page++;
+            }
+            if (el.localName === "commentRangeStart") {
+                const id = el.getAttribute("w:id");
+                activeComments.add(id);
+                pages[id] = page;
+                if (!quotes[id]) quotes[id] = "";
+            }
+            if (el.localName === "commentRangeEnd") {
+                activeComments.delete(el.getAttribute("w:id"));
+            }
+            if (el.localName === "t" && activeComments.size > 0) {
+                activeComments.forEach(id => quotes[id] += el.textContent);
+            }
+        }
+        return { pages, quotes };
+    }
+
+    function renderTable() {
+        tableBody.innerHTML = "";
+        commentsData.forEach((row, index) => {
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td class="read-only">${index + 1}</td>
+                <td class="read-only">${row.page}</td>
+                <td class="editable" contenteditable="true" onblur="updateData(${index}, 'text', this.innerText)">${row.text}</td>
+                <td class="read-only">${row.quote}</td>
+                <td class="meta-editable" contenteditable="true" onblur="updateData(${index}, 'author', this.innerText)">${row.author}</td>
+                <td class="meta-editable" contenteditable="true" style="font-size:12px;" onblur="updateData(${index}, 'date', this.innerText)">${row.date}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    window.updateData = function(index, field, value) {
+        commentsData[index][field] = value.trim();
+    };
+
+    function downloadExcel() {
+        const wb = XLSX.utils.book_new();
+        const sheetData = commentsData.map(c => ({
+            "ID": c.id, "Page": c.page, "Comment Text": c.text, "Quoted Text": c.quote, "Author": c.author, "Date": c.date
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(sheetData);
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        ws['!cols'] = [{wch:5}, {wch:5}, {wch:80}, {wch:50}, {wch:20}, {wch:25}];
+
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cell = XLSX.utils.encode_cell({r: R, c: C});
+                if (!ws[cell]) continue;
+                if (!ws[cell].s) ws[cell].s = {};
+                
+                ws[cell].s.alignment = { vertical: "top", wrapText: true };
+                
+                if (R === 0) {
+                    ws[cell].s.fill = { fgColor: { rgb: "343A40" } };
+                    ws[cell].s.font = { color: { rgb: "FFFFFF" }, bold: true };
+                } else if (C === 2) {
+                     ws[cell].s.fill = { fgColor: { rgb: "FFF3CD" } }; 
+                }
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, "Comments");
+        
+        // COMPRESSION FIX for EXCEL: Use write() with compression:true instead of writeFile()
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true });
+        saveAs(new Blob([wbout], {type: "application/octet-stream"}), originalFileName.replace(".docx", "_Edited.xlsx"));
+    }
+
+    async function downloadWord() {
+        statusDiv.innerText = "Recompiling with High Compression...";
+        
+        try {
+            const zip = await JSZip.loadAsync(originalDocBuffer);
+            let xmlStr = await zip.file("word/comments.xml").async("string");
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
+            
+            const xmlComments = xmlDoc.getElementsByTagNameNS("*", "comment");
+            const xmlMap = new Map();
+            for(let i=0; i<xmlComments.length; i++) {
+                xmlMap.set(xmlComments[i].getAttribute("w:id"), xmlComments[i]);
+            }
+
+            commentsData.forEach(item => {
+                const node = xmlMap.get(item.id);
+                if (node) {
+                    node.setAttribute("w:author", item.author);
+                    node.setAttribute("w:date", item.date);
+
+                    while (node.firstChild) node.removeChild(node.firstChild);
+                    
+                    const p = xmlDoc.createElementNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w:p");
+                    const r = xmlDoc.createElementNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w:r");
+                    const t = xmlDoc.createElementNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w:t");
+                    t.textContent = item.text;
+                    
+                    r.appendChild(t);
+                    p.appendChild(r);
+                    node.appendChild(p);
+                }
+            });
+
+            const serializer = new XMLSerializer();
+            const newXml = serializer.serializeToString(xmlDoc);
+            zip.file("word/comments.xml", newXml);
+
+            // COMPRESSION FIX for WORD
+            const outBlob = await zip.generateAsync({
+                type: "blob",
+                compression: "DEFLATE",
+                compressionOptions: { level: 6 } 
+            });
+            
+            saveAs(outBlob, "Updated_" + originalFileName);
+            statusDiv.innerHTML = '<span class="success">Document Updated & Downloaded!</span>';
+
+        } catch (err) {
+            console.error(err);
+            statusDiv.innerHTML = '<span class="error">Error recompiling Word document.</span>';
+        }
+    }
+
+    function copyTable() {
+        const table = document.getElementById('data-table');
+        const range = document.createRange();
+        range.selectNode(table);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+        alert("Table copied to clipboard!");
+    }
+</script>
+
+</body>
+</html>
