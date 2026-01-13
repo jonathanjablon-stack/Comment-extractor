@@ -9,7 +9,7 @@
     <script src="xlsx.bundle.js"></script>
     <script src="FileSaver.min.js"></script>
 
-<style>
+    <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background-color: #e9ecef; color: #333; }
         .container { max-width: 1400px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         
@@ -47,7 +47,8 @@
         .meta-editable { background-color: #d4edda; }
         .meta-editable:hover { background-color: #c3e6cb; border: 1px solid #155724; }
         
-        .read-only { background-color: #f8f9fa; color: #666; font-style: italic; user-select: none; }
+        /* Removed user-select: none as it interferes with clipboard copy range */
+        .read-only { background-color: #f8f9fa; color: #666; font-style: italic; }
 
         #status { font-weight: bold; margin-bottom: 10px; text-align: center; height: 20px; }
         .success { color: #28a745; }
@@ -82,10 +83,10 @@
                 <tr>
                     <th style="width: 50px;">#</th>
                     <th style="width: 50px;">Pg</th>
-                    <th style="width: 40%;">Comment Text <small>(Editable)</small></th>
-                    <th style="width: 30%;">Quoted Text <small>(Ref Only)</small></th>
-                    <th style="width: 15%;">Author <small>(Editable)</small></th>
-                    <th style="width: 130px;">Date <small>(Editable)</small></th>
+                    <th style="width: 40%;">Comment Text</th>
+                    <th style="width: 30%;">Quoted Text</th>
+                    <th style="width: 15%;">Author</th>
+                    <th style="width: 130px;">Date</th>
                 </tr>
             </thead>
             <tbody id="table-body"></tbody>
@@ -306,17 +307,39 @@
     }
 
     function copyTable() {
-        const table = document.getElementById('data-table');
-        const range = document.createRange();
-        range.selectNode(table);
-        window.getSelection().removeAllRanges();
-        window.getSelection().addRange(range);
-        document.execCommand('copy');
-        window.getSelection().removeAllRanges();
-        alert("Table copied to clipboard!");
+        // We manually construct a clean HTML table for the clipboard
+        // This avoids issues where browsers skip "unselectable" or "editable" nodes
+        let html = '<table border="1" style="border-collapse:collapse;"><thead><tr>';
+        
+        // Headers
+        document.querySelectorAll('#data-table th').forEach(th => {
+            html += `<th style="background-color:#343a40; color:white; padding:10px;">${th.innerText.split('(')[0].trim()}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        // Rows
+        document.querySelectorAll('#table-body tr').forEach(tr => {
+            html += '<tr>';
+            tr.querySelectorAll('td').forEach(td => {
+                // Get the text content, preserving line breaks if any
+                const text = td.innerText.trim();
+                html += `<td style="padding:8px; vertical-align:top;">${text}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+
+        const blob = new Blob([html], { type: 'text/html' });
+        const data = [new ClipboardItem({ 'text/html': blob })];
+
+        navigator.clipboard.write(data).then(() => {
+            alert("Table copied successfully with all columns aligned!");
+        }).catch(err => {
+            console.error("Clipboard API failed: ", err);
+            alert("Failed to copy. Please try again.");
+        });
     }
 </script>
 
 </body>
 </html>
-
