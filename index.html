@@ -58,7 +58,7 @@
 
 <div class="container">
     <div class="header">
-        <h1>Word Comment Editor Pro</h1>
+        <h1>Word Comment Editor</h1>
         <p>Edit comments, authors, and dates. Saves with full compression to keep files small.</p>
     </div>
 
@@ -94,7 +94,6 @@
 </div>
 
 <script>
-    // --- GLOBAL STATE ---
     let originalDocBuffer = null;
     let originalFileName = "";
     let commentsData = [];
@@ -249,7 +248,6 @@
 
         XLSX.utils.book_append_sheet(wb, ws, "Comments");
         
-        // COMPRESSION FIX for EXCEL: Use write() with compression:true instead of writeFile()
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true });
         saveAs(new Blob([wbout], {type: "application/octet-stream"}), originalFileName.replace(".docx", "_Edited.xlsx"));
     }
@@ -292,7 +290,6 @@
             const newXml = serializer.serializeToString(xmlDoc);
             zip.file("word/comments.xml", newXml);
 
-            // COMPRESSION FIX for WORD
             const outBlob = await zip.generateAsync({
                 type: "blob",
                 compression: "DEFLATE",
@@ -322,3 +319,4 @@
 
 </body>
 </html>
+
