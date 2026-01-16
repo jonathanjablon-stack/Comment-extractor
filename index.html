@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Word Comment Editor</title>
     
-    <script src="jszip.min.js"></script>
-    <script src="xlsx.bundle.js"></script>
-    <script src="FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background-color: #e9ecef; color: #333; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 1500px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         
         .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
         h1 { margin: 0; color: #2c3e50; }
@@ -35,7 +35,7 @@
         .btn-reset { background-color: #dc3545; max-width: 100px; }
 
         .table-wrap { overflow-x: auto; max-height: 70vh; border: 1px solid #dee2e6; display: none; }
-        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1200px; }
         
         th { background-color: #343a40; color: white; position: sticky; top: 0; z-index: 10; padding: 12px; text-align: left; }
         td { padding: 8px; border-bottom: 1px solid #dee2e6; vertical-align: top; font-size: 14px; }
@@ -47,7 +47,6 @@
         .meta-editable { background-color: #d4edda; }
         .meta-editable:hover { background-color: #c3e6cb; border: 1px solid #155724; }
         
-        /* Removed user-select: none as it interferes with clipboard copy range */
         .read-only { background-color: #f8f9fa; color: #666; font-style: italic; }
 
         #status { font-weight: bold; margin-bottom: 10px; text-align: center; height: 20px; }
@@ -59,8 +58,8 @@
 
 <div class="container">
     <div class="header">
-        <h1>Word Comment Editor</h1><h4> (current as of 1/13/26)</h4>
-        <p>Edit comments, authors, and dates. Saves with full compression to keep files small.</p>
+        <h1>Word Comment Editor</h1>
+        <p>Edit comments, authors, and dates. Saves with full compression.</p>
     </div>
 
     <div id="drop-zone" class="drop-zone">
@@ -71,7 +70,7 @@
     <div id="status"></div>
 
     <div class="toolbar" id="toolbar">
-        <button class="btn btn-copy" onclick="copyTable()">📋 Copy Table</button>
+        <button class="btn btn-copy" onclick="copyTable()">📋 Copy Table (for Email/Word)</button>
         <button class="btn btn-excel" onclick="downloadExcel()">📊 Download Excel</button>
         <button class="btn btn-word" onclick="downloadWord()">💾 Save New .docx</button>
         <button class="btn btn-reset" onclick="location.reload()">Reset</button>
@@ -81,12 +80,13 @@
         <table id="data-table">
             <thead>
                 <tr>
-                    <th style="width: 50px;">#</th>
-                    <th style="width: 50px;">Pg</th>
-                    <th style="width: 40%;">Comment Text</th>
-                    <th style="width: 30%;">Quoted Text</th>
+                    <th style="width: 40px;">#</th>
+                    <th style="width: 40px;">Pg</th>
+                    <th style="width: 35%;">Comment Text</th>
+                    <th style="width: 25%;">Quoted Text</th>
                     <th style="width: 15%;">Author</th>
-                    <th style="width: 130px;">Date</th>
+                    <th style="width: 90px;">Date</th>
+                    <th style="width: 90px;">Time (ET)</th>
                 </tr>
             </thead>
             <tbody id="table-body"></tbody>
@@ -149,13 +149,17 @@
                 const ps = c.getElementsByTagNameNS("*", "p");
                 for (let j=0; j<ps.length; j++) text += ps[j].textContent;
 
+                // Word stores dates in ISO (e.g., 2024-01-15T10:30:00Z)
+                // We keep this original value for saving, but we will display it split up
+                const rawDate = c.getAttribute("w:date") || new Date().toISOString();
+
                 commentsData.push({
                     id: id,
                     page: contextMap.pages[id] || 1,
                     text: text,
                     quote: contextMap.quotes[id] || "",
                     author: c.getAttribute("w:author") || "Unknown",
-                    date: c.getAttribute("w:date") || new Date().toISOString()
+                    date: rawDate 
                 });
             }
 
@@ -199,10 +203,34 @@
         return { pages, quotes };
     }
 
+    // Helper to format ISO string to Eastern Time parts
+    function getEasternParts(isoString) {
+        try {
+            const dateObj = new Date(isoString);
+            
+            // Format Date (e.g. 01/13/2026)
+            const dateStr = dateObj.toLocaleDateString('en-US', {
+                timeZone: 'America/New_York',
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            });
+
+            // Format Time (e.g. 02:45 PM)
+            const timeStr = dateObj.toLocaleTimeString('en-US', {
+                timeZone: 'America/New_York',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            return { dateStr, timeStr };
+        } catch (e) {
+            return { dateStr: isoString, timeStr: "" };
+        }
+    }
+
     function renderTable() {
         tableBody.innerHTML = "";
         commentsData.forEach((row, index) => {
             const tr = document.createElement("tr");
+            const { dateStr, timeStr } = getEasternParts(row.date);
 
             tr.innerHTML = `
                 <td class="read-only">${index + 1}</td>
@@ -210,7 +238,10 @@
                 <td class="editable" contenteditable="true" onblur="updateData(${index}, 'text', this.innerText)">${row.text}</td>
                 <td class="read-only">${row.quote}</td>
                 <td class="meta-editable" contenteditable="true" onblur="updateData(${index}, 'author', this.innerText)">${row.author}</td>
-                <td class="meta-editable" contenteditable="true" style="font-size:12px;" onblur="updateData(${index}, 'date', this.innerText)">${row.date}</td>
+                
+                <td class="meta-editable date-cell" contenteditable="true" onblur="updateDateTime(${index}, this)">${dateStr}</td>
+                
+                <td class="meta-editable time-cell" contenteditable="true" onblur="updateDateTime(${index}, this)">${timeStr}</td>
             `;
             tableBody.appendChild(tr);
         });
@@ -220,35 +251,96 @@
         commentsData[index][field] = value.trim();
     };
 
+    // Recombines split date/time fields back into the main ISO string
+    window.updateDateTime = function(index, cell) {
+        const row = cell.closest('tr');
+        const dVal = row.querySelector('.date-cell').innerText.trim();
+        const tVal = row.querySelector('.time-cell').innerText.trim();
+        
+        try {
+            // We combine them into a string that the browser can parse
+            // Note: This relies on browser's parsing ability.
+            const combinedString = `${dVal} ${tVal}`;
+            const newDate = new Date(combinedString);
+            
+            if(!isNaN(newDate.getTime())) {
+                commentsData[index].date = newDate.toISOString();
+            }
+        } catch(e) {
+            console.warn("Could not parse date edit", e);
+        }
+    };
+
+    function copyTable() {
+        let html = '<table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse; font-family: Arial, sans-serif; font-size: 12px; width:100%;">';
+        
+        // Headers with styling
+        html += '<thead><tr>';
+        const headers = ["#", "Pg", "Comment Text", "Quoted Text", "Author", "Date", "Time (ET)"];
+        headers.forEach(h => {
+            html += `<th style="background-color:#343a40; color:white; padding:8px; text-align:left; border:1px solid #999;">${h}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        // Rows
+        commentsData.forEach((row, index) => {
+            const { dateStr, timeStr } = getEasternParts(row.date);
+            
+            html += `<tr>
+                <td style="border:1px solid #ccc; padding:6px; background:#f9f9f9;">${index + 1}</td>
+                <td style="border:1px solid #ccc; padding:6px; background:#f9f9f9;">${row.page}</td>
+                <td style="border:1px solid #ccc; padding:6px;">${row.text}</td>
+                <td style="border:1px solid #ccc; padding:6px; color:#555;">${row.quote}</td>
+                <td style="border:1px solid #ccc; padding:6px;">${row.author}</td>
+                <td style="border:1px solid #ccc; padding:6px; white-space:nowrap;">${dateStr}</td>
+                <td style="border:1px solid #ccc; padding:6px; white-space:nowrap;">${timeStr}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+
+        const blob = new Blob([html], { type: 'text/html' });
+        const data = [new ClipboardItem({ 'text/html': blob })];
+
+        navigator.clipboard.write(data).then(() => {
+            alert("Table copied! You can now paste it into Outlook or Word.");
+        }).catch(err => {
+            console.error("Clipboard API failed: ", err);
+            alert("Failed to copy. Please try again.");
+        });
+    }
+
     function downloadExcel() {
         const wb = XLSX.utils.book_new();
-        const sheetData = commentsData.map(c => ({
-            "ID": c.id, "Page": c.page, "Comment Text": c.text, "Quoted Text": c.quote, "Author": c.author, "Date": c.date
-        }));
+        
+        // Prepare data with split columns for Excel
+        const sheetData = commentsData.map(c => {
+            const { dateStr, timeStr } = getEasternParts(c.date);
+            return {
+                "ID": c.id, 
+                "Page": c.page, 
+                "Comment Text": c.text, 
+                "Quoted Text": c.quote, 
+                "Author": c.author, 
+                "Date": dateStr,
+                "Time (ET)": timeStr
+            };
+        });
 
         const ws = XLSX.utils.json_to_sheet(sheetData);
         const range = XLSX.utils.decode_range(ws['!ref']);
-        ws['!cols'] = [{wch:5}, {wch:5}, {wch:80}, {wch:50}, {wch:20}, {wch:25}];
+        ws['!cols'] = [{wch:5}, {wch:5}, {wch:60}, {wch:40}, {wch:15}, {wch:12}, {wch:12}];
 
-        for (let R = range.s.r; R <= range.e.r; ++R) {
-            for (let C = range.s.c; C <= range.e.c; ++C) {
-                const cell = XLSX.utils.encode_cell({r: R, c: C});
-                if (!ws[cell]) continue;
+        // Style the header row in Excel
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cell = XLSX.utils.encode_cell({r: 0, c: C});
+            if (ws[cell]) {
                 if (!ws[cell].s) ws[cell].s = {};
-                
-                ws[cell].s.alignment = { vertical: "top", wrapText: true };
-                
-                if (R === 0) {
-                    ws[cell].s.fill = { fgColor: { rgb: "343A40" } };
-                    ws[cell].s.font = { color: { rgb: "FFFFFF" }, bold: true };
-                } else if (C === 2) {
-                     ws[cell].s.fill = { fgColor: { rgb: "FFF3CD" } }; 
-                }
+                ws[cell].s.fill = { fgColor: { rgb: "343A40" } };
+                ws[cell].s.font = { color: { rgb: "FFFFFF" }, bold: true };
             }
         }
 
         XLSX.utils.book_append_sheet(wb, ws, "Comments");
-        
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true });
         saveAs(new Blob([wbout], {type: "application/octet-stream"}), originalFileName.replace(".docx", "_Edited.xlsx"));
     }
@@ -272,6 +364,7 @@
                 const node = xmlMap.get(item.id);
                 if (node) {
                     node.setAttribute("w:author", item.author);
+                    // We save the ISO date back to the XML
                     node.setAttribute("w:date", item.date);
 
                     while (node.firstChild) node.removeChild(node.firstChild);
@@ -305,42 +398,7 @@
             statusDiv.innerHTML = '<span class="error">Error recompiling Word document.</span>';
         }
     }
-
-    function copyTable() {
-        // We manually construct a clean HTML table for the clipboard
-        // This avoids issues where browsers skip "unselectable" or "editable" nodes
-        let html = '<table border="1" style="border-collapse:collapse;"><thead><tr>';
-        
-        // Headers
-        document.querySelectorAll('#data-table th').forEach(th => {
-            html += `<th style="background-color:#343a40; color:white; padding:10px;">${th.innerText.split('(')[0].trim()}</th>`;
-        });
-        html += '</tr></thead><tbody>';
-
-        // Rows
-        document.querySelectorAll('#table-body tr').forEach(tr => {
-            html += '<tr>';
-            tr.querySelectorAll('td').forEach(td => {
-                // Get the text content, preserving line breaks if any
-                const text = td.innerText.trim();
-                html += `<td style="padding:8px; vertical-align:top;">${text}</td>`;
-            });
-            html += '</tr>';
-        });
-        html += '</tbody></table>';
-
-        const blob = new Blob([html], { type: 'text/html' });
-        const data = [new ClipboardItem({ 'text/html': blob })];
-
-        navigator.clipboard.write(data).then(() => {
-            alert("Table copied successfully with all columns aligned!");
-        }).catch(err => {
-            console.error("Clipboard API failed: ", err);
-            alert("Failed to copy. Please try again.");
-        });
-    }
 </script>
 
 </body>
 </html>
-
