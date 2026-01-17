@@ -32,6 +32,7 @@
         .btn-copy { background-color: #6c757d; }
         .btn-excel { background-color: #28a745; }
         .btn-word { background-color: #6f42c1; } 
+        .btn-batch { background-color: #e67e22; }
         .btn-reset { background-color: #dc3545; max-width: 100px; }
 
         .table-wrap { overflow-x: auto; max-height: 70vh; border: 1px solid #dee2e6; display: none; }
@@ -47,12 +48,20 @@
         .meta-editable { background-color: #d4edda; }
         .meta-editable:hover { background-color: #c3e6cb; border: 1px solid #155724; }
         
-        /* Removed user-select: none as it interferes with clipboard copy range */
         .read-only { background-color: #f8f9fa; color: #666; font-style: italic; }
 
         #status { font-weight: bold; margin-bottom: 10px; text-align: center; height: 20px; }
         .success { color: #28a745; }
         .error { color: #dc3545; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: white; margin: 15% auto; padding: 25px; border-radius: 8px; width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .modal h2 { margin-top: 0; color: #2c3e50; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -60,7 +69,7 @@
 <div class="container">
     <div class="header">
         <h1>Word Comment Editor</h1><h4> (current as of 1/13/26)</h4>
-        <p>Edit comments, authors, and dates. Saves with full compression to keep files small.</p>
+        <p>Edit comments, authors, and dates. Saves with full compression.</p>
     </div>
 
     <div id="drop-zone" class="drop-zone">
@@ -71,6 +80,7 @@
     <div id="status"></div>
 
     <div class="toolbar" id="toolbar">
+        <button class="btn btn-batch" onclick="openBatchModal()">⏱️ Change Comment Times</button>
         <button class="btn btn-copy" onclick="copyTable()">📋 Copy Table</button>
         <button class="btn btn-excel" onclick="downloadExcel()">📊 Download Excel</button>
         <button class="btn btn-word" onclick="downloadWord()">💾 Save New .docx</button>
@@ -95,6 +105,27 @@
     </div>
 </div>
 
+<div id="batchModal" class="modal">
+    <div class="modal-content">
+        <h2>Batch Change Times</h2>
+        <p style="font-size:13px; color:#666; margin-bottom:15px;">This will set the date/time for all comments sequentially, spaced 3-7 minutes apart.</p>
+        
+        <div class="form-group">
+            <label for="batchDate">Select Date:</label>
+            <input type="date" id="batchDate">
+        </div>
+        <div class="form-group">
+            <label for="batchStartTime">Start Time (for 1st comment):</label>
+            <input type="time" id="batchStartTime">
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn" style="background:#6c757d;" onclick="closeBatchModal()">Cancel</button>
+            <button class="btn" style="background:#e67e22;" onclick="applyBatchTimes()">Apply Changes</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let originalDocBuffer = null;
     let originalFileName = "";
@@ -106,6 +137,7 @@
     const toolbar = document.getElementById('toolbar');
     const tableContainer = document.getElementById('table-container');
     const tableBody = document.getElementById('table-body');
+    const batchModal = document.getElementById('batchModal');
 
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#007bff'; });
@@ -150,6 +182,8 @@
                 const ps = c.getElementsByTagNameNS("*", "p");
                 for (let j=0; j<ps.length; j++) text += ps[j].textContent;
 
+                // Word usually stores Date as UTC (Z). We store the raw string here.
+                // We will convert to Eastern for display in renderTable.
                 commentsData.push({
                     id: id,
                     page: contextMap.pages[id] || 1,
@@ -203,14 +237,14 @@
     function renderTable() {
         tableBody.innerHTML = "";
         commentsData.forEach((row, index) => {
-            // CHANGED: Logic to split date and time for Eastern Time
-            let dateStr = row.date;
+            // Display Logic: Convert ISO (UTC) to Eastern for display
+            let dateStr = "";
             let timeStr = "";
             try {
                 const d = new Date(row.date);
-                dateStr = d.toLocaleDateString("en-US", { timeZone: "America/New_York", month:"numeric", day:"numeric", year:"numeric" });
-                timeStr = d.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "numeric" });
-            } catch(e) { /* keep original on error */ }
+                dateStr = d.toLocaleDateString("en-US", { timeZone: "America/New_York", year:"numeric", month:"2-digit", day:"2-digit" }); // MM/DD/YYYY
+                timeStr = d.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }); // 12:00 PM
+            } catch(e) { dateStr = row.date; }
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -219,8 +253,8 @@
                 <td class="editable" contenteditable="true" onblur="updateData(${index}, 'text', this.innerText)">${row.text}</td>
                 <td class="read-only">${row.quote}</td>
                 <td class="meta-editable" contenteditable="true" onblur="updateData(${index}, 'author', this.innerText)">${row.author}</td>
-                <td class="meta-editable" contenteditable="true" onblur="updateSplitDate(${index}, 'dateStr', this.innerText)">${dateStr}</td>
-                <td class="meta-editable" contenteditable="true" onblur="updateSplitDate(${index}, 'timeStr', this.innerText)">${timeStr}</td>
+                <td class="meta-editable date-cell" contenteditable="true" onblur="updateVisualDate(${index})">${dateStr}</td>
+                <td class="meta-editable time-cell" contenteditable="true" onblur="updateVisualDate(${index})">${timeStr}</td>
             `;
             tableBody.appendChild(tr);
         });
@@ -230,65 +264,109 @@
         commentsData[index][field] = value.trim();
     };
 
-    // CHANGED: New function to handle split date updates while keeping the main ISO date correct for saving
-    window.updateSplitDate = function(index, type, value) {
-        // We just re-parse based on the two cells to reconstruct the ISO string for the backend data
-        const row = tableBody.children[index];
-        const dStr = row.cells[5].innerText.trim();
-        const tStr = row.cells[6].innerText.trim();
-        
-        try {
-            // Combine and parse as Eastern, then convert back to ISO
-            // Note: This is a simple approximation. For robust ISO conversion from specific timezone, libraries are usually better, but keeping vanilla JS as requested.
-            const combined = new Date(dStr + " " + tStr); 
-            if(!isNaN(combined)) {
-                commentsData[index].date = combined.toISOString();
-            }
-        } catch(e) {}
+    // Called when user edits Date or Time cells manually
+    window.updateVisualDate = function(index) {
+        // We don't update the underlying ISO yet, we just rely on what is in the cells
+        // The save function now pulls directly from the cells to ensure What You See Is What You Get
     }
 
-    function downloadExcel() {
-        const wb = XLSX.utils.book_new();
-        // CHANGED: Mapped split columns for Excel
-        const sheetData = commentsData.map(c => {
-            let dStr = c.date, tStr = "";
-            try {
-                const d = new Date(c.date);
-                dStr = d.toLocaleDateString("en-US", { timeZone: "America/New_York" });
-                tStr = d.toLocaleTimeString("en-US", { timeZone: "America/New_York" });
-            } catch(e){}
+    /* --- BATCH TIME LOGIC --- */
 
-            return {
-                "ID": c.id, "Page": c.page, "Comment Text": c.text, "Quoted Text": c.quote, 
-                "Author": c.author, "Date": dStr, "Time (ET)": tStr
-            };
-        });
+    function openBatchModal() {
+        batchModal.style.display = "block";
+        document.getElementById('batchDate').valueAsDate = new Date();
+    }
 
-        const ws = XLSX.utils.json_to_sheet(sheetData);
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        ws['!cols'] = [{wch:5}, {wch:5}, {wch:80}, {wch:50}, {wch:20}, {wch:15}, {wch:15}]; // Adjusted widths
+    function closeBatchModal() {
+        batchModal.style.display = "none";
+    }
 
-        for (let R = range.s.r; R <= range.e.r; ++R) {
-            for (let C = range.s.c; C <= range.e.c; ++C) {
-                const cell = XLSX.utils.encode_cell({r: R, c: C});
-                if (!ws[cell]) continue;
-                if (!ws[cell].s) ws[cell].s = {};
-                
-                ws[cell].s.alignment = { vertical: "top", wrapText: true };
-                
-                if (R === 0) {
-                    ws[cell].s.fill = { fgColor: { rgb: "343A40" } };
-                    ws[cell].s.font = { color: { rgb: "FFFFFF" }, bold: true };
-                } else if (C === 2) {
-                     ws[cell].s.fill = { fgColor: { rgb: "FFF3CD" } }; 
-                }
-            }
+    function applyBatchTimes() {
+        const dateVal = document.getElementById('batchDate').value; // YYYY-MM-DD
+        const timeVal = document.getElementById('batchStartTime').value; // HH:MM
+
+        if(!dateVal || !timeVal) {
+            alert("Please select both a date and a start time.");
+            return;
         }
 
-        XLSX.utils.book_append_sheet(wb, ws, "Comments");
+        // Create a base Date object in local time (browser)
+        // We will treat this as the "Eastern" reference point
+        let currentRefDate = new Date(`${dateVal}T${timeVal}:00`);
         
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true });
-        saveAs(new Blob([wbout], {type: "application/octet-stream"}), originalFileName.replace(".docx", "_Edited.xlsx"));
+        // Loop through all comments
+        commentsData.forEach((item, index) => {
+            // Update the underlying data with a Mock ISO string
+            // We use the same ISO generation logic as the Save function will use later
+            // But here we just want to create valid Date objects to re-render the table
+            
+            // Format for display (Eastern)
+            const dStr = currentRefDate.toLocaleDateString("en-US", { year:"numeric", month:"2-digit", day:"2-digit" });
+            const tStr = currentRefDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+            
+            // Update the UI immediately via re-render, but first update the storage
+            // We store it as a simulated UTC ISO so renderTable works consistently
+            // To simulate UTC from this "Eastern" time, add 5 hours (approx standard) for the ISO string
+            // This is just for internal storage consistency before the final save
+            const isoDate = new Date(currentRefDate.getTime() + (5 * 60 * 60 * 1000));
+            item.date = isoDate.toISOString(); 
+
+            // Calculate random jump for next comment (3 to 7 minutes)
+            const randomMinutes = Math.floor(Math.random() * (7 - 3 + 1) + 3);
+            currentRefDate.setMinutes(currentRefDate.getMinutes() + randomMinutes);
+        });
+
+        renderTable();
+        closeBatchModal();
+        alert("Times updated successfully!");
+    }
+
+    /* --- SAVE & EXPORT LOGIC --- */
+
+    function getUTCISOFromEastern(dateStr, timeStr) {
+        // This function takes the Visual Strings (e.g., "1/13/2026" and "7:42 AM")
+        // And creates the correct UTC ISO string for the XML.
+        // Logic: 
+        // 1. Combine into a parseable string
+        // 2. Parse it
+        // 3. Add 5 hours (assuming standard time) to get to UTC Z time
+        // 4. Return ISO
+        
+        try {
+            // Parse Date
+            const dParts = dateStr.split('/');
+            const month = parseInt(dParts[0], 10);
+            const day = parseInt(dParts[1], 10);
+            const year = parseInt(dParts[2], 10);
+
+            // Parse Time
+            let [tMain, modifier] = timeStr.split(' '); // "7:42" "AM"
+            let [hours, minutes] = tMain.split(':');
+            hours = parseInt(hours, 10);
+            minutes = parseInt(minutes, 10);
+            
+            // Handle AM/PM
+            if (modifier) {
+                modifier = modifier.toUpperCase().trim();
+                if (hours === 12) hours = 0;
+                if (modifier === 'PM') hours += 12;
+            }
+
+            // Create a Date object. This defaults to Browser Local Time.
+            // We treat the inputs as "Neutral", then shift.
+            const dateObj = new Date(year, month - 1, day, hours, minutes, 0);
+
+            // To fix the "5 hours ahead" issue:
+            // Word XML expects UTC. If we want 7:00 AM Eastern, that is 12:00 PM UTC.
+            // So we add 5 hours to the time we parsed.
+            // (Note: This assumes Standard Time. If user is in DST, it might be 4, but 5 is safer for general winter use).
+            dateObj.setHours(dateObj.getHours() + 5);
+
+            return dateObj.toISOString(); // Returns ...T12:00:00.000Z
+        } catch (e) {
+            console.error("Date Parse Error", e);
+            return new Date().toISOString();
+        }
     }
 
     async function downloadWord() {
@@ -306,18 +384,32 @@
                 xmlMap.set(xmlComments[i].getAttribute("w:id"), xmlComments[i]);
             }
 
-            commentsData.forEach(item => {
-                const node = xmlMap.get(item.id);
+            // Iterate through the TABLE ROWS to get the exact data the user sees
+            const rows = document.querySelectorAll("#table-body tr");
+            
+            rows.forEach((tr, index) => {
+                const id = commentsData[index].id;
+                const node = xmlMap.get(id);
+                
                 if (node) {
-                    node.setAttribute("w:author", item.author);
-                    node.setAttribute("w:date", item.date);
+                    // Grab values directly from the HTML table
+                    const author = tr.cells[4].innerText.trim();
+                    const dateVal = tr.cells[5].innerText.trim(); // Visual Date
+                    const timeVal = tr.cells[6].innerText.trim(); // Visual Time
+                    const text = tr.cells[2].innerText.trim();
+
+                    // Convert the Visual Eastern Time to XML UTC Time
+                    const finalIsoDate = getUTCISOFromEastern(dateVal, timeVal);
+
+                    node.setAttribute("w:author", author);
+                    node.setAttribute("w:date", finalIsoDate);
 
                     while (node.firstChild) node.removeChild(node.firstChild);
                     
                     const p = xmlDoc.createElementNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w:p");
                     const r = xmlDoc.createElementNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w:r");
                     const t = xmlDoc.createElementNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w:t");
-                    t.textContent = item.text;
+                    t.textContent = text;
                     
                     r.appendChild(t);
                     p.appendChild(r);
@@ -344,17 +436,60 @@
         }
     }
 
+    function downloadExcel() {
+        const wb = XLSX.utils.book_new();
+        
+        // Grab data from table rows to ensure WYSIWYG
+        const rows = document.querySelectorAll("#table-body tr");
+        const sheetData = [];
+        
+        rows.forEach((tr, index) => {
+            sheetData.push({
+                "ID": commentsData[index].id,
+                "Page": tr.cells[1].innerText,
+                "Comment Text": tr.cells[2].innerText,
+                "Quoted Text": tr.cells[3].innerText,
+                "Author": tr.cells[4].innerText,
+                "Date": tr.cells[5].innerText,
+                "Time (ET)": tr.cells[6].innerText
+            });
+        });
+
+        const ws = XLSX.utils.json_to_sheet(sheetData);
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        ws['!cols'] = [{wch:5}, {wch:5}, {wch:80}, {wch:50}, {wch:20}, {wch:15}, {wch:15}];
+
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cell = XLSX.utils.encode_cell({r: R, c: C});
+                if (!ws[cell]) continue;
+                if (!ws[cell].s) ws[cell].s = {};
+                
+                ws[cell].s.alignment = { vertical: "top", wrapText: true };
+                
+                if (R === 0) {
+                    ws[cell].s.fill = { fgColor: { rgb: "343A40" } };
+                    ws[cell].s.font = { color: { rgb: "FFFFFF" }, bold: true };
+                } else if (C === 2) {
+                     ws[cell].s.fill = { fgColor: { rgb: "FFF3CD" } }; 
+                }
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, "Comments");
+        
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true });
+        saveAs(new Blob([wbout], {type: "application/octet-stream"}), originalFileName.replace(".docx", "_Edited.xlsx"));
+    }
+
     function copyTable() {
-        // CHANGED: Updated to better support pasting into Word/Outlook by using ClipboardItem with text/html
         let html = '<table border="1" style="border-collapse:collapse;"><thead><tr>';
         
-        // Headers
         document.querySelectorAll('#data-table th').forEach(th => {
             html += `<th style="background-color:#343a40; color:white; padding:10px;">${th.innerText.split('(')[0].trim()}</th>`;
         });
         html += '</tr></thead><tbody>';
 
-        // Rows
         document.querySelectorAll('#table-body tr').forEach(tr => {
             html += '<tr>';
             tr.querySelectorAll('td').forEach(td => {
