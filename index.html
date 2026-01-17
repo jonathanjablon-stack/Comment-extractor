@@ -32,7 +32,7 @@
         .btn-copy { background-color: #6c757d; }
         .btn-excel { background-color: #28a745; }
         .btn-word { background-color: #6f42c1; } 
-        /* NEW BUTTON STYLE */
+        /* New Batch Button Style */
         .btn-batch { background-color: #e67e22; }
         .btn-reset { background-color: #dc3545; max-width: 100px; }
 
@@ -49,13 +49,14 @@
         .meta-editable { background-color: #d4edda; }
         .meta-editable:hover { background-color: #c3e6cb; border: 1px solid #155724; }
         
+        /* Removed user-select: none as it interferes with clipboard copy range */
         .read-only { background-color: #f8f9fa; color: #666; font-style: italic; }
 
         #status { font-weight: bold; margin-bottom: 10px; text-align: center; height: 20px; }
         .success { color: #28a745; }
         .error { color: #dc3545; }
 
-        /* NEW MODAL STYLES */
+        /* Modal Styles */
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: white; margin: 15% auto; padding: 25px; border-radius: 8px; width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
         .modal h2 { margin-top: 0; color: #2c3e50; }
@@ -70,7 +71,7 @@
 <div class="container">
     <div class="header">
         <h1>Word Comment Editor</h1><h4> (current as of 1/13/26)</h4>
-        <p>Edit comments, authors, and dates. Saves with full compression.</p>
+        <p>Edit comments, authors, and dates. Saves with full compression to keep files small.</p>
     </div>
 
     <div id="drop-zone" class="drop-zone">
@@ -98,7 +99,7 @@
                     <th style="width: 25%;">Quoted Text</th>
                     <th style="width: 15%;">Author</th>
                     <th style="width: 90px;">Date</th>
-                    <th style="width: 90px;">Time (ET)</th>
+                    <th style="width: 90px;">Time</th>
                 </tr>
             </thead>
             <tbody id="table-body"></tbody>
@@ -183,14 +184,15 @@
                 const ps = c.getElementsByTagNameNS("*", "p");
                 for (let j=0; j<ps.length; j++) text += ps[j].textContent;
 
-                // Store raw ISO date from XML
+                // We store the RAW string (e.g., 2024-05-10T14:30:00Z)
+                // We will NOT use new Date() to parse it, to avoid timezone shifts.
                 commentsData.push({
                     id: id,
                     page: contextMap.pages[id] || 1,
                     text: text,
                     quote: contextMap.quotes[id] || "",
                     author: c.getAttribute("w:author") || "Unknown",
-                    date: c.getAttribute("w:date") || new Date().toISOString()
+                    rawDate: c.getAttribute("w:date") || new Date().toISOString()
                 });
             }
 
@@ -234,39 +236,56 @@
         return { pages, quotes };
     }
 
+    // "Dumb" Parser - Parses ISO string purely by text, ignoring browser timezone
+    function parseBlindISO(isoStr) {
+        // Regex for YYYY-MM-DDTHH:MM
+        const match = isoStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+        if (!match) return { dateStr: isoStr, timeStr: "" };
+
+        const year = match[1];
+        const month = match[2];
+        const day = match[3];
+        let hour = parseInt(match[4], 10);
+        const minute = match[5];
+
+        // Convert 24h to 12h for display
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        hour = hour % 12;
+        hour = hour ? hour : 12; 
+
+        return {
+            dateStr: `${month}/${day}/${year}`,
+            timeStr: `${hour}:${minute} ${ampm}`
+        };
+    }
+
     function renderTable() {
         tableBody.innerHTML = "";
         commentsData.forEach((row, index) => {
-            // Display Logic: Convert ISO (UTC) to Eastern for display
-            let dateStr = "";
-            let timeStr = "";
-            try {
-                const d = new Date(row.date);
-                dateStr = d.toLocaleDateString("en-US", { timeZone: "America/New_York", year:"numeric", month:"2-digit", day:"2-digit" }); // MM/DD/YYYY
-                timeStr = d.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }); // 12:00 PM
-            } catch(e) { dateStr = row.date; }
+            const { dateStr, timeStr } = parseBlindISO(row.rawDate);
 
             const tr = document.createElement("tr");
+
             tr.innerHTML = `
                 <td class="read-only">${index + 1}</td>
                 <td class="read-only">${row.page}</td>
                 <td class="editable" contenteditable="true" onblur="updateData(${index}, 'text', this.innerText)">${row.text}</td>
                 <td class="read-only">${row.quote}</td>
                 <td class="meta-editable" contenteditable="true" onblur="updateData(${index}, 'author', this.innerText)">${row.author}</td>
-                <td class="meta-editable date-cell" contenteditable="true" onblur="updateVisualDate(${index})">${dateStr}</td>
-                <td class="meta-editable time-cell" contenteditable="true" onblur="updateVisualDate(${index})">${timeStr}</td>
+                <td class="meta-editable" contenteditable="true" onblur="updateData(${index}, 'visualDate', this.innerText)">${dateStr}</td>
+                <td class="meta-editable" contenteditable="true" onblur="updateData(${index}, 'visualTime', this.innerText)">${timeStr}</td>
             `;
             tableBody.appendChild(tr);
         });
     }
 
     window.updateData = function(index, field, value) {
-        commentsData[index][field] = value.trim();
+        // For date/time, we don't update the rawDate yet (we do that at save time)
+        // But for other fields we update immediately
+        if(field !== 'visualDate' && field !== 'visualTime') {
+            commentsData[index][field] = value.trim();
+        }
     };
-
-    window.updateVisualDate = function(index) {
-        // Placeholder for manual edits logic
-    }
 
     /* --- BATCH TIME LOGIC --- */
 
@@ -288,17 +307,21 @@
             return;
         }
 
-        // Create a base Date object in local time (browser)
-        let currentRefDate = new Date(`${dateVal}T${timeVal}:00`);
-        
-        // Loop through all comments
-        commentsData.forEach((item, index) => {
-            // Internal Update: Create a simulated ISO for storage
-            // This is just to keep the internal data valid for next render
-            const isoDate = new Date(currentRefDate.getTime() + (5 * 60 * 60 * 1000));
-            item.date = isoDate.toISOString(); 
+        // We use Date object ONLY for adding minutes, but we output strict text
+        let currentRefDate = new Date(`${dateVal}T${timeVal}:00`); 
 
-            // Calculate random jump (3 to 7 minutes)
+        // Update Loop
+        commentsData.forEach((item, index) => {
+            let y = currentRefDate.getFullYear();
+            let m = String(currentRefDate.getMonth() + 1).padStart(2, '0');
+            let d = String(currentRefDate.getDate()).padStart(2, '0');
+            let h = String(currentRefDate.getHours()).padStart(2, '0');
+            let min = String(currentRefDate.getMinutes()).padStart(2, '0');
+
+            // Construct new Raw ISO String (Simulating "Z" so Word accepts it, but using the calculated numbers directly)
+            item.rawDate = `${y}-${m}-${d}T${h}:${min}:00Z`;
+
+            // Random jump 3-7 mins
             const randomMinutes = Math.floor(Math.random() * (7 - 3 + 1) + 3);
             currentRefDate.setMinutes(currentRefDate.getMinutes() + randomMinutes);
         });
@@ -308,38 +331,83 @@
         alert("Times updated successfully!");
     }
 
-    /* --- SAVE & EXPORT LOGIC --- */
-
-    function getUTCISOFromEastern(dateStr, timeStr) {
+    // Converts the Visual Table Strings directly to an ISO string
+    function getDumbISO(dateStr, timeStr) {
         try {
-            // Parse Date
+            // Parse Date MM/DD/YYYY
             const dParts = dateStr.split('/');
-            const month = parseInt(dParts[0], 10);
-            const day = parseInt(dParts[1], 10);
-            const year = parseInt(dParts[2], 10);
+            if(dParts.length < 3) return new Date().toISOString();
 
-            // Parse Time
-            let [tMain, modifier] = timeStr.split(' '); // "7:42" "AM"
+            const month = dParts[0].padStart(2, '0');
+            const day = dParts[1].padStart(2, '0');
+            const year = dParts[2];
+
+            // Parse Time HH:MM AM/PM
+            let [tMain, modifier] = timeStr.split(' '); 
             let [hours, minutes] = tMain.split(':');
             hours = parseInt(hours, 10);
-            minutes = parseInt(minutes, 10);
             
             if (modifier) {
                 modifier = modifier.toUpperCase().trim();
                 if (hours === 12) hours = 0;
                 if (modifier === 'PM') hours += 12;
+            } else if (hours === 12) { 
+                // Handle case where user entered "12:00" without AM/PM, assume noon? 
+                // Or if it was 12 AM logic from parsed... 
+                // Standard logic: if 12 and not PM, usually 0 if AM. 
             }
-
-            const dateObj = new Date(year, month - 1, day, hours, minutes, 0);
-
-            // Add 5 hours to shift Eastern Visual Time to UTC XML Time
-            dateObj.setHours(dateObj.getHours() + 5);
-
-            return dateObj.toISOString();
+            
+            const hStr = String(hours).padStart(2, '0');
+            const mStr = String(minutes).padStart(2, '0');
+            
+            // Return raw string format
+            return `${year}-${month}-${day}T${hStr}:${mStr}:00Z`;
         } catch (e) {
-            console.error("Date Parse Error", e);
             return new Date().toISOString();
         }
+    }
+
+    function downloadExcel() {
+        const wb = XLSX.utils.book_new();
+        const rows = document.querySelectorAll("#table-body tr");
+        const sheetData = [];
+        
+        rows.forEach((tr, index) => {
+            sheetData.push({
+                "ID": commentsData[index].id,
+                "Page": tr.cells[1].innerText,
+                "Comment Text": tr.cells[2].innerText,
+                "Quoted Text": tr.cells[3].innerText,
+                "Author": tr.cells[4].innerText,
+                "Date": tr.cells[5].innerText,
+                "Time": tr.cells[6].innerText
+            });
+        });
+
+        const ws = XLSX.utils.json_to_sheet(sheetData);
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        ws['!cols'] = [{wch:5}, {wch:5}, {wch:80}, {wch:50}, {wch:20}, {wch:15}, {wch:15}];
+
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cell = XLSX.utils.encode_cell({r: R, c: C});
+                if (!ws[cell]) continue;
+                if (!ws[cell].s) ws[cell].s = {};
+                ws[cell].s.alignment = { vertical: "top", wrapText: true };
+                
+                if (R === 0) {
+                    ws[cell].s.fill = { fgColor: { rgb: "343A40" } };
+                    ws[cell].s.font = { color: { rgb: "FFFFFF" }, bold: true };
+                } else if (C === 2) {
+                     ws[cell].s.fill = { fgColor: { rgb: "FFF3CD" } }; 
+                }
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, "Comments");
+        
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true });
+        saveAs(new Blob([wbout], {type: "application/octet-stream"}), originalFileName.replace(".docx", "_Edited.xlsx"));
     }
 
     async function downloadWord() {
@@ -357,7 +425,7 @@
                 xmlMap.set(xmlComments[i].getAttribute("w:id"), xmlComments[i]);
             }
 
-            // Grab values directly from HTML table rows
+            // Grab visual data from table
             const rows = document.querySelectorAll("#table-body tr");
             
             rows.forEach((tr, index) => {
@@ -370,8 +438,8 @@
                     const timeVal = tr.cells[6].innerText.trim();
                     const text = tr.cells[2].innerText.trim();
 
-                    // Convert Visual Eastern to XML UTC
-                    const finalIsoDate = getUTCISOFromEastern(dateVal, timeVal);
+                    // Convert to Dumb ISO
+                    const finalIsoDate = getDumbISO(dateVal, timeVal);
 
                     node.setAttribute("w:author", author);
                     node.setAttribute("w:date", finalIsoDate);
@@ -408,51 +476,8 @@
         }
     }
 
-    function downloadExcel() {
-        const wb = XLSX.utils.book_new();
-        const rows = document.querySelectorAll("#table-body tr");
-        const sheetData = [];
-        
-        rows.forEach((tr, index) => {
-            sheetData.push({
-                "ID": commentsData[index].id,
-                "Page": tr.cells[1].innerText,
-                "Comment Text": tr.cells[2].innerText,
-                "Quoted Text": tr.cells[3].innerText,
-                "Author": tr.cells[4].innerText,
-                "Date": tr.cells[5].innerText,
-                "Time (ET)": tr.cells[6].innerText
-            });
-        });
-
-        const ws = XLSX.utils.json_to_sheet(sheetData);
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        ws['!cols'] = [{wch:5}, {wch:5}, {wch:80}, {wch:50}, {wch:20}, {wch:15}, {wch:15}];
-
-        for (let R = range.s.r; R <= range.e.r; ++R) {
-            for (let C = range.s.c; C <= range.e.c; ++C) {
-                const cell = XLSX.utils.encode_cell({r: R, c: C});
-                if (!ws[cell]) continue;
-                if (!ws[cell].s) ws[cell].s = {};
-                
-                ws[cell].s.alignment = { vertical: "top", wrapText: true };
-                
-                if (R === 0) {
-                    ws[cell].s.fill = { fgColor: { rgb: "343A40" } };
-                    ws[cell].s.font = { color: { rgb: "FFFFFF" }, bold: true };
-                } else if (C === 2) {
-                     ws[cell].s.fill = { fgColor: { rgb: "FFF3CD" } }; 
-                }
-            }
-        }
-
-        XLSX.utils.book_append_sheet(wb, ws, "Comments");
-        
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true });
-        saveAs(new Blob([wbout], {type: "application/octet-stream"}), originalFileName.replace(".docx", "_Edited.xlsx"));
-    }
-
     function copyTable() {
+        // Rich HTML Copy
         let html = '<table border="1" style="border-collapse:collapse;"><thead><tr>';
         
         document.querySelectorAll('#data-table th').forEach(th => {
@@ -474,7 +499,7 @@
         const data = [new ClipboardItem({ 'text/html': blob })];
 
         navigator.clipboard.write(data).then(() => {
-            alert("Table copied successfully (Word/Outlook format)!");
+            alert("Table copied successfully (Formatted for Word/Outlook)!");
         }).catch(err => {
             console.error("Clipboard API failed: ", err);
             alert("Failed to copy. Please try again.");
