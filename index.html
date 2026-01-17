@@ -32,6 +32,7 @@
         .btn-copy { background-color: #6c757d; }
         .btn-excel { background-color: #28a745; }
         .btn-word { background-color: #6f42c1; } 
+        /* NEW BUTTON STYLE */
         .btn-batch { background-color: #e67e22; }
         .btn-reset { background-color: #dc3545; max-width: 100px; }
 
@@ -54,7 +55,7 @@
         .success { color: #28a745; }
         .error { color: #dc3545; }
 
-        /* Modal Styles */
+        /* NEW MODAL STYLES */
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: white; margin: 15% auto; padding: 25px; border-radius: 8px; width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
         .modal h2 { margin-top: 0; color: #2c3e50; }
@@ -182,8 +183,7 @@
                 const ps = c.getElementsByTagNameNS("*", "p");
                 for (let j=0; j<ps.length; j++) text += ps[j].textContent;
 
-                // Word usually stores Date as UTC (Z). We store the raw string here.
-                // We will convert to Eastern for display in renderTable.
+                // Store raw ISO date from XML
                 commentsData.push({
                     id: id,
                     page: contextMap.pages[id] || 1,
@@ -264,10 +264,8 @@
         commentsData[index][field] = value.trim();
     };
 
-    // Called when user edits Date or Time cells manually
     window.updateVisualDate = function(index) {
-        // We don't update the underlying ISO yet, we just rely on what is in the cells
-        // The save function now pulls directly from the cells to ensure What You See Is What You Get
+        // Placeholder for manual edits logic
     }
 
     /* --- BATCH TIME LOGIC --- */
@@ -291,27 +289,16 @@
         }
 
         // Create a base Date object in local time (browser)
-        // We will treat this as the "Eastern" reference point
         let currentRefDate = new Date(`${dateVal}T${timeVal}:00`);
         
         // Loop through all comments
         commentsData.forEach((item, index) => {
-            // Update the underlying data with a Mock ISO string
-            // We use the same ISO generation logic as the Save function will use later
-            // But here we just want to create valid Date objects to re-render the table
-            
-            // Format for display (Eastern)
-            const dStr = currentRefDate.toLocaleDateString("en-US", { year:"numeric", month:"2-digit", day:"2-digit" });
-            const tStr = currentRefDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-            
-            // Update the UI immediately via re-render, but first update the storage
-            // We store it as a simulated UTC ISO so renderTable works consistently
-            // To simulate UTC from this "Eastern" time, add 5 hours (approx standard) for the ISO string
-            // This is just for internal storage consistency before the final save
+            // Internal Update: Create a simulated ISO for storage
+            // This is just to keep the internal data valid for next render
             const isoDate = new Date(currentRefDate.getTime() + (5 * 60 * 60 * 1000));
             item.date = isoDate.toISOString(); 
 
-            // Calculate random jump for next comment (3 to 7 minutes)
+            // Calculate random jump (3 to 7 minutes)
             const randomMinutes = Math.floor(Math.random() * (7 - 3 + 1) + 3);
             currentRefDate.setMinutes(currentRefDate.getMinutes() + randomMinutes);
         });
@@ -324,14 +311,6 @@
     /* --- SAVE & EXPORT LOGIC --- */
 
     function getUTCISOFromEastern(dateStr, timeStr) {
-        // This function takes the Visual Strings (e.g., "1/13/2026" and "7:42 AM")
-        // And creates the correct UTC ISO string for the XML.
-        // Logic: 
-        // 1. Combine into a parseable string
-        // 2. Parse it
-        // 3. Add 5 hours (assuming standard time) to get to UTC Z time
-        // 4. Return ISO
-        
         try {
             // Parse Date
             const dParts = dateStr.split('/');
@@ -345,24 +324,18 @@
             hours = parseInt(hours, 10);
             minutes = parseInt(minutes, 10);
             
-            // Handle AM/PM
             if (modifier) {
                 modifier = modifier.toUpperCase().trim();
                 if (hours === 12) hours = 0;
                 if (modifier === 'PM') hours += 12;
             }
 
-            // Create a Date object. This defaults to Browser Local Time.
-            // We treat the inputs as "Neutral", then shift.
             const dateObj = new Date(year, month - 1, day, hours, minutes, 0);
 
-            // To fix the "5 hours ahead" issue:
-            // Word XML expects UTC. If we want 7:00 AM Eastern, that is 12:00 PM UTC.
-            // So we add 5 hours to the time we parsed.
-            // (Note: This assumes Standard Time. If user is in DST, it might be 4, but 5 is safer for general winter use).
+            // Add 5 hours to shift Eastern Visual Time to UTC XML Time
             dateObj.setHours(dateObj.getHours() + 5);
 
-            return dateObj.toISOString(); // Returns ...T12:00:00.000Z
+            return dateObj.toISOString();
         } catch (e) {
             console.error("Date Parse Error", e);
             return new Date().toISOString();
@@ -384,7 +357,7 @@
                 xmlMap.set(xmlComments[i].getAttribute("w:id"), xmlComments[i]);
             }
 
-            // Iterate through the TABLE ROWS to get the exact data the user sees
+            // Grab values directly from HTML table rows
             const rows = document.querySelectorAll("#table-body tr");
             
             rows.forEach((tr, index) => {
@@ -392,13 +365,12 @@
                 const node = xmlMap.get(id);
                 
                 if (node) {
-                    // Grab values directly from the HTML table
                     const author = tr.cells[4].innerText.trim();
-                    const dateVal = tr.cells[5].innerText.trim(); // Visual Date
-                    const timeVal = tr.cells[6].innerText.trim(); // Visual Time
+                    const dateVal = tr.cells[5].innerText.trim();
+                    const timeVal = tr.cells[6].innerText.trim();
                     const text = tr.cells[2].innerText.trim();
 
-                    // Convert the Visual Eastern Time to XML UTC Time
+                    // Convert Visual Eastern to XML UTC
                     const finalIsoDate = getUTCISOFromEastern(dateVal, timeVal);
 
                     node.setAttribute("w:author", author);
@@ -438,8 +410,6 @@
 
     function downloadExcel() {
         const wb = XLSX.utils.book_new();
-        
-        // Grab data from table rows to ensure WYSIWYG
         const rows = document.querySelectorAll("#table-body tr");
         const sheetData = [];
         
