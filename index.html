@@ -3,516 +3,968 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Comment Editor</title>
+    <title>Word Forensics & Ghost Writer Suite</title>
     
     <script src="jszip.min.js"></script>
     <script src="xlsx.bundle.js"></script>
     <script src="FileSaver.min.js"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background-color: #e9ecef; color: #333; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background-color: #f4f6f8; color: #333; }
+        .container { max-width: 1600px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         
         .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
-        h1 { margin: 0; color: #2c3e50; }
+        h1 { margin: 0; color: #2c3e50; font-size: 28px; }
         p { color: #666; margin-top: 5px; }
 
         .drop-zone { 
-            border: 3px dashed #cbd5e0; padding: 40px; text-align: center; color: #6c757d; 
-            cursor: pointer; margin-bottom: 20px; transition: 0.3s; border-radius: 6px; background: #f8f9fa;
+            border: 3px dashed #cbd5e0; padding: 50px; text-align: center; color: #6c757d; font-size: 18px;
+            cursor: pointer; margin-bottom: 20px; transition: 0.3s; border-radius: 8px; background: #fff;
         }
-        .drop-zone:hover { border-color: #007bff; background-color: #eef7ff; color: #007bff; }
+        .drop-zone:hover { border-color: #007bff; background-color: #f0f7ff; color: #007bff; }
 
-        .toolbar { display: none; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #e2e6ea; }
+        /* TABS */
+        .tabs { display: none; margin-bottom: 20px; border-bottom: 2px solid #dee2e6; gap: 5px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 12px 20px; cursor: pointer; background: none; border: none; font-size: 14px; font-weight: 600; color: #6c757d;
+            border-bottom: 3px solid transparent; transition: all 0.2s; border-radius: 4px 4px 0 0;
+        }
+        .tab-btn:hover { color: #333; background-color: #f8f9fa; }
+        .tab-btn.active { color: #007bff; border-bottom-color: #007bff; background-color: #fff; }
+
+        .toolbar { display: none; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e2e6ea; }
         .btn { 
-            border: none; padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: 600;
-            border-radius: 4px; color: white; transition: all 0.2s; flex: 1; display: flex; align-items: center; justify-content: center;
+            border: none; padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600;
+            border-radius: 6px; color: white; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
         }
-        .btn:hover { transform: translateY(-1px); }
-        .btn-copy { background-color: #6c757d; }
-        .btn-excel { background-color: #28a745; }
-        .btn-word { background-color: #6f42c1; } 
-        .btn-batch { background-color: #e67e22; }
-        .btn-reset { background-color: #dc3545; max-width: 100px; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn-primary { background-color: #007bff; }
+        .btn-success { background-color: #28a745; }
+        .btn-warning { background-color: #e67e22; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-secondary { background-color: #6c757d; }
+        
+        #btn-focus-reset {
+            display: none; position: fixed; top: 20px; right: 20px; z-index: 1000;
+            background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: bold; cursor: pointer;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .table-wrap { overflow-x: auto; max-height: 70vh; border: 1px solid #dee2e6; display: none; }
-        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        /* VIEWS */
+        .view-section { display: none; animation: fadeIn 0.3s; }
         
-        th { background-color: #343a40; color: white; position: sticky; top: 0; z-index: 10; padding: 12px; text-align: left; }
-        td { padding: 8px; border-bottom: 1px solid #dee2e6; vertical-align: top; font-size: 14px; }
+        /* Table View */
+        .table-wrap { overflow-x: auto; max-height: 70vh; border: 1px solid #dee2e6; border-radius: 6px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1200px; font-size: 13px; }
         
-        .editable { background-color: #fff3cd; cursor: text; transition: background 0.2s; border: 1px solid transparent; }
-        .editable:hover { background-color: #ffeeba; border: 1px solid #d39e00; }
-        .editable:focus { background-color: #fff; outline: 2px solid #007bff; }
+        th { background-color: #343a40; color: white; position: sticky; top: 0; z-index: 10; padding: 12px; text-align: left; cursor: pointer; user-select: none; }
+        th:hover { background-color: #495057; }
+        th.sort-asc::after { content: " ▲"; opacity: 0.7; }
+        th.sort-desc::after { content: " ▼"; opacity: 0.7; }
         
-        .meta-editable { background-color: #d4edda; }
-        .meta-editable:hover { background-color: #c3e6cb; border: 1px solid #155724; }
+        td { padding: 10px; border-bottom: 1px solid #dee2e6; vertical-align: top; }
         
-        .read-only { background-color: #f8f9fa; color: #666; font-style: italic; }
+        /* Filter Row */
+        .filter-row th { background-color: #e9ecef; padding: 5px; cursor: default; }
+        .filter-input { width: 95%; padding: 4px; border: 1px solid #ced4da; border-radius: 3px; font-size: 12px; }
 
-        #status { font-weight: bold; margin-bottom: 10px; text-align: center; height: 20px; }
+        .editable { background-color: #fff8e1; cursor: text; border: 1px dashed #eec; padding: 2px; }
+        .editable:focus { outline: 2px solid #007bff; background: white; }
+        .meta-editable { background-color: #e8f5e9; }
+
+        /* Document View */
+        .doc-view-wrapper { display: flex; height: 75vh; border: 1px solid #dee2e6; border-radius: 6px; overflow: hidden; }
+        .doc-content { flex: 2; padding: 50px; background: #fff; overflow-y: scroll; font-family: 'Times New Roman', serif; border-right: 1px solid #dee2e6; font-size: 11pt; line-height: 1.5; }
+        .doc-sidebar { flex: 1; background: #f8f9fa; overflow-y: scroll; padding: 20px; max-width: 450px; }
+        
+        .doc-ins { background-color: #d4edda; border-bottom: 2px solid #28a745; cursor: pointer; text-decoration: none; }
+        .doc-del { background-color: #f8d7da; text-decoration: line-through; color: #721c24; cursor: pointer; }
+        .doc-comment-highlight { background-color: #fff3cd; border-bottom: 2px solid #ffc107; cursor: pointer; }
+        
+        .comment-card { background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 15px; cursor: pointer; transition: 0.2s; }
+        .comment-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .comment-card.active-card { border-left: 5px solid #007bff; background-color: #eef7ff; }
+        
+        @keyframes flashHighlight { 0% { background: yellow; box-shadow: 0 0 10px yellow; } 50% { background: orange; box-shadow: 0 0 20px orange; } 100% { background: yellow; box-shadow: 0 0 10px yellow; } }
+        .target-flash-infinite { animation: flashHighlight 1s infinite; z-index: 10; position: relative; }
+
+        /* Forensics View */
+        .forensics-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 12px; }
+        .forensics-table th { background: #eee; color: #333; }
+        .forensics-table td { padding: 10px; border-bottom: 1px solid #ddd; vertical-align: middle; }
+        .risk-high { color: #dc3545; font-weight: bold; background: #ffe6e6; padding: 2px 5px; border-radius: 3px; }
+        .risk-med { color: #e67e22; background: #fff3cd; padding: 2px 5px; border-radius: 3px; }
+        .hex-preview { font-family: monospace; font-size: 10px; color: #666; background: #f8f9fa; padding: 5px; border: 1px solid #eee; margin-top: 5px; word-break: break-all; }
+
+        /* Ghost Writer 2.0 */
+        .ghost-workspace { display: flex; height: 75vh; border: 1px solid #dee2e6; border-radius: 6px; position:relative; }
+        .ghost-doc-render { flex: 1; padding: 50px; background: #fff; overflow-y: scroll; font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; cursor: text; }
+        .ghost-doc-render p:hover { background-color: #f9f9f9; } 
+        ::selection { background: #b3d7ff; }
+
+        .ghost-floating-toolbar {
+            position: absolute; bottom: 20px; right: 20px; width: 320px;
+            background: white; padding: 20px; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.25);
+            border: 1px solid #ccc; display: none; z-index: 100;
+        }
+        .ghost-floating-toolbar h3 { margin-top: 0; color: #e67e22; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+
+        /* Badges */
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color:white; display: inline-block; width: 60px; text-align: center; }
+        .badge-com { background-color: #17a2b8; }
+        .badge-ins { background-color: #28a745; }
+        .badge-del { background-color: #dc3545; }
+
+        #status { font-weight: bold; margin-bottom: 10px; text-align: center; height: 20px; font-size: 14px; }
         .success { color: #28a745; }
         .error { color: #dc3545; }
 
         /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: white; margin: 15% auto; padding: 25px; border-radius: 8px; width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-        .modal h2 { margin-top: 0; color: #2c3e50; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .modal-content { background-color: white; margin: 10% auto; padding: 30px; border-radius: 12px; width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .form-row { margin-bottom: 15px; }
+        .form-row label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 12px; color: #555; }
+        .form-row input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
     </style>
 </head>
 <body>
 
+<button id="btn-focus-reset" onclick="resetFocus()">🚫 Reset Focus</button>
+
 <div class="container">
     <div class="header">
-        <h1>Word Comment Editor</h1><h4> (current as of 1/13/26)</h4>
-        <p>Edit comments, authors, and dates. Saves with full compression.</p>
+        <h1>Word Forensics & Ghost Writer</h1>
+        <p>Edit metadata, scrub forensics, fabric revisions, and view tracking.</p>
     </div>
 
     <div id="drop-zone" class="drop-zone">
-        Drag & Drop .docx file here<br>(or click to browse)
+        📂 Drag & Drop .docx file here<br><span style="font-size:14px; color:#999;">(or click to browse)</span>
     </div>
     <input type="file" id="file-input" accept=".docx" style="display: none;">
     
     <div id="status"></div>
 
-    <div class="toolbar" id="toolbar">
-        <button class="btn btn-batch" onclick="openBatchModal()">⏱️ Change Comment Times</button>
-        <button class="btn btn-copy" onclick="copyTable()">📋 Copy Table</button>
-        <button class="btn btn-excel" onclick="downloadExcel()">📊 Download Excel</button>
-        <button class="btn btn-word" onclick="downloadWord()">💾 Save New .docx</button>
-        <button class="btn btn-reset" onclick="location.reload()">Reset</button>
+    <div class="tabs" id="tabs">
+        <button class="tab-btn active" onclick="switchTab('comments')">💬 Comments (<span id="count-comments">0</span>)</button>
+        <button class="tab-btn" onclick="switchTab('revisions')">📝 Tracked Changes (<span id="count-revisions">0</span>)</button>
+        <button class="tab-btn" onclick="switchTab('all')">📑 All Activity (<span id="count-all">0</span>)</button>
+        <button class="tab-btn" onclick="switchTab('docview')">📄 Document View</button>
+        <button class="tab-btn" onclick="switchTab('forensics')">🕵️ Deep Forensics</button>
+        <button class="tab-btn" onclick="switchTab('ghost')">👻 Ghost Writer</button>
     </div>
 
-    <div class="table-wrap" id="table-container">
+    <div class="toolbar" id="toolbar">
+        <button class="btn btn-warning" onclick="openBatchModal()">⏱️ Batch Times</button>
+        <button class="btn btn-secondary" onclick="copyTable()">📋 Copy Table</button>
+        <button class="btn btn-success" onclick="downloadExcel()">📊 Export XLSX</button>
+        <button class="btn btn-primary" onclick="downloadWord()">💾 Save .docx</button>
+        <button class="btn btn-danger" onclick="location.reload()">Reset</button>
+    </div>
+
+    <div class="view-section table-wrap" id="view-table">
         <table id="data-table">
-            <thead>
-                <tr>
-                    <th style="width: 50px;">#</th>
-                    <th style="width: 50px;">Pg</th>
-                    <th style="width: 35%;">Comment Text</th>
-                    <th style="width: 25%;">Quoted Text</th>
-                    <th style="width: 15%;">Author</th>
-                    <th style="width: 90px;">Date</th>
-                    <th style="width: 90px;">Time</th>
-                </tr>
-            </thead>
+            <thead id="data-table-head"></thead>
             <tbody id="table-body"></tbody>
         </table>
     </div>
+
+    <div class="view-section doc-view-wrapper" id="view-doc">
+        <div class="doc-content" id="doc-content"><div style="color:#999; text-align:center;">Content...</div></div>
+        <div class="doc-sidebar" id="doc-sidebar"><h4 style="margin-top:0;">Comments Pane</h4><div id="sidebar-content"></div></div>
+    </div>
+
+    <div class="view-section" id="view-forensics">
+        <div style="background:#fff; padding:20px; border-radius:8px; border:1px solid #ddd; margin-bottom:20px;">
+            <h3 style="margin-top:0;">Deep Scan: Binary Analysis</h3>
+            <p style="font-size:13px; color:#666;">Analyzing binary headers for hidden EXIF, XMP, and software tags.</p>
+            <table class="forensics-table">
+                <thead id="forensics-head"></thead>
+                <tbody id="forensics-body"></tbody>
+            </table>
+        </div>
+        
+        <div class="view-section" id="view-metadata" style="display:block;">
+            <div class="meta-grid">
+                <div class="meta-box">
+                    <h3>Core Properties</h3>
+                    <div class="meta-row"><label>Title</label><input type="text" id="meta-title"></div>
+                    <div class="meta-row"><label>Creator</label><input type="text" id="meta-creator"></div>
+                    <div class="meta-row"><label>Last Modified By</label><input type="text" id="meta-lastMod"></div>
+                    <div class="meta-row"><label>Created Date</label><input type="text" id="meta-created"></div>
+                    <div class="meta-row"><label>Modified Date</label><input type="text" id="meta-modified"></div>
+                </div>
+                <div class="meta-box">
+                    <h3>App Statistics</h3>
+                    <div class="meta-row"><label>Total Edit Time (Minutes)</label><input type="number" id="meta-time"></div>
+                    <div class="meta-row"><label>Revision Count</label><input type="number" id="meta-revision"></div>
+                    <button class="btn btn-danger" style="width:100%; margin-top:20px;" onclick="deepCleanMetadata()">🧹 Run Deep Clean Protocol</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="view-section" id="view-ghost">
+        <div class="ghost-workspace">
+            <div class="ghost-doc-render" id="ghost-render-area" onmouseup="handleGhostSelection()"></div>
+            
+            <div class="ghost-floating-toolbar" id="ghost-toolbar">
+                <h3>👻 Ghost Revision</h3>
+                <div style="font-size:12px; color:#666; margin-bottom:10px;">
+                    Selected: <span id="ghost-sel-text" style="font-weight:bold; color:#333; background:#eee; padding:2px;"></span>
+                </div>
+                
+                <div class="form-row">
+                    <label>Replacement Text (Leave empty to delete)</label>
+                    <input type="text" id="ghost-replace-text">
+                </div>
+                
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Fake Author</label><input type="text" id="ghost-author-input" placeholder="Default: Author"></div>
+                    <div style="flex:1;"><label>Fake Date</label><input type="datetime-local" id="ghost-date-input"></div>
+                </div>
+                
+                <button class="btn btn-warning" style="width:100%; margin-top:10px;" onclick="executeGhostEdit()">Inject Change</button>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <div id="batchModal" class="modal">
     <div class="modal-content">
-        <h2>Batch Change Times</h2>
-        <p style="font-size:13px; color:#666; margin-bottom:15px;">This will set the date/time for all comments sequentially, spaced 3-7 minutes apart.</p>
-        
-        <div class="form-group">
-            <label for="batchDate">Select Date:</label>
-            <input type="date" id="batchDate">
-        </div>
-        <div class="form-group">
-            <label for="batchStartTime">Start Time (for 1st comment):</label>
-            <input type="time" id="batchStartTime">
-        </div>
-        
-        <div class="modal-actions">
-            <button class="btn" style="background:#6c757d;" onclick="closeBatchModal()">Cancel</button>
-            <button class="btn" style="background:#e67e22;" onclick="applyBatchTimes()">Apply Changes</button>
+        <h2 style="margin-top:0;">Batch Change Times</h2>
+        <div class="form-row"><label>Date:</label><input type="date" id="batchDate"></div>
+        <div class="form-row"><label>Start Time:</label><input type="time" id="batchStartTime"></div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+            <button class="btn btn-secondary" onclick="document.getElementById('batchModal').style.display='none'">Cancel</button>
+            <button class="btn btn-warning" onclick="applyBatchTimes()">Apply</button>
         </div>
     </div>
 </div>
 
 <script>
-    let originalDocBuffer = null;
+    // --- STATE ---
+    let zipObj = null;
     let originalFileName = "";
+    
+    // Data Sources
     let commentsData = [];
+    let revisionsData = [];
+    let allData = []; 
+    let forensicsData = [];
+    
+    // Tab & View State
+    let currentTab = 'comments'; 
+    let tableSort = { col: null, dir: 1 }; // 1 asc, -1 desc
+    let tableFilters = {}; // { colIndex: 'value' }
 
+    // XML Objects
+    let coreXmlDoc = null;
+    let appXmlDoc = null;
+    let mainDocXml = null; 
+    
+    // Ghost Writer State
+    let ghostSelectedParagraphIndex = -1;
+    let ghostParagraphs = []; 
+
+    const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+
+    // --- DOM Elements ---
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const statusDiv = document.getElementById('status');
     const toolbar = document.getElementById('toolbar');
-    const tableContainer = document.getElementById('table-container');
+    const viewTable = document.getElementById('view-table');
+    const viewDoc = document.getElementById('view-doc');
+    const viewForensics = document.getElementById('view-forensics');
+    const viewGhost = document.getElementById('view-ghost');
+    const viewMeta = document.getElementById('view-metadata');
+    
+    const dataTableHead = document.getElementById('data-table-head');
     const tableBody = document.getElementById('table-body');
-    const batchModal = document.getElementById('batchModal');
+    const forensicsHead = document.getElementById('forensics-head');
+    const forensicsBody = document.getElementById('forensics-body');
+    
+    const ghostRenderArea = document.getElementById('ghost-render-area');
+    const ghostToolbar = document.getElementById('ghost-toolbar');
 
+    // --- INITIALIZATION ---
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#007bff'; });
     dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#cbd5e0'; });
     dropZone.addEventListener('drop', (e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); });
     fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
 
+    // --- FILE HANDLING ---
     async function handleFile(file) {
-        if (!file || !file.name.endsWith(".docx")) {
-            statusDiv.innerHTML = '<span class="error">Error: Please upload a valid .docx file.</span>';
-            return;
-        }
-
+        if (!file || !file.name.endsWith(".docx")) return;
         originalFileName = file.name;
-        statusDiv.innerHTML = "Processing document...";
+        statusDiv.innerHTML = "Processing...";
         
         try {
-            originalDocBuffer = await file.arrayBuffer();
-            const zip = await JSZip.loadAsync(originalDocBuffer);
+            const buf = await file.arrayBuffer();
+            zipObj = await JSZip.loadAsync(buf);
 
-            if (!zip.file("word/comments.xml")) {
-                statusDiv.innerHTML = '<span class="error">No comments found.</span>';
-                return;
-            }
+            // Auto Unlock
+            try {
+                if (zipObj.file("word/settings.xml")) {
+                    let sXml = await zipObj.file("word/settings.xml").async("string");
+                    sXml = sXml.replace(/<w:documentProtection[^>]*\/>/g, "").replace(/<w:writeProtection[^>]*\/>/g, "");
+                    zipObj.file("word/settings.xml", sXml);
+                }
+            } catch(e) {}
 
-            const commentsXml = await zip.file("word/comments.xml").async("string");
-            const docXml = await zip.file("word/document.xml").async("string");
+            // Parse Docs
+            const docXmlStr = await zipObj.file("word/document.xml").async("string");
+            mainDocXml = new DOMParser().parseFromString(docXmlStr, "text/xml");
             
-            const parser = new DOMParser();
-            const commentsDoc = parser.parseFromString(commentsXml, "text/xml");
-            const mainDoc = parser.parseFromString(docXml, "text/xml");
+            let commentsDoc = null;
+            try {
+                if (zipObj.file("word/comments.xml")) {
+                    const cXml = await zipObj.file("word/comments.xml").async("string");
+                    commentsDoc = new DOMParser().parseFromString(cXml, "text/xml");
+                }
+            } catch(e) {}
 
-            const contextMap = mapDocumentContext(mainDoc);
-            const commentNodes = commentsDoc.getElementsByTagNameNS("*", "comment");
-            commentsData = [];
+            // Parse Metadata
+            try {
+                if (zipObj.file("docProps/core.xml")) {
+                    const cXml = await zipObj.file("docProps/core.xml").async("string");
+                    coreXmlDoc = new DOMParser().parseFromString(cXml, "text/xml");
+                    populateMetaFields('core');
+                }
+                if (zipObj.file("docProps/app.xml")) {
+                    const aXml = await zipObj.file("docProps/app.xml").async("string");
+                    appXmlDoc = new DOMParser().parseFromString(aXml, "text/xml");
+                    populateMetaFields('app');
+                }
+            } catch(e) {}
 
-            for (let i = 0; i < commentNodes.length; i++) {
-                const c = commentNodes[i];
-                const id = c.getAttribute("w:id");
-                
-                let text = "";
-                const ps = c.getElementsByTagNameNS("*", "p");
-                for (let j=0; j<ps.length; j++) text += ps[j].textContent;
+            // Forensics Scan
+            forensicsData = [];
+            let filePromises = [];
+            zipObj.forEach((relativePath, file) => {
+                const ext = relativePath.split('.').pop().toLowerCase();
+                if(!['xml','rels'].includes(ext) && relativePath !== '[Content_Types].xml') {
+                    filePromises.push(file.async("uint8array").then(data => {
+                        forensicsData.push({
+                            id: relativePath, // unique ID for sorting
+                            path: relativePath,
+                            file: file,
+                            date: file.date,
+                            type: ext.toUpperCase(),
+                            data: data,
+                            size: data.length
+                        });
+                    }));
+                }
+            });
+            await Promise.all(filePromises);
 
-                // Grab Raw String only. Do not interpret timezones.
-                commentsData.push({
-                    id: id,
-                    page: contextMap.pages[id] || 1,
-                    text: text,
-                    quote: contextMap.quotes[id] || "",
-                    author: c.getAttribute("w:author") || "Unknown",
-                    rawDate: c.getAttribute("w:date") || new Date().toISOString()
-                });
-            }
+            // Process Data
+            const contextMap = mapDocumentContext(mainDocXml);
+            commentsData = extractComments(commentsDoc, contextMap);
+            revisionsData = extractRevisions(mainDocXml, contextMap);
+            allData = [...commentsData, ...revisionsData]; 
+            // We do sort logic in render now, but set initial order
+            allData.sort((a,b) => (a.page - b.page) || (parseInt(a.id) - parseInt(b.id)));
+            
+            prepareGhostDoc();
+            renderDocumentView(mainDocXml);
+            renderSidebar();
+            
+            // Initial Render
+            document.getElementById('count-comments').innerText = commentsData.length;
+            document.getElementById('count-revisions').innerText = revisionsData.length;
+            document.getElementById('count-all').innerText = allData.length;
 
-            renderTable();
             dropZone.style.display = 'none';
             toolbar.style.display = 'flex';
-            tableContainer.style.display = 'block';
-            statusDiv.innerHTML = `<span class="success">Loaded ${commentsData.length} comments.</span>`;
+            document.getElementById('tabs').style.display = 'flex';
+            switchTab('all');
+            statusDiv.innerHTML = `<span class="success">Loaded.</span>`;
 
-        } catch (err) {
-            console.error(err);
-            statusDiv.innerHTML = '<span class="error">Fatal Error: Could not parse document.</span>';
-        }
+        } catch (err) { console.error(err); statusDiv.innerHTML = "Error parsing file."; }
     }
 
-    function mapDocumentContext(xmlDoc) {
-        const all = xmlDoc.getElementsByTagName("*");
-        let page = 1;
-        let activeComments = new Set();
-        let pages = {};
-        let quotes = {};
+    // --- DATA EXTRACTION ---
+    function getTags(xml, tagName) {
+        const nsTags = xml.getElementsByTagNameNS("*", tagName);
+        if (nsTags.length > 0) return nsTags;
+        return xml.getElementsByTagName("w:" + tagName);
+    }
 
-        for (let i = 0; i < all.length; i++) {
-            const el = all[i];
-            if (el.localName === "lastRenderedPageBreak" || (el.localName === "br" && el.getAttribute("w:type") === "page")) {
-                page++;
-            }
-            if (el.localName === "commentRangeStart") {
-                const id = el.getAttribute("w:id");
-                activeComments.add(id);
-                pages[id] = page;
-                if (!quotes[id]) quotes[id] = "";
-            }
-            if (el.localName === "commentRangeEnd") {
-                activeComments.delete(el.getAttribute("w:id"));
-            }
-            if (el.localName === "t" && activeComments.size > 0) {
-                activeComments.forEach(id => quotes[id] += el.textContent);
-            }
+    function extractComments(xml, map) {
+        if (!xml) return [];
+        let arr = [];
+        const nodes = getTags(xml, "comment");
+        for (let i=0; i<nodes.length; i++) {
+            const c = nodes[i];
+            const id = c.getAttribute("w:id");
+            let text = "";
+            const ps = getTags(c, "p");
+            for (let j=0; j<ps.length; j++) text += ps[j].textContent;
+            arr.push({
+                uniqueId: 'com-'+id, // Stable ID for editing
+                id: id, objType: 'comment', page: map.pages[id]||1,
+                text: text, quote: map.quotes[id]||"", author: c.getAttribute("w:author")||"",
+                rawDate: c.getAttribute("w:date")||new Date().toISOString()
+            });
+        }
+        return arr;
+    }
+
+    function extractRevisions(xml, map) {
+        let arr = [];
+        const ins = getTags(xml, "ins");
+        const del = getTags(xml, "del");
+        const proc = (n, t) => {
+            let text = "";
+            const tags = getTags(n, t==='Insert'?"t":"delText");
+            for(let x of tags) text += x.textContent;
+            let id = n.getAttribute("w:id");
+            arr.push({
+                uniqueId: 'rev-'+id, // Stable ID for editing
+                id: id, objType: 'revision', subType: t,
+                page: map.pages[id]||1, text: text,
+                author: n.getAttribute("w:author")||"", rawDate: n.getAttribute("w:date")||new Date().toISOString()
+            });
+        };
+        for(let i=0; i<ins.length; i++) proc(ins[i], 'Insert');
+        for(let i=0; i<del.length; i++) proc(del[i], 'Delete');
+        return arr;
+    }
+
+    function mapDocumentContext(xml) {
+        const all = xml.getElementsByTagName("*");
+        let page = 1, active = new Set(), pages = {}, quotes = {};
+        for (let el of all) {
+            if (el.localName==="lastRenderedPageBreak" || (el.localName==="br" && el.getAttribute("w:type")==="page")) page++;
+            if (el.localName==="commentRangeStart") { const id=el.getAttribute("w:id"); active.add(id); pages[id]=page; quotes[id]=""; }
+            if (el.localName==="commentRangeEnd") active.delete(el.getAttribute("w:id"));
+            if (el.localName==="t" && active.size>0) active.forEach(id => quotes[id]+=el.textContent);
+            if ((el.localName==="ins" || el.localName==="del") && el.getAttribute("w:id")) pages[el.getAttribute("w:id")]=page;
         }
         return { pages, quotes };
     }
 
-    // "Dumb" Parser - Parses ISO string purely by text numbers
-    function parseBlindISO(isoStr) {
-        // Regex for YYYY-MM-DDTHH:MM
-        const match = isoStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-        if (!match) return { dateStr: isoStr, timeStr: "" };
+    // --- SORT & FILTER LOGIC ---
+    function getProcessedData(tabName) {
+        let source = tabName==='comments'?commentsData : tabName==='revisions'?revisionsData : tabName==='forensics'?forensicsData : allData;
+        
+        // 1. Filter
+        let filtered = source.filter(row => {
+            for (let key in tableFilters) {
+                let filterVal = tableFilters[key].toLowerCase();
+                let cellVal = "";
+                // Map logical keys to data props
+                // Main Table Props
+                if (key === 'pg') cellVal = row.page.toString();
+                else if (key === 'type') cellVal = (row.objType==='comment'?'Comment':row.subType).toString();
+                else if (key === 'text') cellVal = (row.text || "").toString();
+                else if (key === 'author') cellVal = (row.author || "").toString();
+                else if (key === 'date' || key === 'time') cellVal = row.rawDate.toString(); 
+                // Forensics Props
+                else if (key === 'path') cellVal = row.path;
+                else if (key === 'size') cellVal = row.size.toString();
+                
+                if (cellVal && !cellVal.toLowerCase().includes(filterVal)) return false;
+            }
+            return true;
+        });
 
-        const year = match[1];
-        const month = match[2];
-        const day = match[3];
-        let hour = parseInt(match[4], 10);
-        const minute = match[5];
-
-        // Convert 24h to 12h for display
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        hour = hour % 12;
-        hour = hour ? hour : 12; 
-
-        return {
-            dateStr: `${month}/${day}/${year}`,
-            timeStr: `${hour}:${minute} ${ampm}`
-        };
+        // 2. Sort
+        if (tableSort.col) {
+            filtered.sort((a, b) => {
+                let valA, valB;
+                // Map sort keys
+                if (tableSort.col === 'pg') { valA=a.page; valB=b.page; }
+                else if (tableSort.col === 'type') { valA=(a.objType==='comment'?'Comment':a.subType); valB=(b.objType==='comment'?'Comment':b.subType); }
+                else if (tableSort.col === 'text') { valA=a.text; valB=b.text; }
+                else if (tableSort.col === 'author') { valA=a.author; valB=b.author; }
+                else if (tableSort.col === 'date' || tableSort.col === 'time') { valA=a.rawDate; valB=b.rawDate; }
+                // Forensics
+                else if (tableSort.col === 'path') { valA=a.path; valB=b.path; }
+                else if (tableSort.col === 'size') { valA=a.size; valB=b.size; } // Numeric Sort
+                else if (tableSort.col === 'risk') { 
+                    // Calculate risk score just for sorting
+                    const riskScore = (item) => {
+                        let s = 0; 
+                        let head = new TextDecoder().decode(item.data.slice(0,100));
+                        if(head.includes('Exif') || head.includes('XMP') || head.includes('Photoshop')) s=1;
+                        if(item.path.includes('.bin')) s=2;
+                        return s;
+                    }
+                    valA=riskScore(a); valB=riskScore(b);
+                }
+                
+                if (valA < valB) return -1 * tableSort.dir;
+                if (valA > valB) return 1 * tableSort.dir;
+                return 0;
+            });
+        }
+        return filtered;
     }
 
+    function handleSort(col) {
+        if (tableSort.col === col) tableSort.dir *= -1; // Toggle
+        else { tableSort.col = col; tableSort.dir = 1; }
+        renderActiveView();
+    }
+
+    function handleFilter(key, val) {
+        if (val === "") delete tableFilters[key];
+        else tableFilters[key] = val;
+        renderActiveView();
+    }
+
+    function renderActiveView() {
+        if (currentTab === 'forensics') renderForensicsTable();
+        else if (['comments','revisions','all'].includes(currentTab)) renderTable();
+    }
+
+    // --- TAB SWITCH ---
+    window.switchTab = function(tab) {
+        currentTab = tab;
+        // Reset sort/filter when switching contexts usually, but user asked for "all applicable tabs"
+        // We will keep filters if they make sense (e.g. author), but usually better to reset to avoid confusion
+        tableSort = { col: null, dir: 1 };
+        tableFilters = {};
+
+        document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`button[onclick="switchTab('${tab}')"]`).classList.add('active');
+
+        if(tab==='metadata') viewMeta.style.display = 'block';
+        else if(tab==='forensics') { viewForensics.style.display = 'block'; renderForensicsTable(); }
+        else if(tab==='docview') { viewDoc.style.display = 'flex'; toolbar.style.visibility = 'hidden'; }
+        else if(tab==='ghost') { viewGhost.style.display = 'block'; }
+        else { 
+            viewTable.style.display = 'block'; 
+            toolbar.style.visibility = 'visible'; 
+            renderTable(); 
+        }
+    };
+
+    // --- RENDER TABLE (MAIN) ---
     function renderTable() {
+        let data = getProcessedData(currentTab);
+        
+        // Dynamic Headers
+        let cols = [
+            { key:'num', lbl:'#', w:'40px', sort:false },
+            { key:'pg', lbl:'Pg', w:'40px', sort:true },
+            { key:'type', lbl:'Type', w:'', sort:true },
+            { key:'text', lbl:'Text', w:'', sort:true },
+            { key:'author', lbl:'Author', w:'15%', sort:true },
+            { key:'date', lbl:'Date', w:'90px', sort:true },
+            { key:'time', lbl:'Time', w:'90px', sort:true },
+            { key:'act', lbl:'Act', w:'50px', sort:false }
+        ];
+
+        // 1. Header Row
+        let hHTML = "<tr>";
+        cols.forEach(c => {
+            let sortClass = (tableSort.col === c.key) ? (tableSort.dir===1 ? 'sort-asc' : 'sort-desc') : '';
+            let cursor = c.sort ? 'pointer' : 'default';
+            let click = c.sort ? `onclick="handleSort('${c.key}')"` : '';
+            hHTML += `<th class="${sortClass}" style="width:${c.w}; cursor:${cursor}" ${click}>${c.lbl}</th>`;
+        });
+        hHTML += "</tr>";
+
+        // 2. Filter Row
+        hHTML += "<tr class='filter-row'>";
+        cols.forEach(c => {
+            if (!c.sort) hHTML += "<th></th>";
+            else hHTML += `<th><input type="text" class="filter-input" placeholder="Filter..." onkeyup="handleFilter('${c.key}', this.value)"></th>`;
+        });
+        hHTML += "</tr>";
+        
+        dataTableHead.innerHTML = hHTML;
         tableBody.innerHTML = "";
-        commentsData.forEach((row, index) => {
-            const { dateStr, timeStr } = parseBlindISO(row.rawDate);
 
+        // 3. Rows
+        data.forEach((row, i) => {
+            const {d, t} = parseISO(row.rawDate);
             const tr = document.createElement("tr");
-
+            let typeHtml = row.objType==='comment' ? `<span class="badge badge-com">Com</span>` : (row.subType==='Insert'?`<span class="badge badge-ins">Ins</span>`:`<span class="badge badge-del">Del</span>`);
+            let content = row.objType==='comment' ? `<div class="editable" contenteditable onblur="updateData('${row.uniqueId}','text',this.innerText)">${row.text}</div>` : `<span style="color:#666">${row.text}</span>`;
+            
             tr.innerHTML = `
-                <td class="read-only">${index + 1}</td>
+                <td class="read-only">${i+1}</td>
                 <td class="read-only">${row.page}</td>
-                <td class="editable" contenteditable="true" onblur="updateData(${index}, 'text', this.innerText)">${row.text}</td>
-                <td class="read-only">${row.quote}</td>
-                <td class="meta-editable" contenteditable="true" onblur="updateData(${index}, 'author', this.innerText)">${row.author}</td>
-                <td class="meta-editable" contenteditable="true" onblur="updateData(${index}, 'visualDate', this.innerText)">${dateStr}</td>
-                <td class="meta-editable" contenteditable="true" onblur="updateData(${index}, 'visualTime', this.innerText)">${timeStr}</td>
+                <td style="text-align:center;">${typeHtml}</td>
+                <td>${content}</td>
+                <td class="meta-editable" contenteditable onblur="updateData('${row.uniqueId}','author',this.innerText)">${row.author}</td>
+                <td class="meta-editable" contenteditable onblur="updateData('${row.uniqueId}','d',this.innerText)">${d}</td>
+                <td class="meta-editable" contenteditable onblur="updateData('${row.uniqueId}','t',this.innerText)">${t}</td>
+                <td><button class="btn btn-step" onclick="stepInto('${row.id}','${row.objType}')">View</button></td>
             `;
             tableBody.appendChild(tr);
         });
     }
 
-    window.updateData = function(index, field, value) {
-        if(field !== 'visualDate' && field !== 'visualTime') {
-            commentsData[index][field] = value.trim();
+    // --- ID-BASED DATA UPDATE (TRIPLE CHECKED) ---
+    window.updateData = function(uid, field, val) {
+        // Find in ALL lists (since we edit by Unique ID now)
+        let item = commentsData.find(x => x.uniqueId === uid) || revisionsData.find(x => x.uniqueId === uid);
+        
+        if (item) {
+            if(field==='d' || field==='t') {
+                // To support split date/time editing, we need to read the CURRENT value of the other field from the item
+                // However, since we are inside a callback, 'this.innerText' gave us the NEW value.
+                // We need to parse existing rawDate to get the component we AREN'T changing.
+                let parts = parseISO(item.rawDate);
+                if (field==='d') item.rawDate = makeISO(val.trim(), parts.t);
+                else item.rawDate = makeISO(parts.d, val.trim());
+            } else {
+                item[field] = val.trim();
+            }
         }
-    };
-
-    /* --- BATCH TIME LOGIC --- */
-
-    function openBatchModal() {
-        batchModal.style.display = "block";
-        document.getElementById('batchDate').valueAsDate = new Date();
     }
 
-    function closeBatchModal() {
-        batchModal.style.display = "none";
-    }
+    // --- RENDER FORENSICS (WITH SORT/FILTER) ---
+    function renderForensicsTable() {
+        let data = getProcessedData('forensics');
+        
+        let cols = [
+            { key:'path', lbl:'File Path', sort:true },
+            { key:'type', lbl:'Type', sort:true },
+            { key:'size', lbl:'Size (KB)', sort:true },
+            { key:'risk', lbl:'Binary Risks', sort:true },
+            { key:'act', lbl:'Action', sort:false }
+        ];
 
-    function applyBatchTimes() {
-        const dateVal = document.getElementById('batchDate').value; // YYYY-MM-DD
-        const timeVal = document.getElementById('batchStartTime').value; // HH:MM
-
-        if(!dateVal || !timeVal) {
-            alert("Please select both a date and a start time.");
-            return;
-        }
-
-        // Parse inputs manually to integers to avoid Browser Timezone interference
-        const dParts = dateVal.split('-');
-        const tParts = timeVal.split(':');
-
-        const year = parseInt(dParts[0], 10);
-        const month = parseInt(dParts[1], 10) - 1; // Month is 0-indexed in JS Date
-        const day = parseInt(dParts[2], 10);
-        const hour = parseInt(tParts[0], 10);
-        const minute = parseInt(tParts[1], 10);
-
-        // Create a UTC date. This locks the numbers: 7:10 input becomes 7:10 UTC.
-        // We will output UTC, so the numbers will match exactly.
-        let calculatorDate = new Date(Date.UTC(year, month, day, hour, minute));
-
-        // Update Loop
-        commentsData.forEach((item, index) => {
-            // Read values using getUTC* methods. 
-            // This ensures if we set 7:10, we read 7:10.
-            let y = calculatorDate.getUTCFullYear();
-            let m = String(calculatorDate.getUTCMonth() + 1).padStart(2, '0');
-            let d = String(calculatorDate.getUTCDate()).padStart(2, '0');
-            let h = String(calculatorDate.getUTCHours()).padStart(2, '0');
-            let min = String(calculatorDate.getUTCMinutes()).padStart(2, '0');
-
-            // Construct new Raw ISO String. We assume 'Z' (UTC) so Word is happy,
-            // but the numbers are visually exactly what you typed.
-            item.rawDate = `${y}-${m}-${d}T${h}:${min}:00Z`;
-
-            // Random jump 3-7 mins
-            const randomMinutes = Math.floor(Math.random() * (7 - 3 + 1) + 3);
-            calculatorDate.setUTCMinutes(calculatorDate.getUTCMinutes() + randomMinutes);
+        let hHTML = "<tr>";
+        cols.forEach(c => {
+            let sortClass = (tableSort.col === c.key) ? (tableSort.dir===1 ? 'sort-asc' : 'sort-desc') : '';
+            let cursor = c.sort ? 'pointer' : 'default';
+            let click = c.sort ? `onclick="handleSort('${c.key}')"` : '';
+            hHTML += `<th class="${sortClass}" style="cursor:${cursor}" ${click}>${c.lbl}</th>`;
         });
+        hHTML += "</tr>";
+        
+        // Filter Row
+        hHTML += "<tr class='filter-row'>";
+        cols.forEach(c => {
+            if(!c.sort) hHTML += "<th></th>";
+            else hHTML += `<th><input type="text" class="filter-input" placeholder="Filter..." onkeyup="handleFilter('${c.key}', this.value)"></th>`;
+        });
+        hHTML += "</tr>";
 
+        forensicsHead.innerHTML = hHTML;
+        forensicsBody.innerHTML = "";
+
+        data.forEach(m => {
+            const sizeKB = (m.size / 1024).toFixed(2);
+            const date = m.date.toLocaleString();
+            
+            // Binary Risk Analysis (Cached logic)
+            let risks = [];
+            const header = new TextDecoder().decode(m.data.slice(0, 100)); 
+            if(header.includes("Exif")) risks.push("EXIF");
+            if(header.includes("http://ns.adobe.com/")) risks.push("XMP");
+            if(header.includes("Photoshop")) risks.push("PS");
+            
+            let riskHtml = risks.length > 0 ? `<span class="risk-high">⚠️ ${risks.join(", ")}</span>` : `<span class="risk-med">Clean?</span>`;
+            if(m.path.includes('.bin')) riskHtml = `<span class="risk-high">⚠️ ActiveX/OLE</span>`;
+
+            // Hex Preview
+            const hex = Array.from(m.data.slice(0, 20)).map(b => b.toString(16).padStart(2,'0')).join(' ');
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${m.path}<div class="hex-preview">${hex}...</div></td>
+                <td><span class="badge" style="background:#666;width:auto;">${m.type}</span></td>
+                <td>${sizeKB} KB</td>
+                <td>${riskHtml}</td>
+                <td><button class="btn btn-secondary" onclick="downloadAsset('${m.path}')">Download</button></td>
+            `;
+            forensicsBody.appendChild(tr);
+        });
+    }
+
+    // --- DOC VIEW ---
+    function renderDocumentView(xml) {
+        let html = "";
+        function t(n) {
+            if(n.nodeType===3) return;
+            if(n.localName==="p") { html+="<p>"; n.childNodes.forEach(t); html+="</p>"; }
+            else if(n.localName==="r") n.childNodes.forEach(t);
+            else if(n.localName==="t") html+=n.textContent;
+            else if(n.localName==="br") html+="<br>";
+            else if(n.localName==="ins") { html+=`<span class="doc-ins" id="hl-${n.getAttribute("w:id")}" onclick="hlSidebar('${n.getAttribute("w:id")}')">`; n.childNodes.forEach(t); html+="</span>"; }
+            else if(n.localName==="del") { html+=`<span class="doc-del" id="hl-${n.getAttribute("w:id")}" onclick="hlSidebar('${n.getAttribute("w:id")}')">`; n.childNodes.forEach(t); html+="</span>"; }
+            else if(n.localName==="commentRangeStart") { html+=`<span class="doc-comment-highlight" id="hl-${n.getAttribute("w:id")}" onclick="hlSidebar('${n.getAttribute("w:id")}')">`; }
+            else if(n.localName==="commentRangeEnd") { html+="</span>"; }
+            else n.childNodes.forEach(t);
+        }
+        if(xml.getElementsByTagName("w:body")[0]) t(xml.getElementsByTagName("w:body")[0]);
+        document.getElementById('doc-content').innerHTML = html;
+    }
+    function renderSidebar() {
+        let h = "";
+        allData.forEach(x => {
+            const {d,t} = parseISO(x.rawDate);
+            let c = x.objType==='comment'?"border-left:5px solid #17a2b8":(x.subType==='Insert'?"border-left:5px solid #28a745":"border-left:5px solid #dc3545");
+            h += `<div class="comment-card" id="card-${x.id}" style="${c}" onclick="jumpTo('${x.id}')"><div style="font-size:11px;color:#888;">${x.author} • ${d} ${t}</div><div>${x.text.substring(0,100)}...</div></div>`;
+        });
+        document.getElementById('sidebar-content').innerHTML = h;
+    }
+    window.hlSidebar = function(id) {
+        document.querySelectorAll('.active-card').forEach(x=>x.classList.remove('active-card'));
+        const el = document.getElementById('card-'+id);
+        if(el) { el.classList.add('active-card'); el.scrollIntoView({behavior:'smooth',block:'center'}); }
+    }
+    window.jumpTo = function(id) {
+        const el = document.getElementById('hl-'+id);
+        if(el) { el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('target-flash-infinite'); document.getElementById('btn-focus-reset').style.display='block'; }
+    }
+    window.stepInto = function(id) { switchTab('docview'); setTimeout(()=>jumpTo(id), 100); }
+    window.resetFocus = function() { document.querySelectorAll('.target-flash-infinite').forEach(x=>x.classList.remove('target-flash-infinite')); document.getElementById('btn-focus-reset').style.display='none'; }
+
+    // --- GHOST WRITER ---
+    function prepareGhostDoc() {
+        ghostParagraphs = [];
+        const ps = getTags(mainDocXml, "p");
+        let html = "";
+        for(let i=0; i<ps.length; i++) {
+            let t = "";
+            const runs = getTags(ps[i], "r");
+            for(let r of runs) {
+                const texts = getTags(r, "t");
+                for(let txt of texts) t += txt.textContent;
+            }
+            ghostParagraphs.push({ node: ps[i], fullText: t });
+            if(t.trim().length > 0) {
+                html += `<p data-idx="${i}" style="margin-bottom:10px;">${t}</p>`;
+            }
+        }
+        ghostRenderArea.innerHTML = html;
+    }
+    function handleGhostSelection() {
+        const sel = window.getSelection();
+        if(sel.rangeCount > 0 && !sel.isCollapsed) {
+            let pEl = sel.anchorNode;
+            while(pEl && pEl.nodeName !== 'P') pEl = pEl.parentElement;
+            if(pEl && pEl.hasAttribute('data-idx')) {
+                ghostSelectedParagraphIndex = parseInt(pEl.getAttribute('data-idx'));
+                let selectedText = sel.toString();
+                document.getElementById('ghost-sel-text').innerText = selectedText.substring(0, 30) + "...";
+                ghostToolbar.style.display = 'block';
+                document.getElementById('ghost-replace-text').value = "";
+                document.getElementById('ghost-date-input').value = new Date().toISOString().slice(0,16);
+            }
+        } else { ghostToolbar.style.display = 'none'; }
+    }
+    function normalizeStr(str) { return str.replace(/[\s\n\r\t\u00A0]+/g, ' ').trim(); }
+    function executeGhostEdit() {
+        const pIdx = ghostSelectedParagraphIndex;
+        if(pIdx === -1) return;
+        
+        const sel = window.getSelection();
+        const rawSelText = sel.toString();
+        const replaceText = document.getElementById('ghost-replace-text').value;
+        const auth = document.getElementById('ghost-author-input').value || "Author";
+        const date = new Date(document.getElementById('ghost-date-input').value).toISOString();
+        const revId = Math.floor(Math.random() * 99999999);
+
+        const pNode = ghostParagraphs[pIdx].node;
+        const runs = Array.from(getTags(pNode, "r"));
+        let styleNode = null;
+        if(runs.length > 0) {
+            const rPr = getTags(runs[0], "rPr")[0];
+            if(rPr) styleNode = rPr.cloneNode(true);
+        }
+        const kids = Array.from(pNode.childNodes);
+        kids.forEach(k => { if(k.localName !== 'pPr') pNode.removeChild(k); });
+
+        const fullText = ghostParagraphs[pIdx].fullText;
+        const normFull = normalizeStr(fullText);
+        const normSel = normalizeStr(rawSelText);
+        let startIdx = fullText.indexOf(rawSelText);
+        let endIdx = startIdx + rawSelText.length;
+        
+        if (startIdx === -1) {
+            const normStart = normFull.indexOf(normSel);
+            if(normStart === -1) {
+                alert("Error locating text in XML structure.");
+                const restoreR = mainDocXml.createElementNS(W_NS, "w:r");
+                const restoreT = mainDocXml.createElementNS(W_NS, "w:t");
+                restoreT.textContent = fullText;
+                restoreR.appendChild(restoreT);
+                pNode.appendChild(restoreR);
+                return; 
+            }
+            startIdx = normStart; endIdx = normStart + normSel.length;
+            var preText = normFull.substring(0, startIdx);
+            var midText = normSel; 
+            var postText = normFull.substring(endIdx);
+        } else {
+            var preText = fullText.substring(0, startIdx);
+            var midText = rawSelText;
+            var postText = fullText.substring(endIdx);
+        }
+
+        const createRun = (text, type) => {
+            if(!text) return null;
+            let container = null;
+            if(type === 'del') {
+                container = mainDocXml.createElementNS(W_NS, "w:del");
+                container.setAttribute("w:id", revId);
+                container.setAttribute("w:author", auth);
+                container.setAttribute("w:date", date);
+            } else if(type === 'ins') {
+                container = mainDocXml.createElementNS(W_NS, "w:ins");
+                container.setAttribute("w:id", revId+1);
+                container.setAttribute("w:author", auth);
+                container.setAttribute("w:date", date);
+            }
+            const r = mainDocXml.createElementNS(W_NS, "w:r");
+            if(styleNode) r.appendChild(styleNode.cloneNode(true)); 
+            const t = mainDocXml.createElementNS(W_NS, type==='del' ? "w:delText" : "w:t");
+            if(text.length > 0 && (text[0]===' ' || text[text.length-1]===' ')) t.setAttribute("xml:space", "preserve");
+            t.textContent = text;
+            r.appendChild(t);
+            if(container) { container.appendChild(r); return container; }
+            return r;
+        };
+
+        const nPre = createRun(preText, 'normal'); if(nPre) pNode.appendChild(nPre);
+        const nDel = createRun(midText, 'del'); if(nDel) pNode.appendChild(nDel);
+        if(replaceText) { const nIns = createRun(replaceText, 'ins'); if(nIns) pNode.appendChild(nIns); }
+        const nPost = createRun(postText, 'normal'); if(nPost) pNode.appendChild(nPost);
+
+        alert("Ghost Revision Injected!");
+        ghostToolbar.style.display = 'none';
+        prepareGhostDoc(); 
+        const contextMap = mapDocumentContext(mainDocXml);
+        revisionsData = extractRevisions(mainDocXml, contextMap);
+        allData = [...commentsData, ...revisionsData].sort((a,b) => (a.page - b.page) || (parseInt(a.id) - parseInt(b.id)));
+        renderTable();
+        document.getElementById('count-revisions').innerText = revisionsData.length;
+        document.getElementById('count-all').innerText = allData.length;
+    }
+
+    // --- METADATA ---
+    function populateMetaFields(type) {
+        if(!coreXmlDoc || !appXmlDoc) return;
+        const doc = type==='core' ? coreXmlDoc : appXmlDoc;
+        if(type==='core') {
+            ['title', 'creator', 'lastModifiedBy', 'created', 'modified'].forEach(p => {
+                const el = doc.getElementsByTagName("*").namedItem(p) || doc.getElementsByTagName(p)[0] || doc.getElementsByTagName("dc:"+p)[0] || doc.getElementsByTagName("cp:"+p)[0];
+                if(el) document.getElementById('meta-'+(p==='lastModifiedBy'?'lastMod':p)).value = el.textContent;
+            });
+        }
+        if(type==='app') {
+            ['TotalTime', 'Revision', 'Pages'].forEach(p => {
+                const all = doc.getElementsByTagName("*");
+                for(let x of all) if(x.localName === p) document.getElementById('meta-'+(p==='TotalTime'?'time':p.toLowerCase())).value = x.textContent;
+            });
+        }
+    }
+    window.deepCleanMetadata = function() {
+        if(!confirm("Wipe forensics?")) return;
+        let docStr = new XMLSerializer().serializeToString(mainDocXml);
+        docStr = docStr.replace(/w:rsidR="[^"]*"/g, "").replace(/w:rsidRPr="[^"]*"/g, "").replace(/w:rsidRDefault="[^"]*"/g, "");
+        mainDocXml = new DOMParser().parseFromString(docStr, "text/xml");
+        if(coreXmlDoc) ['creator','lastModifiedBy'].forEach(id => { const els=coreXmlDoc.getElementsByTagName("*"); for(let el of els) if(el.localName===id) el.textContent="Microsoft Office User"; });
+        document.getElementById('meta-time').value = "0"; document.getElementById('meta-revision').value = "1";
+        alert("Wiped. Save to apply.");
+    }
+
+    // --- HELPERS ---
+    window.downloadAsset = async function(path) {
+        const file = zipObj.file(path);
+        if(file) { const blob = await file.async("blob"); saveAs(blob, path.split('/').pop()); }
+    }
+    function parseISO(s) { if(!s) return {d:"",t:""}; try { return { d: s.split('T')[0], t: s.split('T')[1].substring(0,5) }; } catch(e) { return {d:s,t:""}; } }
+    function makeISO(d, t) { return `${d}T${t}:00Z`; }
+    window.openBatchModal = () => document.getElementById('batchModal').style.display='block';
+    window.closeBatchModal = () => document.getElementById('batchModal').style.display='none';
+    window.applyBatchTimes = function() {
+        const d = document.getElementById('batchDate').value;
+        const t = document.getElementById('batchStartTime').value;
+        if(!d || !t) return;
+        let target = currentTab==='comments'?commentsData:(currentTab==='revisions'?revisionsData:allData);
+        let base = new Date(d+"T"+t);
+        target.forEach(x => {
+            let iso = base.toISOString().split('.')[0]+"Z";
+            x.rawDate = iso;
+            base.setMinutes(base.getMinutes() + Math.floor(Math.random()*5)+3);
+        });
         renderTable();
         closeBatchModal();
-        alert("Times updated successfully!");
     }
-
-    // Converts the Visual Table Strings directly to an ISO string
-    function getDumbISO(dateStr, timeStr) {
-        try {
-            // Parse Date MM/DD/YYYY
-            const dParts = dateStr.split('/');
-            if(dParts.length < 3) return new Date().toISOString();
-
-            const month = dParts[0].padStart(2, '0');
-            const day = dParts[1].padStart(2, '0');
-            const year = dParts[2];
-
-            // Parse Time HH:MM AM/PM
-            let [tMain, modifier] = timeStr.split(' '); 
-            let [hours, minutes] = tMain.split(':');
-            hours = parseInt(hours, 10);
-            
-            if (modifier) {
-                modifier = modifier.toUpperCase().trim();
-                if (hours === 12) hours = 0;
-                if (modifier === 'PM') hours += 12;
-            } else if (hours === 12) { 
-               // Handle 12:00 case if AM/PM missing, default to 12 PM logic if undefined? 
-               // Or 12 AM? We'll assume standard 12-hour clock logic.
-            }
-            
-            const hStr = String(hours).padStart(2, '0');
-            const mStr = String(minutes).padStart(2, '0');
-            
-            // Return raw string format
-            return `${year}-${month}-${day}T${hStr}:${mStr}:00Z`;
-        } catch (e) {
-            return new Date().toISOString();
-        }
-    }
-
-    function downloadExcel() {
-        const wb = XLSX.utils.book_new();
-        const rows = document.querySelectorAll("#table-body tr");
-        const sheetData = [];
-        
-        rows.forEach((tr, index) => {
-            sheetData.push({
-                "ID": commentsData[index].id,
-                "Page": tr.cells[1].innerText,
-                "Comment Text": tr.cells[2].innerText,
-                "Quoted Text": tr.cells[3].innerText,
-                "Author": tr.cells[4].innerText,
-                "Date": tr.cells[5].innerText,
-                "Time": tr.cells[6].innerText
-            });
-        });
-
-        const ws = XLSX.utils.json_to_sheet(sheetData);
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        ws['!cols'] = [{wch:5}, {wch:5}, {wch:80}, {wch:50}, {wch:20}, {wch:15}, {wch:15}];
-
-        for (let R = range.s.r; R <= range.e.r; ++R) {
-            for (let C = range.s.c; C <= range.e.c; ++C) {
-                const cell = XLSX.utils.encode_cell({r: R, c: C});
-                if (!ws[cell]) continue;
-                if (!ws[cell].s) ws[cell].s = {};
-                ws[cell].s.alignment = { vertical: "top", wrapText: true };
-                
-                if (R === 0) {
-                    ws[cell].s.fill = { fgColor: { rgb: "343A40" } };
-                    ws[cell].s.font = { color: { rgb: "FFFFFF" }, bold: true };
-                } else if (C === 2) {
-                     ws[cell].s.fill = { fgColor: { rgb: "FFF3CD" } }; 
-                }
-            }
-        }
-
-        XLSX.utils.book_append_sheet(wb, ws, "Comments");
-        
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true });
-        saveAs(new Blob([wbout], {type: "application/octet-stream"}), originalFileName.replace(".docx", "_Edited.xlsx"));
-    }
-
     async function downloadWord() {
-        statusDiv.innerText = "Recompiling with High Compression...";
+        statusDiv.innerText = "Saving Text...";
+        const s = new XMLSerializer();
+        zipObj.file("word/document.xml", s.serializeToString(mainDocXml));
         
-        try {
-            const zip = await JSZip.loadAsync(originalDocBuffer);
-            let xmlStr = await zip.file("word/comments.xml").async("string");
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
-            
-            const xmlComments = xmlDoc.getElementsByTagNameNS("*", "comment");
-            const xmlMap = new Map();
-            for(let i=0; i<xmlComments.length; i++) {
-                xmlMap.set(xmlComments[i].getAttribute("w:id"), xmlComments[i]);
-            }
-
-            // Grab visual data from table
-            const rows = document.querySelectorAll("#table-body tr");
-            
-            rows.forEach((tr, index) => {
-                const id = commentsData[index].id;
-                const node = xmlMap.get(id);
-                
-                if (node) {
-                    const author = tr.cells[4].innerText.trim();
-                    const dateVal = tr.cells[5].innerText.trim();
-                    const timeVal = tr.cells[6].innerText.trim();
-                    const text = tr.cells[2].innerText.trim();
-
-                    // Convert to Dumb ISO
-                    const finalIsoDate = getDumbISO(dateVal, timeVal);
-
-                    node.setAttribute("w:author", author);
-                    node.setAttribute("w:date", finalIsoDate);
-
-                    while (node.firstChild) node.removeChild(node.firstChild);
-                    
-                    const p = xmlDoc.createElementNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w:p");
-                    const r = xmlDoc.createElementNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w:r");
-                    const t = xmlDoc.createElementNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w:t");
-                    t.textContent = text;
-                    
-                    r.appendChild(t);
-                    p.appendChild(r);
-                    node.appendChild(p);
+        statusDiv.innerText = "Saving Metadata...";
+        if(coreXmlDoc) {
+             ['title', 'creator', 'lastModifiedBy', 'created', 'modified'].forEach(p => {
+                const elInput = document.getElementById('meta-'+(p==='lastModifiedBy'?'lastMod':p));
+                if(elInput) { 
+                    const val = elInput.value;
+                    const el = coreXmlDoc.getElementsByTagName("*").namedItem(p) || coreXmlDoc.getElementsByTagName(p)[0] || coreXmlDoc.getElementsByTagName("dc:"+p)[0] || coreXmlDoc.getElementsByTagName("cp:"+p)[0];
+                    if(el) el.textContent = val;
                 }
             });
-
-            const serializer = new XMLSerializer();
-            const newXml = serializer.serializeToString(xmlDoc);
-            zip.file("word/comments.xml", newXml);
-
-            const outBlob = await zip.generateAsync({
-                type: "blob",
-                compression: "DEFLATE",
-                compressionOptions: { level: 6 } 
-            });
-            
-            saveAs(outBlob, "Updated_" + originalFileName);
-            statusDiv.innerHTML = '<span class="success">Document Updated & Downloaded!</span>';
-
-        } catch (err) {
-            console.error(err);
-            statusDiv.innerHTML = '<span class="error">Error recompiling Word document.</span>';
+            zipObj.file("docProps/core.xml", s.serializeToString(coreXmlDoc));
         }
-    }
-
-    function copyTable() {
-        // Rich HTML Copy
-        let html = '<table border="1" style="border-collapse:collapse;"><thead><tr>';
-        
-        document.querySelectorAll('#data-table th').forEach(th => {
-            html += `<th style="background-color:#343a40; color:white; padding:10px;">${th.innerText.split('(')[0].trim()}</th>`;
-        });
-        html += '</tr></thead><tbody>';
-
-        document.querySelectorAll('#table-body tr').forEach(tr => {
-            html += '<tr>';
-            tr.querySelectorAll('td').forEach(td => {
-                const text = td.innerText.trim();
-                html += `<td style="padding:8px; vertical-align:top;">${text}</td>`;
+        if(appXmlDoc) {
+             ['TotalTime', 'Revision', 'Pages'].forEach(p => {
+                const elInput = document.getElementById('meta-'+(p==='TotalTime'?'time':p.toLowerCase()));
+                if(elInput) { 
+                    const val = elInput.value;
+                    const all = appXmlDoc.getElementsByTagName("*");
+                    for(let x of all) if(x.localName === p) x.textContent = val;
+                }
             });
-            html += '</tr>';
-        });
-        html += '</tbody></table>';
-
-        const blob = new Blob([html], { type: 'text/html' });
-        const data = [new ClipboardItem({ 'text/html': blob })];
-
-        navigator.clipboard.write(data).then(() => {
-            alert("Table copied successfully (Formatted for Word/Outlook)!");
-        }).catch(err => {
-            console.error("Clipboard API failed: ", err);
-            alert("Failed to copy. Please try again.");
-        });
+            zipObj.file("docProps/app.xml", s.serializeToString(appXmlDoc));
+        }
+        
+        statusDiv.innerText = "Compressing...";
+        if(commentsData.length > 0 && zipObj.file("word/comments.xml")) {
+             let cXml = await zipObj.file("word/comments.xml").async("string");
+             let cDoc = new DOMParser().parseFromString(cXml, "text/xml");
+             let cMap = new Map();
+             Array.from(getTags(cDoc, "comment")).forEach(c => cMap.set(c.getAttribute("w:id"), c));
+             commentsData.forEach(cd => {
+                 let node = cMap.get(cd.id);
+                 if(node) {
+                     node.setAttribute("w:author", cd.author);
+                     node.setAttribute("w:date", cd.rawDate);
+                     while(node.firstChild) node.removeChild(node.firstChild);
+                     let p = cDoc.createElementNS(W_NS, "w:p");
+                     let r = cDoc.createElementNS(W_NS, "w:r");
+                     let t = cDoc.createElementNS(W_NS, "w:t");
+                     t.textContent = cd.text;
+                     r.appendChild(t); p.appendChild(r); node.appendChild(p);
+                 }
+             });
+             zipObj.file("word/comments.xml", s.serializeToString(cDoc));
+        }
+        const blob = await zipObj.generateAsync({type:"blob"});
+        saveAs(blob, "Cleaned_"+originalFileName);
+        statusDiv.innerText = "Saved.";
     }
+    window.downloadExcel = () => {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(allData.map(x=>({Type:x.objType, Text:x.text, Author:x.author, Date:x.rawDate})));
+        XLSX.utils.book_append_sheet(wb, ws, "Data");
+        const out = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+        saveAs(new Blob([out]), "export.xlsx");
+    };
+    window.copyTable = () => {
+        let h = "<table border='1'><tr>" + tableHeaders.innerHTML + "</tr>";
+        Array.from(tableBody.children).forEach(tr => h += "<tr>" + tr.innerHTML + "</tr>");
+        h += "</table>";
+        navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([h], {type:'text/html'})})]).then(()=>alert("Copied"));
+    };
 </script>
 
 </body>
