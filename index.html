@@ -1,971 +1,2545 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Forensics & Ghost Writer Suite</title>
-    
-    <script src="jszip.min.js"></script>
-    <script src="xlsx.bundle.js"></script>
-    <script src="FileSaver.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word Forensics Master</title>
 
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background-color: #f4f6f8; color: #333; }
-        .container { max-width: 1600px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        
-        .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
-        h1 { margin: 0; color: #2c3e50; font-size: 28px; }
-        p { color: #666; margin-top: 5px; }
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-        .drop-zone { 
-            border: 3px dashed #cbd5e0; padding: 50px; text-align: center; color: #6c757d; font-size: 18px;
-            cursor: pointer; margin-bottom: 20px; transition: 0.3s; border-radius: 8px; background: #fff;
-        }
-        .drop-zone:hover { border-color: #007bff; background-color: #f0f7ff; color: #007bff; }
+  <style>
+    :root {
+      --primary: #0d6efd;
+      --bg: #f8f9fa;
+      --dark: #212529;
+      --secondary: #6c757d;
+      --border: #dee2e6;
+    }
 
-        /* TABS */
-        .tabs { display: none; margin-bottom: 20px; border-bottom: 2px solid #dee2e6; gap: 5px; flex-wrap: wrap; }
-        .tab-btn {
-            padding: 12px 20px; cursor: pointer; background: none; border: none; font-size: 14px; font-weight: 600; color: #6c757d;
-            border-bottom: 3px solid transparent; transition: all 0.2s; border-radius: 4px 4px 0 0;
-        }
-        .tab-btn:hover { color: #333; background-color: #f8f9fa; }
-        .tab-btn.active { color: #007bff; border-bottom-color: #007bff; background-color: #fff; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 15px;
+      background-color: var(--bg);
+      color: #333;
+      margin: 0;
+      padding-bottom: 50px;
+    }
 
-        .toolbar { display: none; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e2e6ea; }
-        .btn { 
-            border: none; padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600;
-            border-radius: 6px; color: white; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
-        }
-        .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #007bff; }
-        .btn-success { background-color: #28a745; }
-        .btn-warning { background-color: #e67e22; }
-        .btn-danger { background-color: #dc3545; }
-        .btn-secondary { background-color: #6c757d; }
-        
-        #btn-focus-reset {
-            display: none; position: fixed; top: 20px; right: 20px; z-index: 1000;
-            background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 30px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: bold; cursor: pointer;
-            animation: fadeIn 0.3s;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .container {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
 
-        /* VIEWS */
-        .view-section { display: none; animation: fadeIn 0.3s; }
-        
-        /* Table View */
-        .table-wrap { overflow-x: auto; max-height: 70vh; border: 1px solid #dee2e6; border-radius: 6px; }
-        table { width: 100%; border-collapse: collapse; min-width: 1200px; font-size: 13px; }
-        
-        th { background-color: #343a40; color: white; position: sticky; top: 0; z-index: 10; padding: 12px; text-align: left; cursor: pointer; user-select: none; }
-        th:hover { background-color: #495057; }
-        th.sort-asc::after { content: " ▲"; opacity: 0.7; }
-        th.sort-desc::after { content: " ▼"; opacity: 0.7; }
-        
-        td { padding: 10px; border-bottom: 1px solid #dee2e6; vertical-align: top; }
-        
-        /* Filter Row */
-        .filter-row th { background-color: #e9ecef; padding: 5px; cursor: default; }
-        .filter-input { width: 95%; padding: 4px; border: 1px solid #ced4da; border-radius: 3px; font-size: 12px; }
+    h1 {
+      margin: 0 0 15px 0;
+      font-size: 18px;
+      text-align: center;
+      color: var(--dark);
+      font-weight: 700;
+    }
 
-        .editable { background-color: #fff8e1; cursor: text; border: 1px dashed #eec; padding: 2px; }
-        .editable:focus { outline: 2px solid #007bff; background: white; }
-        .meta-editable { background-color: #e8f5e9; }
+    .drop-zone {
+      border: 2px dashed #cbd5e0;
+      padding: 40px 20px;
+      text-align: center;
+      color: #6c757d;
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      margin-bottom: 15px;
+      transition: 0.2s;
+      user-select: none;
+    }
+    .drop-zone:active { background: #eef7ff; border-color: var(--primary); color: var(--primary); }
+    .drop-zone.dragover { background: #eef7ff; border-color: var(--primary); color: var(--primary); }
 
-        /* Document View */
-        .doc-view-wrapper { display: flex; height: 75vh; border: 1px solid #dee2e6; border-radius: 6px; overflow: hidden; }
-        .doc-content { flex: 2; padding: 50px; background: #fff; overflow-y: scroll; font-family: 'Times New Roman', serif; border-right: 1px solid #dee2e6; font-size: 11pt; line-height: 1.5; }
-        .doc-sidebar { flex: 1; background: #f8f9fa; overflow-y: scroll; padding: 20px; max-width: 450px; }
-        
-        .doc-ins { background-color: #d4edda; border-bottom: 2px solid #28a745; cursor: pointer; text-decoration: none; }
-        .doc-del { background-color: #f8d7da; text-decoration: line-through; color: #721c24; cursor: pointer; }
-        .doc-comment-highlight { background-color: #fff3cd; border-bottom: 2px solid #ffc107; cursor: pointer; }
-        
-        .comment-card { background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 15px; cursor: pointer; transition: 0.2s; }
-        .comment-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .comment-card.active-card { border-left: 5px solid #007bff; background-color: #eef7ff; }
-        
-        @keyframes flashHighlight { 0% { background: yellow; box-shadow: 0 0 10px yellow; } 50% { background: orange; box-shadow: 0 0 20px orange; } 100% { background: yellow; box-shadow: 0 0 10px yellow; } }
-        .target-flash-infinite { animation: flashHighlight 1s infinite; z-index: 10; position: relative; }
+    .tabs {
+      display: none;
+      overflow-x: auto;
+      white-space: nowrap;
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--border);
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 2px;
+      gap: 4px;
+    }
+    .tab-btn {
+      display: inline-block;
+      padding: 10px 15px;
+      background: none;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6c757d;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+    }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
 
-        /* Forensics View */
-        .forensics-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 12px; }
-        .forensics-table th { background: #eee; color: #333; }
-        .forensics-table td { padding: 10px; border-bottom: 1px solid #ddd; vertical-align: middle; }
-        .risk-high { color: #dc3545; font-weight: bold; background: #ffe6e6; padding: 2px 5px; border-radius: 3px; }
-        .risk-med { color: #e67e22; background: #fff3cd; padding: 2px 5px; border-radius: 3px; }
-        .hex-preview { font-family: monospace; font-size: 10px; color: #666; background: #f8f9fa; padding: 5px; border: 1px solid #eee; margin-top: 5px; word-break: break-all; }
+    .toolbar {
+      display: none;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+      background: #e9ecef;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .btn {
+      flex: 1 1 40%;
+      border: none;
+      padding: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .btn-primary { background: var(--primary); }
+    .btn-success { background: #198754; }
+    .btn-warning { background: #ffc107; color: #000; }
+    .btn-danger { background: #dc3545; }
+    .btn-secondary { background: #6c757d; }
 
-        /* Ghost Writer 2.0 */
-        .ghost-workspace { display: flex; height: 75vh; border: 1px solid #dee2e6; border-radius: 6px; position:relative; }
-        .ghost-doc-render { flex: 1; padding: 50px; background: #fff; overflow-y: scroll; font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5; cursor: text; }
-        .ghost-doc-render p:hover { background-color: #f9f9f9; } 
-        ::selection { background: #b3d7ff; }
+    .view-section { display: none; animation: fadeIn 0.2s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .ghost-floating-toolbar {
-            position: absolute; bottom: 20px; right: 20px; width: 320px;
-            background: white; padding: 20px; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.25);
-            border: 1px solid #ccc; display: none; z-index: 100;
-        }
-        .ghost-floating-toolbar h3 { margin-top: 0; color: #e67e22; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      max-height: 60vh;
+      background: #fff;
+    }
+    table { width: 100%; min-width: 860px; border-collapse: collapse; font-size: 12px; }
+    th {
+      background-color: var(--dark);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 10px;
+      text-align: left;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    th:hover { background-color: #495057; }
+    td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: top; }
 
-        /* Badges */
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color:white; display: inline-block; width: 60px; text-align: center; }
-        .badge-com { background-color: #17a2b8; }
-        .badge-ins { background-color: #28a745; }
-        .badge-del { background-color: #dc3545; }
+    th.sort-asc::after { content: " ▲"; opacity: 0.85; }
+    th.sort-desc::after { content: " ▼"; opacity: 0.85; }
 
-        #status { font-weight: bold; margin-bottom: 10px; text-align: center; height: 20px; font-size: 14px; }
-        .success { color: #28a745; }
-        .error { color: #dc3545; }
+    .filter-row th {
+      background-color: #e9ecef;
+      padding: 5px;
+      cursor: default;
+      position: sticky;
+      top: 37px;
+      z-index: 9;
+    }
+    .filter-input {
+      width: 100%;
+      padding: 5px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 11px;
+      box-sizing: border-box;
+      background: #fff;
+    }
 
-        /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
-        .modal-content { background-color: white; margin: 10% auto; padding: 30px; border-radius: 12px; width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .form-row { margin-bottom: 15px; }
-        .form-row label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 12px; color: #555; }
-        .form-row input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-    </style>
+    .editable { background-color: #fff8e1; border: 1px solid transparent; }
+    .editable:focus { outline: 2px solid var(--primary); background: white; border-color: #ccc; }
+
+    .cell-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 11px;
+      background: #fff;
+    }
+    .cell-input.editish { background: #fff8e1; }
+
+    .doc-topbar {
+      display: flex;
+      gap: 8px;
+      padding: 10px;
+      background: #f1f3f5;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .doc-topbar select, .doc-topbar input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 12px;
+      background: #fff;
+      flex: 1 1 220px;
+      min-width: 160px;
+    }
+    .doc-topbar .mini {
+      width: auto;
+      flex: 0 0 auto;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      background: #6c757d;
+      color: white;
+    }
+
+    .doc-view-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 65vh;
+      border: 1px solid #ccc;
+      border-radius: 0 0 6px 6px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .doc-content {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background: #fff;
+      font-family: 'Times New Roman', serif;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .doc-sidebar {
+      height: 170px;
+      overflow-y: auto;
+      background: #f8f9fa;
+      border-top: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    .doc-ins { background: #d4edda; border-bottom: 2px solid #28a745; cursor: pointer; text-decoration: none; }
+    .doc-del { background: #f8d7da; text-decoration: line-through; color: #721c24; cursor: pointer; }
+    .doc-com { background: #fff3cd; border-bottom: 2px solid #ffc107; cursor: pointer; }
+
+    .comment-card {
+      background: white;
+      border: 1px solid #ddd;
+      padding: 8px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .active-card { border-left: 4px solid var(--primary); background: #eef7ff; }
+
+    .ghost-render {
+      height: 35vh;
+      overflow-y: auto;
+      padding: 15px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      font-family: serif;
+      background: white;
+      border-radius: 4px;
+    }
+    .ghost-render p { padding: 8px 6px; border-bottom: 1px solid #eee; margin: 0; }
+    .ghost-toolbar { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd; display: none; }
+    ::selection { background: #b3d7ff; }
+
+    .badge {
+      padding: 3px 6px;
+      border-radius: 3px;
+      color: white;
+      font-size: 10px;
+      display: inline-block;
+      min-width: 44px;
+      text-align: center;
+    }
+    .bg-com { background: #17a2b8; }
+    .bg-ins { background: #28a745; }
+    .bg-del { background: #dc3545; }
+    .bg-hi { background: #dc3545; }
+    .bg-med { background: #ffc107; color: #000; }
+    .bg-lo { background: #198754; }
+
+    #error-log {
+      display: none;
+      background: #ffe6e6;
+      color: #721c24;
+      padding: 10px;
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      margin-top: 10px;
+      border: 1px solid #f5c6cb;
+      white-space: pre-wrap;
+      border-radius: 6px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+    .modal-content {
+      background: white;
+      margin: 10vh auto;
+      padding: 18px;
+      width: 92%;
+      max-width: 520px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .form-row { margin-bottom: 12px; }
+    .form-row label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 800; }
+    input, select, textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 12px; background: #fff; }
+
+    .row-inline { display: flex; gap: 8px; }
+    .row-inline > * { flex: 1; }
+    .tiny { font-size: 11px; opacity: 0.8; margin-top: 4px; }
+
+    .flash-target { animation: flash 2s linear 1; background: yellow !important; }
+    @keyframes flash { 0% { background: yellow; } 50% { background: orange; } 100% { background: yellow; } }
+  </style>
 </head>
+
 <body>
+  <div class="container">
+    <h1>Word Forensics Master</h1>
 
-<button id="btn-focus-reset" onclick="resetFocus()">🚫 Reset Focus</button>
-
-<div class="container">
-    <div class="header">
-        <h1>Word Forensics & Ghost Writer</h1>
-        <p>Edit metadata, scrub forensics, fabric revisions, and view tracking.</p>
+    <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Open DOCX">
+      📄 Tap to Open .docx<br><span style="font-size:11px; opacity:0.8;">or drag & drop here</span>
     </div>
+    <input type="file" id="file-input" accept=".docx" style="display:none;" />
 
-    <div id="drop-zone" class="drop-zone">
-        📂 Drag & Drop .docx file here<br><span style="font-size:14px; color:#999;">(or click to browse)</span>
-    </div>
-    <input type="file" id="file-input" accept=".docx" style="display: none;">
-    
-    <div id="status"></div>
+    <div id="status" style="text-align:center; font-size:12px; margin-bottom:10px; font-weight:bold; color: var(--secondary);"></div>
+    <div id="error-log"></div>
 
     <div class="tabs" id="tabs">
-        <button class="tab-btn active" onclick="switchTab('comments')">💬 Comments (<span id="count-comments">0</span>)</button>
-        <button class="tab-btn" onclick="switchTab('revisions')">📝 Tracked Changes (<span id="count-revisions">0</span>)</button>
-        <button class="tab-btn" onclick="switchTab('all')">📑 All Activity (<span id="count-all">0</span>)</button>
-        <button class="tab-btn" onclick="switchTab('docview')">📄 Document View</button>
-        <button class="tab-btn" onclick="switchTab('forensics')">🕵️ Deep Forensics</button>
-        <button class="tab-btn" onclick="switchTab('ghost')">👻 Ghost Writer</button>
+      <button class="tab-btn active" data-tab="comments">Comments</button>
+      <button class="tab-btn" data-tab="revisions">Changes</button>
+      <button class="tab-btn" data-tab="all">All Activity</button>
+      <button class="tab-btn" data-tab="parts">Parts</button>
+      <button class="tab-btn" data-tab="relationships">Relationships</button>
+      <button class="tab-btn" data-tab="forensics">Forensics</button>
+      <button class="tab-btn" data-tab="ghost">Ghost Writer</button>
+      <button class="tab-btn" data-tab="meta">Metadata</button>
     </div>
 
     <div class="toolbar" id="toolbar">
-        <button class="btn btn-warning" onclick="openBatchModal()">⏱️ Batch Times</button>
-        <button class="btn btn-secondary" onclick="copyTable()">📋 Copy Table</button>
-        <button class="btn btn-success" onclick="downloadExcel()">📊 Export XLSX</button>
-        <button class="btn btn-primary" onclick="downloadWord()">💾 Save .docx</button>
-        <button class="btn btn-danger" onclick="location.reload()">Reset</button>
+      <button class="btn btn-warning" id="btn-batch-tools">Batch Tools</button>
+      <button class="btn btn-primary" id="btn-save">Save Docx</button>
+      <button class="btn btn-secondary" id="btn-copy">Copy Table</button>
+      <button class="btn btn-danger" id="btn-reset">Reset</button>
     </div>
 
-    <div class="view-section table-wrap" id="view-table">
-        <table id="data-table">
-            <thead id="data-table-head"></thead>
-            <tbody id="table-body"></tbody>
-        </table>
+    <!-- Main Activity Table -->
+    <div id="view-table" class="view-section table-wrap">
+      <table id="data-table">
+        <thead id="data-head"></thead>
+        <tbody id="data-body"></tbody>
+      </table>
     </div>
 
-    <div class="view-section doc-view-wrapper" id="view-doc">
-        <div class="doc-content" id="doc-content"><div style="color:#999; text-align:center;">Content...</div></div>
-        <div class="doc-sidebar" id="doc-sidebar"><h4 style="margin-top:0;">Comments Pane</h4><div id="sidebar-content"></div></div>
+    <!-- Parts View -->
+    <div id="view-parts" class="view-section">
+      <div class="doc-topbar">
+        <select id="part-select" aria-label="Part selector"></select>
+        <input id="part-filter" type="text" placeholder="Filter sidebar (quick)" aria-label="Sidebar filter" />
+        <button class="mini" id="btn-clear-selection" title="Clear selections">Clear Sel</button>
+      </div>
+      <div class="doc-view-wrapper">
+        <div class="doc-content" id="doc-content"></div>
+        <div class="doc-sidebar" id="doc-sidebar"></div>
+      </div>
     </div>
 
-    <div class="view-section" id="view-forensics">
-        <div style="background:#fff; padding:20px; border-radius:8px; border:1px solid #ddd; margin-bottom:20px;">
-            <h3 style="margin-top:0;">Deep Scan: Binary Analysis</h3>
-            <p style="font-size:13px; color:#666;">Analyzing binary headers for hidden EXIF, XMP, and software tags.</p>
-            <table class="forensics-table">
-                <thead id="forensics-head"></thead>
-                <tbody id="forensics-body"></tbody>
-            </table>
+    <!-- Relationships -->
+    <div id="view-rel" class="view-section table-wrap">
+      <table id="rel-table">
+        <thead id="rel-head"></thead>
+        <tbody id="rel-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Forensics -->
+    <div id="view-forensics" class="view-section table-wrap">
+      <div style="padding:15px; text-align:center; background:#f1f3f5;">
+        <button class="btn btn-primary" style="width:auto; padding:10px 20px;" id="btn-scan">
+          🔍 Click to Run Deep Scan
+        </button>
+      </div>
+      <table id="forensics-table">
+        <thead id="forensics-head"></thead>
+        <tbody id="forensics-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Ghost Writer -->
+    <div id="view-ghost" class="view-section">
+      <div class="ghost-render" id="ghost-render"></div>
+      <div class="ghost-toolbar" id="ghost-tools">
+        <div style="font-size:11px; margin-bottom:5px; color:#666;">
+          Selected: <b id="ghost-sel-text" style="color:#000;"></b>
         </div>
-        
-        <div class="view-section" id="view-metadata" style="display:block;">
-            <div class="meta-grid">
-                <div class="meta-box">
-                    <h3>Core Properties</h3>
-                    <div class="meta-row"><label>Title</label><input type="text" id="meta-title"></div>
-                    <div class="meta-row"><label>Creator</label><input type="text" id="meta-creator"></div>
-                    <div class="meta-row"><label>Last Modified By</label><input type="text" id="meta-lastMod"></div>
-                    <div class="meta-row"><label>Created Date</label><input type="text" id="meta-created"></div>
-                    <div class="meta-row"><label>Modified Date</label><input type="text" id="meta-modified"></div>
-                </div>
-                <div class="meta-box">
-                    <h3>App Statistics</h3>
-                    <div class="meta-row"><label>Total Edit Time (Minutes)</label><input type="number" id="meta-time"></div>
-                    <div class="meta-row"><label>Revision Count</label><input type="number" id="meta-revision"></div>
-                    <button class="btn btn-danger" style="width:100%; margin-top:20px;" onclick="deepCleanMetadata()">🧹 Run Deep Clean Protocol</button>
-                </div>
-            </div>
+        <input type="text" id="ghost-replace" placeholder="Replacement Text (Empty = Delete)">
+        <div class="row-inline" style="margin-top:6px;">
+          <input type="text" id="ghost-auth" placeholder="Author">
+          <input type="datetime-local" id="ghost-date">
         </div>
+        <button class="btn btn-warning" style="width:100%; margin-top:10px;" id="btn-inject">Inject Revision</button>
+      </div>
+      <div style="text-align:center; color:#999; padding:20px; font-size:12px;" id="ghost-hint">
+        Highlight text above to edit
+      </div>
     </div>
 
-    <div class="view-section" id="view-ghost">
-        <div class="ghost-workspace">
-            <div class="ghost-doc-render" id="ghost-render-area" onmouseup="handleGhostSelection()"></div>
-            
-            <div class="ghost-floating-toolbar" id="ghost-toolbar">
-                <h3>👻 Ghost Revision</h3>
-                <div style="font-size:12px; color:#666; margin-bottom:10px;">
-                    Selected: <span id="ghost-sel-text" style="font-weight:bold; color:#333; background:#eee; padding:2px;"></span>
-                </div>
-                
-                <div class="form-row">
-                    <label>Replacement Text (Leave empty to delete)</label>
-                    <input type="text" id="ghost-replace-text">
-                </div>
-                
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1;"><label>Fake Author</label><input type="text" id="ghost-author-input" placeholder="Default: Author"></div>
-                    <div style="flex:1;"><label>Fake Date</label><input type="datetime-local" id="ghost-date-input"></div>
-                </div>
-                
-                <button class="btn btn-warning" style="width:100%; margin-top:10px;" onclick="executeGhostEdit()">Inject Change</button>
-            </div>
-        </div>
+    <!-- Metadata -->
+    <div id="view-meta" class="view-section">
+      <div style="padding:15px;">
+        <h3>Core Properties</h3>
+        <div class="form-row"><label>Author</label><input type="text" id="meta-creator"></div>
+        <div class="form-row"><label>Modified By</label><input type="text" id="meta-lastMod"></div>
+        <h3>App Stats</h3>
+        <div class="form-row"><label>Total Minutes</label><input type="number" id="meta-time"></div>
+        <div class="form-row"><label>Revisions</label><input type="number" id="meta-revision"></div>
+        <button class="btn btn-danger" style="width:100%; margin-top:20px;" id="btn-wipe">🧽 Wipe All Metadata</button>
+      </div>
     </div>
+  </div>
 
-</div>
-
-<div id="batchModal" class="modal">
+  <!-- Batch Tools Modal -->
+  <div id="batchToolsModal" class="modal" aria-hidden="true">
     <div class="modal-content">
-        <h2 style="margin-top:0;">Batch Change Times</h2>
-        <div class="form-row"><label>Date:</label><input type="date" id="batchDate"></div>
-        <div class="form-row"><label>Start Time:</label><input type="time" id="batchStartTime"></div>
-        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-            <button class="btn btn-secondary" onclick="document.getElementById('batchModal').style.display='none'">Cancel</button>
-            <button class="btn btn-warning" onclick="applyBatchTimes()">Apply</button>
+      <h3 style="margin:0 0 12px 0;">Global Batch Tools</h3>
+
+      <div class="form-row">
+        <label>Scope</label>
+        <select id="batch-scope">
+          <option value="all">All items</option>
+          <option value="filtered">Filtered (current table)</option>
+          <option value="selected">Selected (checkboxes)</option>
+        </select>
+        <div class="tiny">Tip: “Filtered” respects your current Comments/Changes/All mode + filters.</div>
+      </div>
+
+      <div class="form-row">
+        <label>Part</label>
+        <select id="batch-part">
+          <option value="*">All parts</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label>Types</label>
+        <div class="row-inline">
+          <label style="font-weight:700;"><input type="checkbox" id="bt-com" checked> Comments</label>
+          <label style="font-weight:700;"><input type="checkbox" id="bt-ins" checked> Insertions</label>
+          <label style="font-weight:700;"><input type="checkbox" id="bt-del" checked> Deletions</label>
         </div>
+      </div>
+
+      <div class="form-row">
+        <label>Operation</label>
+        <select id="batch-op">
+          <option value="setAuthor">Set Author</option>
+          <option value="replaceAuthor">Replace Author</option>
+          <option value="setDate">Set Date/Time</option>
+          <option value="sequentialDate">Sequential Date/Time</option>
+          <option value="shiftDate">Shift Date/Time</option>
+        </select>
+      </div>
+
+      <div class="form-row" id="row-author">
+        <label>Author</label>
+        <input type="text" id="batch-author" placeholder="e.g., Author">
+      </div>
+
+      <div class="form-row" id="row-replace">
+        <label>Replace Author</label>
+        <div class="row-inline">
+          <input type="text" id="batch-from-author" placeholder="From (case-insensitive)">
+          <input type="text" id="batch-to-author" placeholder="To">
+        </div>
+      </div>
+
+      <div class="form-row" id="row-date">
+        <label>Date/Time</label>
+        <input type="datetime-local" id="batch-dt">
+      </div>
+
+      <div class="form-row" id="row-seq">
+        <label>Sequential</label>
+        <div class="row-inline">
+          <input type="datetime-local" id="batch-seq-start">
+          <input type="number" id="batch-seq-step" value="5" min="0" step="1" placeholder="Step minutes">
+        </div>
+        <div class="tiny">Applies in current visible order for “Filtered”; otherwise by Part then Pg then ID.</div>
+      </div>
+
+      <div class="form-row" id="row-shift">
+        <label>Shift</label>
+        <div class="row-inline">
+          <input type="number" id="batch-shift-amt" value="60" step="1">
+          <select id="batch-shift-unit">
+            <option value="minutes">minutes</option>
+            <option value="hours">hours</option>
+            <option value="days">days</option>
+          </select>
+        </div>
+        <div class="tiny">Only shifts items that already have a date.</div>
+      </div>
+
+      <div style="text-align:right; display:flex; gap:10px; margin-top:10px;">
+        <button class="btn btn-secondary" id="btn-bt-cancel">Cancel</button>
+        <button class="btn btn-warning" id="btn-bt-apply">Apply</button>
+      </div>
     </div>
-</div>
+  </div>
 
-<script>
-    // --- STATE ---
-    let zipObj = null;
-    let originalFileName = "";
-    
-    // Data Sources
-    let commentsData = [];
-    let revisionsData = [];
-    let allData = []; 
-    let forensicsData = [];
-    
-    // Tab & View State
-    let currentTab = 'comments'; 
-    let tableSort = { col: null, dir: 1 }; // 1 asc, -1 desc
-    let tableFilters = {}; // { colIndex: 'value' }
-
-    // XML Objects
-    let coreXmlDoc = null;
-    let appXmlDoc = null;
-    let mainDocXml = null; 
-    
-    // Ghost Writer State
-    let ghostSelectedParagraphIndex = -1;
-    let ghostParagraphs = []; 
+  <script>
+    window.onerror = function (msg, url, line, col, err) {
+      const d = document.getElementById("error-log");
+      d.style.display = "block";
+      const detail = err && err.stack ? err.stack : String(msg);
+      d.innerText += `ERR: ${detail} (Line ${line}${col ? ":" + col : ""})\n`;
+      return false;
+    };
 
     const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    const XML_NS = "http://www.w3.org/XML/1998/namespace";
 
-    // --- DOM Elements ---
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const statusDiv = document.getElementById('status');
-    const toolbar = document.getElementById('toolbar');
-    const viewTable = document.getElementById('view-table');
-    const viewDoc = document.getElementById('view-doc');
-    const viewForensics = document.getElementById('view-forensics');
-    const viewGhost = document.getElementById('view-ghost');
-    const viewMeta = document.getElementById('view-metadata');
-    
-    const dataTableHead = document.getElementById('data-table-head');
-    const tableBody = document.getElementById('table-body');
-    const forensicsHead = document.getElementById('forensics-head');
-    const forensicsBody = document.getElementById('forensics-body');
-    
-    const ghostRenderArea = document.getElementById('ghost-render-area');
-    const ghostToolbar = document.getElementById('ghost-toolbar');
+    let zipObj = null;
+    let originalFileName = "";
+    let mainDocXml = null, coreXmlDoc = null, appXmlDoc = null, commentsXmlDoc = null;
 
-    // --- INITIALIZATION ---
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#007bff'; });
-    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#cbd5e0'; });
-    dropZone.addEventListener('drop', (e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); });
-    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    // parts: path -> { path, label, xmlDoc }
+    const parts = new Map();
+    let activePartPath = "word/document.xml";
 
-    // --- FILE HANDLING ---
-    async function handleFile(file) {
-        if (!file || !file.name.endsWith(".docx")) return;
-        originalFileName = file.name;
-        statusDiv.innerHTML = "Processing...";
-        
-        try {
-            const buf = await file.arrayBuffer();
-            zipObj = await JSZip.loadAsync(buf);
+    // Activity items: uid -> { uid,id,type,pg,part,txt,auth,date }
+    const items = new Map();
+    const selectedUids = new Set();
 
-            // Auto Unlock
-            try {
-                if (zipObj.file("word/settings.xml")) {
-                    let sXml = await zipObj.file("word/settings.xml").async("string");
-                    sXml = sXml.replace(/<w:documentProtection[^>]*\/>/g, "").replace(/<w:writeProtection[^>]*\/>/g, "");
-                    zipObj.file("word/settings.xml", sXml);
-                }
-            } catch(e) {}
+    // Relationships data
+    let relationshipsData = [];
 
-            // Parse Docs
-            const docXmlStr = await zipObj.file("word/document.xml").async("string");
-            mainDocXml = new DOMParser().parseFromString(docXmlStr, "text/xml");
-            
-            let commentsDoc = null;
-            try {
-                if (zipObj.file("word/comments.xml")) {
-                    const cXml = await zipObj.file("word/comments.xml").async("string");
-                    commentsDoc = new DOMParser().parseFromString(cXml, "text/xml");
-                }
-            } catch(e) {}
+    let currentTab = "all";
+    let activityMode = "all";
 
-            // Parse Metadata
-            try {
-                if (zipObj.file("docProps/core.xml")) {
-                    const cXml = await zipObj.file("docProps/core.xml").async("string");
-                    coreXmlDoc = new DOMParser().parseFromString(cXml, "text/xml");
-                    populateMetaFields('core');
-                }
-                if (zipObj.file("docProps/app.xml")) {
-                    const aXml = await zipObj.file("docProps/app.xml").async("string");
-                    appXmlDoc = new DOMParser().parseFromString(aXml, "text/xml");
-                    populateMetaFields('app');
-                }
-            } catch(e) {}
-
-            // Forensics Scan
-            forensicsData = [];
-            let filePromises = [];
-            zipObj.forEach((relativePath, file) => {
-                const ext = relativePath.split('.').pop().toLowerCase();
-                if(!['xml','rels'].includes(ext) && relativePath !== '[Content_Types].xml') {
-                    filePromises.push(file.async("uint8array").then(data => {
-                        forensicsData.push({
-                            id: relativePath, // unique ID for sorting
-                            path: relativePath,
-                            file: file,
-                            date: file.date,
-                            type: ext.toUpperCase(),
-                            data: data,
-                            size: data.length
-                        });
-                    }));
-                }
-            });
-            await Promise.all(filePromises);
-
-            // Process Data
-            const contextMap = mapDocumentContext(mainDocXml);
-            commentsData = extractComments(commentsDoc, contextMap);
-            revisionsData = extractRevisions(mainDocXml, contextMap);
-            allData = [...commentsData, ...revisionsData]; 
-            // We do sort logic in render now, but set initial order
-            allData.sort((a,b) => (a.page - b.page) || (parseInt(a.id) - parseInt(b.id)));
-            
-            prepareGhostDoc();
-            renderDocumentView(mainDocXml);
-            renderSidebar();
-            
-            // Initial Render
-            document.getElementById('count-comments').innerText = commentsData.length;
-            document.getElementById('count-revisions').innerText = revisionsData.length;
-            document.getElementById('count-all').innerText = allData.length;
-
-            dropZone.style.display = 'none';
-            toolbar.style.display = 'flex';
-            document.getElementById('tabs').style.display = 'flex';
-            switchTab('all');
-            statusDiv.innerHTML = `<span class="success">Loaded.</span>`;
-
-        } catch (err) { console.error(err); statusDiv.innerHTML = "Error parsing file."; }
-    }
-
-    // --- DATA EXTRACTION ---
-    function getTags(xml, tagName) {
-        const nsTags = xml.getElementsByTagNameNS("*", tagName);
-        if (nsTags.length > 0) return nsTags;
-        return xml.getElementsByTagName("w:" + tagName);
-    }
-
-    function extractComments(xml, map) {
-        if (!xml) return [];
-        let arr = [];
-        const nodes = getTags(xml, "comment");
-        for (let i=0; i<nodes.length; i++) {
-            const c = nodes[i];
-            const id = c.getAttribute("w:id");
-            let text = "";
-            const ps = getTags(c, "p");
-            for (let j=0; j<ps.length; j++) text += ps[j].textContent;
-            arr.push({
-                uniqueId: 'com-'+id, // Stable ID for editing
-                id: id, objType: 'comment', page: map.pages[id]||1,
-                text: text, quote: map.quotes[id]||"", author: c.getAttribute("w:author")||"",
-                rawDate: c.getAttribute("w:date")||new Date().toISOString()
-            });
-        }
-        return arr;
-    }
-
-    function extractRevisions(xml, map) {
-        let arr = [];
-        const ins = getTags(xml, "ins");
-        const del = getTags(xml, "del");
-        const proc = (n, t) => {
-            let text = "";
-            const tags = getTags(n, t==='Insert'?"t":"delText");
-            for(let x of tags) text += x.textContent;
-            let id = n.getAttribute("w:id");
-            arr.push({
-                uniqueId: 'rev-'+id, // Stable ID for editing
-                id: id, objType: 'revision', subType: t,
-                page: map.pages[id]||1, text: text,
-                author: n.getAttribute("w:author")||"", rawDate: n.getAttribute("w:date")||new Date().toISOString()
-            });
-        };
-        for(let i=0; i<ins.length; i++) proc(ins[i], 'Insert');
-        for(let i=0; i<del.length; i++) proc(del[i], 'Delete');
-        return arr;
-    }
-
-    function mapDocumentContext(xml) {
-        const all = xml.getElementsByTagName("*");
-        let page = 1, active = new Set(), pages = {}, quotes = {};
-        for (let el of all) {
-            if (el.localName==="lastRenderedPageBreak" || (el.localName==="br" && el.getAttribute("w:type")==="page")) page++;
-            if (el.localName==="commentRangeStart") { const id=el.getAttribute("w:id"); active.add(id); pages[id]=page; quotes[id]=""; }
-            if (el.localName==="commentRangeEnd") active.delete(el.getAttribute("w:id"));
-            if (el.localName==="t" && active.size>0) active.forEach(id => quotes[id]+=el.textContent);
-            if ((el.localName==="ins" || el.localName==="del") && el.getAttribute("w:id")) pages[el.getAttribute("w:id")]=page;
-        }
-        return { pages, quotes };
-    }
-
-    // --- SORT & FILTER LOGIC ---
-    function getProcessedData(tabName) {
-        let source = tabName==='comments'?commentsData : tabName==='revisions'?revisionsData : tabName==='forensics'?forensicsData : allData;
-        
-        // 1. Filter
-        let filtered = source.filter(row => {
-            for (let key in tableFilters) {
-                let filterVal = tableFilters[key].toLowerCase();
-                let cellVal = "";
-                // Map logical keys to data props
-                // Main Table Props
-                if (key === 'pg') cellVal = row.page.toString();
-                else if (key === 'type') cellVal = (row.objType==='comment'?'Comment':row.subType).toString();
-                else if (key === 'text') cellVal = (row.text || "").toString();
-                else if (key === 'author') cellVal = (row.author || "").toString();
-                else if (key === 'date' || key === 'time') cellVal = row.rawDate.toString(); 
-                // Forensics Props
-                else if (key === 'path') cellVal = row.path;
-                else if (key === 'size') cellVal = row.size.toString();
-                
-                if (cellVal && !cellVal.toLowerCase().includes(filterVal)) return false;
-            }
-            return true;
-        });
-
-        // 2. Sort
-        if (tableSort.col) {
-            filtered.sort((a, b) => {
-                let valA, valB;
-                // Map sort keys
-                if (tableSort.col === 'pg') { valA=a.page; valB=b.page; }
-                else if (tableSort.col === 'type') { valA=(a.objType==='comment'?'Comment':a.subType); valB=(b.objType==='comment'?'Comment':b.subType); }
-                else if (tableSort.col === 'text') { valA=a.text; valB=b.text; }
-                else if (tableSort.col === 'author') { valA=a.author; valB=b.author; }
-                else if (tableSort.col === 'date' || tableSort.col === 'time') { valA=a.rawDate; valB=b.rawDate; }
-                // Forensics
-                else if (tableSort.col === 'path') { valA=a.path; valB=b.path; }
-                else if (tableSort.col === 'size') { valA=a.size; valB=b.size; } // Numeric Sort
-                else if (tableSort.col === 'risk') { 
-                    // Calculate risk score just for sorting
-                    const riskScore = (item) => {
-                        let s = 0; 
-                        let head = new TextDecoder().decode(item.data.slice(0,100));
-                        if(head.includes('Exif') || head.includes('XMP') || head.includes('Photoshop')) s=1;
-                        if(item.path.includes('.bin')) s=2;
-                        return s;
-                    }
-                    valA=riskScore(a); valB=riskScore(b);
-                }
-                
-                if (valA < valB) return -1 * tableSort.dir;
-                if (valA > valB) return 1 * tableSort.dir;
-                return 0;
-            });
-        }
-        return filtered;
-    }
-
-    function handleSort(col) {
-        if (tableSort.col === col) tableSort.dir *= -1; // Toggle
-        else { tableSort.col = col; tableSort.dir = 1; }
-        renderActiveView();
-    }
-
-    function handleFilter(key, val) {
-        if (val === "") delete tableFilters[key];
-        else tableFilters[key] = val;
-        renderActiveView();
-    }
-
-    function renderActiveView() {
-        if (currentTab === 'forensics') renderForensicsTable();
-        else if (['comments','revisions','all'].includes(currentTab)) renderTable();
-    }
-
-    // --- TAB SWITCH ---
-    window.switchTab = function(tab) {
-        currentTab = tab;
-        // Reset sort/filter when switching contexts usually, but user asked for "all applicable tabs"
-        // We will keep filters if they make sense (e.g. author), but usually better to reset to avoid confusion
-        tableSort = { col: null, dir: 1 };
-        tableFilters = {};
-
-        document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector(`button[onclick="switchTab('${tab}')"]`).classList.add('active');
-
-        if(tab==='metadata') viewMeta.style.display = 'block';
-        else if(tab==='forensics') { viewForensics.style.display = 'block'; renderForensicsTable(); }
-        else if(tab==='docview') { viewDoc.style.display = 'flex'; toolbar.style.visibility = 'hidden'; }
-        else if(tab==='ghost') { viewGhost.style.display = 'block'; }
-        else { 
-            viewTable.style.display = 'block'; 
-            toolbar.style.visibility = 'visible'; 
-            renderTable(); 
-        }
+    const tableState = {
+      main: { sortCol: "pg", dir: 1, filters: {} },
+      forensics: { sortCol: "path", dir: 1, filters: {} },
+      rel: { sortCol: "riskRank", dir: 1, filters: {} },
     };
 
-    // --- RENDER TABLE (MAIN) ---
-    function renderTable() {
-        let data = getProcessedData(currentTab);
-        
-        // Dynamic Headers
-        let cols = [
-            { key:'num', lbl:'#', w:'40px', sort:false },
-            { key:'pg', lbl:'Pg', w:'40px', sort:true },
-            { key:'type', lbl:'Type', w:'', sort:true },
-            { key:'text', lbl:'Text', w:'', sort:true },
-            { key:'author', lbl:'Author', w:'15%', sort:true },
-            { key:'date', lbl:'Date', w:'90px', sort:true },
-            { key:'time', lbl:'Time', w:'90px', sort:true },
-            { key:'act', lbl:'Act', w:'50px', sort:false }
-        ];
+    let forensicsData = [];
 
-        // 1. Header Row
-        let hHTML = "<tr>";
-        cols.forEach(c => {
-            let sortClass = (tableSort.col === c.key) ? (tableSort.dir===1 ? 'sort-asc' : 'sort-desc') : '';
-            let cursor = c.sort ? 'pointer' : 'default';
-            let click = c.sort ? `onclick="handleSort('${c.key}')"` : '';
-            hHTML += `<th class="${sortClass}" style="width:${c.w}; cursor:${cursor}" ${click}>${c.lbl}</th>`;
-        });
-        hHTML += "</tr>";
+    // Ghost
+    let ghostParagraphs = [];
+    let ghostSelIdx = -1;
+    let nextChangeId = 1;
 
-        // 2. Filter Row
-        hHTML += "<tr class='filter-row'>";
-        cols.forEach(c => {
-            if (!c.sort) hHTML += "<th></th>";
-            else hHTML += `<th><input type="text" class="filter-input" placeholder="Filter..." onkeyup="handleFilter('${c.key}', this.value)"></th>`;
-        });
-        hHTML += "</tr>";
-        
-        dataTableHead.innerHTML = hHTML;
-        tableBody.innerHTML = "";
+    const dom = {
+      drop: document.getElementById("drop-zone"),
+      file: document.getElementById("file-input"),
+      status: document.getElementById("status"),
+      error: document.getElementById("error-log"),
 
-        // 3. Rows
-        data.forEach((row, i) => {
-            const {d, t} = parseISO(row.rawDate);
-            const tr = document.createElement("tr");
-            let typeHtml = row.objType==='comment' ? `<span class="badge badge-com">Com</span>` : (row.subType==='Insert'?`<span class="badge badge-ins">Ins</span>`:`<span class="badge badge-del">Del</span>`);
-            let content = row.objType==='comment' ? `<div class="editable" contenteditable onblur="updateData('${row.uniqueId}','text',this.innerText)">${row.text}</div>` : `<span style="color:#666">${row.text}</span>`;
-            
-            tr.innerHTML = `
-                <td class="read-only">${i+1}</td>
-                <td class="read-only">${row.page}</td>
-                <td style="text-align:center;">${typeHtml}</td>
-                <td>${content}</td>
-                <td class="meta-editable" contenteditable onblur="updateData('${row.uniqueId}','author',this.innerText)">${row.author}</td>
-                <td class="meta-editable" contenteditable onblur="updateData('${row.uniqueId}','d',this.innerText)">${d}</td>
-                <td class="meta-editable" contenteditable onblur="updateData('${row.uniqueId}','t',this.innerText)">${t}</td>
-                <td><button class="btn btn-step" onclick="stepInto('${row.id}','${row.objType}')">View</button></td>
-            `;
-            tableBody.appendChild(tr);
-        });
+      tabs: document.getElementById("tabs"),
+      toolbar: document.getElementById("toolbar"),
+
+      viewTable: document.getElementById("view-table"),
+      tableHead: document.getElementById("data-head"),
+      tableBody: document.getElementById("data-body"),
+
+      viewParts: document.getElementById("view-parts"),
+      partSelect: document.getElementById("part-select"),
+      partFilter: document.getElementById("part-filter"),
+      docContent: document.getElementById("doc-content"),
+      docSidebar: document.getElementById("doc-sidebar"),
+
+      viewRel: document.getElementById("view-rel"),
+      relHead: document.getElementById("rel-head"),
+      relBody: document.getElementById("rel-body"),
+
+      viewForensics: document.getElementById("view-forensics"),
+      forHead: document.getElementById("forensics-head"),
+      forBody: document.getElementById("forensics-body"),
+
+      viewGhost: document.getElementById("view-ghost"),
+      ghostRender: document.getElementById("ghost-render"),
+      ghostTools: document.getElementById("ghost-tools"),
+      ghostHint: document.getElementById("ghost-hint"),
+      ghostSelText: document.getElementById("ghost-sel-text"),
+      ghostReplace: document.getElementById("ghost-replace"),
+      ghostAuth: document.getElementById("ghost-auth"),
+      ghostDate: document.getElementById("ghost-date"),
+
+      viewMeta: document.getElementById("view-meta"),
+      metaCreator: document.getElementById("meta-creator"),
+      metaLastMod: document.getElementById("meta-lastMod"),
+      metaTime: document.getElementById("meta-time"),
+      metaRevision: document.getElementById("meta-revision"),
+
+      btModal: document.getElementById("batchToolsModal"),
+      btScope: document.getElementById("batch-scope"),
+      btPart: document.getElementById("batch-part"),
+      btCom: document.getElementById("bt-com"),
+      btIns: document.getElementById("bt-ins"),
+      btDel: document.getElementById("bt-del"),
+      btOp: document.getElementById("batch-op"),
+      btAuthor: document.getElementById("batch-author"),
+      btFromAuthor: document.getElementById("batch-from-author"),
+      btToAuthor: document.getElementById("batch-to-author"),
+      btDt: document.getElementById("batch-dt"),
+      btSeqStart: document.getElementById("batch-seq-start"),
+      btSeqStep: document.getElementById("batch-seq-step"),
+      btShiftAmt: document.getElementById("batch-shift-amt"),
+      btShiftUnit: document.getElementById("batch-shift-unit"),
+    };
+
+    const btRows = {
+      author: document.getElementById("row-author"),
+      replace: document.getElementById("row-replace"),
+      date: document.getElementById("row-date"),
+      seq: document.getElementById("row-seq"),
+      shift: document.getElementById("row-shift"),
+    };
+
+    function setStatus(text, ok = true) {
+      dom.status.textContent = text;
+      dom.status.style.color = ok ? "green" : "crimson";
+    }
+    function showStatusHtml(html, ok = true) {
+      dom.status.innerHTML = html;
+      dom.status.style.color = ok ? "green" : "crimson";
+    }
+    function clearErrorLog() {
+      dom.error.style.display = "none";
+      dom.error.textContent = "";
+    }
+    function isParserError(xmldoc) {
+      const pe = xmldoc.getElementsByTagName("parsererror");
+      return pe && pe.length > 0;
+    }
+    function qAll(node, localName) {
+      if (!node) return [];
+      if (node.getElementsByTagNameNS) return Array.from(node.getElementsByTagNameNS("*", localName));
+      return Array.from(node.getElementsByTagName("w:" + localName));
+    }
+    function attrW(node, name) {
+      if (!node) return "";
+      return node.getAttribute("w:" + name) || node.getAttribute(name) || "";
+    }
+    function setAttrW(node, name, value) {
+      if (!node) return;
+      try { node.setAttributeNS(W_NS, "w:" + name, value); }
+      catch { node.setAttribute("w:" + name, value); }
+    }
+    function setAttrXmlSpacePreserve(node, text) {
+      if (!node) return;
+      if (typeof text === "string" && (/^\s/.test(text) || /\s$/.test(text) || /\s{2,}/.test(text))) {
+        try { node.setAttributeNS(XML_NS, "xml:space", "preserve"); }
+        catch { node.setAttribute("xml:space", "preserve"); }
+      }
+    }
+    function toDatetimeLocal(iso) {
+      if (!iso) return "";
+      try {
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return "";
+        const pad = n => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      } catch { return ""; }
+    }
+    function fromDatetimeLocal(val) {
+      if (!val) return "";
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return "";
+      return d.toISOString();
+    }
+    function safeSnippet(s, n = 60) {
+      const t = String(s || "");
+      return t.length > n ? t.slice(0, n) + "…" : t;
+    }
+    function normalizePath(baseDir, target) {
+      let t = target || "";
+      if (t.startsWith("/")) t = t.slice(1);
+      const raw = (baseDir || "") + t;
+      const parts = raw.split("/").filter(x => x.length);
+      const out = [];
+      for (const p of parts) {
+        if (p === ".") continue;
+        if (p === "..") out.pop();
+        else out.push(p);
+      }
+      return out.join("/");
+    }
+    function partLabel(path) {
+      if (path === "word/document.xml") return "Main Document";
+      const mH = path.match(/^word\/header(\d+)\.xml$/i);
+      if (mH) return "Header " + mH[1];
+      const mF = path.match(/^word\/footer(\d+)\.xml$/i);
+      if (mF) return "Footer " + mF[1];
+      if (path === "word/footnotes.xml") return "Footnotes";
+      if (path === "word/endnotes.xml") return "Endnotes";
+      return path.split("/").pop() || path;
     }
 
-    // --- ID-BASED DATA UPDATE (TRIPLE CHECKED) ---
-    window.updateData = function(uid, field, val) {
-        // Find in ALL lists (since we edit by Unique ID now)
-        let item = commentsData.find(x => x.uniqueId === uid) || revisionsData.find(x => x.uniqueId === uid);
-        
-        if (item) {
-            if(field==='d' || field==='t') {
-                // To support split date/time editing, we need to read the CURRENT value of the other field from the item
-                // However, since we are inside a callback, 'this.innerText' gave us the NEW value.
-                // We need to parse existing rawDate to get the component we AREN'T changing.
-                let parts = parseISO(item.rawDate);
-                if (field==='d') item.rawDate = makeISO(val.trim(), parts.t);
-                else item.rawDate = makeISO(parts.d, val.trim());
-            } else {
-                item[field] = val.trim();
-            }
+    function stableSort(arr, cmp) {
+      return arr.map((v, i) => ({ v, i }))
+        .sort((a, b) => cmp(a.v, b.v) || (a.i - b.i))
+        .map(x => x.v);
+    }
+
+    function mapContext(xml, partPath) {
+      // Page numbers only meaningful for main document; other parts get pg=0.
+      let pg = (partPath === "word/document.xml") ? 1 : 0;
+      const pgMap = {};
+      const all = xml.getElementsByTagName("*");
+      for (const el of all) {
+        if (partPath === "word/document.xml") {
+          if (el.localName === "lastRenderedPageBreak" || (el.localName === "br" && attrW(el, "type") === "page")) pg++;
         }
-    }
-
-    // --- RENDER FORENSICS (WITH SORT/FILTER) ---
-    function renderForensicsTable() {
-        let data = getProcessedData('forensics');
-        
-        let cols = [
-            { key:'path', lbl:'File Path', sort:true },
-            { key:'type', lbl:'Type', sort:true },
-            { key:'size', lbl:'Size (KB)', sort:true },
-            { key:'risk', lbl:'Binary Risks', sort:true },
-            { key:'act', lbl:'Action', sort:false }
-        ];
-
-        let hHTML = "<tr>";
-        cols.forEach(c => {
-            let sortClass = (tableSort.col === c.key) ? (tableSort.dir===1 ? 'sort-asc' : 'sort-desc') : '';
-            let cursor = c.sort ? 'pointer' : 'default';
-            let click = c.sort ? `onclick="handleSort('${c.key}')"` : '';
-            hHTML += `<th class="${sortClass}" style="cursor:${cursor}" ${click}>${c.lbl}</th>`;
-        });
-        hHTML += "</tr>";
-        
-        // Filter Row
-        hHTML += "<tr class='filter-row'>";
-        cols.forEach(c => {
-            if(!c.sort) hHTML += "<th></th>";
-            else hHTML += `<th><input type="text" class="filter-input" placeholder="Filter..." onkeyup="handleFilter('${c.key}', this.value)"></th>`;
-        });
-        hHTML += "</tr>";
-
-        forensicsHead.innerHTML = hHTML;
-        forensicsBody.innerHTML = "";
-
-        data.forEach(m => {
-            const sizeKB = (m.size / 1024).toFixed(2);
-            const date = m.date.toLocaleString();
-            
-            // Binary Risk Analysis (Cached logic)
-            let risks = [];
-            const header = new TextDecoder().decode(m.data.slice(0, 100)); 
-            if(header.includes("Exif")) risks.push("EXIF");
-            if(header.includes("http://ns.adobe.com/")) risks.push("XMP");
-            if(header.includes("Photoshop")) risks.push("PS");
-            
-            let riskHtml = risks.length > 0 ? `<span class="risk-high">⚠️ ${risks.join(", ")}</span>` : `<span class="risk-med">Clean?</span>`;
-            if(m.path.includes('.bin')) riskHtml = `<span class="risk-high">⚠️ ActiveX/OLE</span>`;
-
-            // Hex Preview
-            const hex = Array.from(m.data.slice(0, 20)).map(b => b.toString(16).padStart(2,'0')).join(' ');
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${m.path}<div class="hex-preview">${hex}...</div></td>
-                <td><span class="badge" style="background:#666;width:auto;">${m.type}</span></td>
-                <td>${sizeKB} KB</td>
-                <td>${riskHtml}</td>
-                <td><button class="btn btn-secondary" onclick="downloadAsset('${m.path}')">Download</button></td>
-            `;
-            forensicsBody.appendChild(tr);
-        });
-    }
-
-    // --- DOC VIEW ---
-    function renderDocumentView(xml) {
-        let html = "";
-        function t(n) {
-            if(n.nodeType===3) return;
-            if(n.localName==="p") { html+="<p>"; n.childNodes.forEach(t); html+="</p>"; }
-            else if(n.localName==="r") n.childNodes.forEach(t);
-            else if(n.localName==="t") html+=n.textContent;
-            else if(n.localName==="br") html+="<br>";
-            else if(n.localName==="ins") { html+=`<span class="doc-ins" id="hl-${n.getAttribute("w:id")}" onclick="hlSidebar('${n.getAttribute("w:id")}')">`; n.childNodes.forEach(t); html+="</span>"; }
-            else if(n.localName==="del") { html+=`<span class="doc-del" id="hl-${n.getAttribute("w:id")}" onclick="hlSidebar('${n.getAttribute("w:id")}')">`; n.childNodes.forEach(t); html+="</span>"; }
-            else if(n.localName==="commentRangeStart") { html+=`<span class="doc-comment-highlight" id="hl-${n.getAttribute("w:id")}" onclick="hlSidebar('${n.getAttribute("w:id")}')">`; }
-            else if(n.localName==="commentRangeEnd") { html+="</span>"; }
-            else n.childNodes.forEach(t);
+        if (el.localName === "commentRangeStart") {
+          const id = attrW(el, "id");
+          if (id !== "") pgMap["c:" + id] = pg;
         }
-        if(xml.getElementsByTagName("w:body")[0]) t(xml.getElementsByTagName("w:body")[0]);
-        document.getElementById('doc-content').innerHTML = html;
+        if ((el.localName === "ins" || el.localName === "del") && attrW(el, "id") !== "") {
+          pgMap[el.localName + ":" + attrW(el, "id")] = pg;
+        }
+      }
+      return { pg: pgMap };
     }
-    function renderSidebar() {
-        let h = "";
-        allData.forEach(x => {
-            const {d,t} = parseISO(x.rawDate);
-            let c = x.objType==='comment'?"border-left:5px solid #17a2b8":(x.subType==='Insert'?"border-left:5px solid #28a745":"border-left:5px solid #dc3545");
-            h += `<div class="comment-card" id="card-${x.id}" style="${c}" onclick="jumpTo('${x.id}')"><div style="font-size:11px;color:#888;">${x.author} • ${d} ${t}</div><div>${x.text.substring(0,100)}...</div></div>`;
+
+    function extractComments(commentsXml, anchorMap) {
+      if (!commentsXml) return [];
+      const arr = [];
+      const nodes = qAll(commentsXml, "comment");
+      for (const n of nodes) {
+        const id = attrW(n, "id");
+        let txt = "";
+        const ps = qAll(n, "p");
+        for (let j = 0; j < ps.length; j++) {
+          if (j > 0) txt += "\n";
+          txt += ps[j].textContent || "";
+        }
+
+        const anchor = anchorMap.get(id) || null;
+        arr.push({
+          uid: "c" + id,
+          id,
+          type: "com",
+          pg: anchor?.pg ?? 0,
+          part: anchor?.part ?? "",
+          txt,
+          auth: attrW(n, "author") || "",
+          date: attrW(n, "date") || "",
         });
-        document.getElementById('sidebar-content').innerHTML = h;
+      }
+      return arr;
     }
-    window.hlSidebar = function(id) {
-        document.querySelectorAll('.active-card').forEach(x=>x.classList.remove('active-card'));
-        const el = document.getElementById('card-'+id);
-        if(el) { el.classList.add('active-card'); el.scrollIntoView({behavior:'smooth',block:'center'}); }
-    }
-    window.jumpTo = function(id) {
-        const el = document.getElementById('hl-'+id);
-        if(el) { el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('target-flash-infinite'); document.getElementById('btn-focus-reset').style.display='block'; }
-    }
-    window.stepInto = function(id) { switchTab('docview'); setTimeout(()=>jumpTo(id), 100); }
-    window.resetFocus = function() { document.querySelectorAll('.target-flash-infinite').forEach(x=>x.classList.remove('target-flash-infinite')); document.getElementById('btn-focus-reset').style.display='none'; }
 
-    // --- GHOST WRITER ---
-    function prepareGhostDoc() {
-        ghostParagraphs = [];
-        const ps = getTags(mainDocXml, "p");
-        let html = "";
-        for(let i=0; i<ps.length; i++) {
-            let t = "";
-            const runs = getTags(ps[i], "r");
-            for(let r of runs) {
-                const texts = getTags(r, "t");
-                for(let txt of texts) t += txt.textContent;
-            }
-            ghostParagraphs.push({ node: ps[i], fullText: t });
-            if(t.trim().length > 0) {
-                html += `<p data-idx="${i}" style="margin-bottom:10px;">${t}</p>`;
-            }
+    function extractRevisions(partXml, partPath, ctx) {
+      const arr = [];
+      const push = (nodeList, type) => {
+        for (const n of nodeList) {
+          const id = attrW(n, "id");
+          let txt = "";
+          if (type === "ins") for (const t of qAll(n, "t")) txt += t.textContent || "";
+          else for (const t of qAll(n, "delText")) txt += t.textContent || "";
+          const pgKey = type + ":" + id;
+          arr.push({
+            uid: "r" + id,
+            id,
+            type,
+            pg: ctx.pg[pgKey] ?? ((partPath === "word/document.xml") ? 1 : 0),
+            part: partPath,
+            txt,
+            auth: attrW(n, "author") || "",
+            date: attrW(n, "date") || "",
+          });
         }
-        ghostRenderArea.innerHTML = html;
+      };
+      push(qAll(partXml, "ins"), "ins");
+      push(qAll(partXml, "del"), "del");
+      return arr;
     }
-    function handleGhostSelection() {
-        const sel = window.getSelection();
-        if(sel.rangeCount > 0 && !sel.isCollapsed) {
-            let pEl = sel.anchorNode;
-            while(pEl && pEl.nodeName !== 'P') pEl = pEl.parentElement;
-            if(pEl && pEl.hasAttribute('data-idx')) {
-                ghostSelectedParagraphIndex = parseInt(pEl.getAttribute('data-idx'));
-                let selectedText = sel.toString();
-                document.getElementById('ghost-sel-text').innerText = selectedText.substring(0, 30) + "...";
-                ghostToolbar.style.display = 'block';
-                document.getElementById('ghost-replace-text').value = "";
-                document.getElementById('ghost-date-input').value = new Date().toISOString().slice(0,16);
-            }
-        } else { ghostToolbar.style.display = 'none'; }
-    }
-    function normalizeStr(str) { return str.replace(/[\s\n\r\t\u00A0]+/g, ' ').trim(); }
-    function executeGhostEdit() {
-        const pIdx = ghostSelectedParagraphIndex;
-        if(pIdx === -1) return;
-        
-        const sel = window.getSelection();
-        const rawSelText = sel.toString();
-        const replaceText = document.getElementById('ghost-replace-text').value;
-        const auth = document.getElementById('ghost-author-input').value || "Author";
-        const date = new Date(document.getElementById('ghost-date-input').value).toISOString();
-        const revId = Math.floor(Math.random() * 99999999);
 
-        const pNode = ghostParagraphs[pIdx].node;
-        const runs = Array.from(getTags(pNode, "r"));
-        let styleNode = null;
-        if(runs.length > 0) {
-            const rPr = getTags(runs[0], "rPr")[0];
-            if(rPr) styleNode = rPr.cloneNode(true);
-        }
-        const kids = Array.from(pNode.childNodes);
-        kids.forEach(k => { if(k.localName !== 'pPr') pNode.removeChild(k); });
-
-        const fullText = ghostParagraphs[pIdx].fullText;
-        const normFull = normalizeStr(fullText);
-        const normSel = normalizeStr(rawSelText);
-        let startIdx = fullText.indexOf(rawSelText);
-        let endIdx = startIdx + rawSelText.length;
-        
-        if (startIdx === -1) {
-            const normStart = normFull.indexOf(normSel);
-            if(normStart === -1) {
-                alert("Error locating text in XML structure.");
-                const restoreR = mainDocXml.createElementNS(W_NS, "w:r");
-                const restoreT = mainDocXml.createElementNS(W_NS, "w:t");
-                restoreT.textContent = fullText;
-                restoreR.appendChild(restoreT);
-                pNode.appendChild(restoreR);
-                return; 
-            }
-            startIdx = normStart; endIdx = normStart + normSel.length;
-            var preText = normFull.substring(0, startIdx);
-            var midText = normSel; 
-            var postText = normFull.substring(endIdx);
+    function mergeItems(freshList) {
+      for (const fresh of freshList) {
+        const existing = items.get(fresh.uid);
+        if (existing) {
+          existing.pg = fresh.pg;
+          if (!existing.type) existing.type = fresh.type;
+          if (!existing.id) existing.id = fresh.id;
+          if (!existing.part) existing.part = fresh.part;
         } else {
-            var preText = fullText.substring(0, startIdx);
-            var midText = rawSelText;
-            var postText = fullText.substring(endIdx);
+          items.set(fresh.uid, fresh);
         }
-
-        const createRun = (text, type) => {
-            if(!text) return null;
-            let container = null;
-            if(type === 'del') {
-                container = mainDocXml.createElementNS(W_NS, "w:del");
-                container.setAttribute("w:id", revId);
-                container.setAttribute("w:author", auth);
-                container.setAttribute("w:date", date);
-            } else if(type === 'ins') {
-                container = mainDocXml.createElementNS(W_NS, "w:ins");
-                container.setAttribute("w:id", revId+1);
-                container.setAttribute("w:author", auth);
-                container.setAttribute("w:date", date);
-            }
-            const r = mainDocXml.createElementNS(W_NS, "w:r");
-            if(styleNode) r.appendChild(styleNode.cloneNode(true)); 
-            const t = mainDocXml.createElementNS(W_NS, type==='del' ? "w:delText" : "w:t");
-            if(text.length > 0 && (text[0]===' ' || text[text.length-1]===' ')) t.setAttribute("xml:space", "preserve");
-            t.textContent = text;
-            r.appendChild(t);
-            if(container) { container.appendChild(r); return container; }
-            return r;
-        };
-
-        const nPre = createRun(preText, 'normal'); if(nPre) pNode.appendChild(nPre);
-        const nDel = createRun(midText, 'del'); if(nDel) pNode.appendChild(nDel);
-        if(replaceText) { const nIns = createRun(replaceText, 'ins'); if(nIns) pNode.appendChild(nIns); }
-        const nPost = createRun(postText, 'normal'); if(nPost) pNode.appendChild(nPost);
-
-        alert("Ghost Revision Injected!");
-        ghostToolbar.style.display = 'none';
-        prepareGhostDoc(); 
-        const contextMap = mapDocumentContext(mainDocXml);
-        revisionsData = extractRevisions(mainDocXml, contextMap);
-        allData = [...commentsData, ...revisionsData].sort((a,b) => (a.page - b.page) || (parseInt(a.id) - parseInt(b.id)));
-        renderTable();
-        document.getElementById('count-revisions').innerText = revisionsData.length;
-        document.getElementById('count-all').innerText = allData.length;
+      }
     }
 
-    // --- METADATA ---
-    function populateMetaFields(type) {
-        if(!coreXmlDoc || !appXmlDoc) return;
-        const doc = type==='core' ? coreXmlDoc : appXmlDoc;
-        if(type==='core') {
-            ['title', 'creator', 'lastModifiedBy', 'created', 'modified'].forEach(p => {
-                const el = doc.getElementsByTagName("*").namedItem(p) || doc.getElementsByTagName(p)[0] || doc.getElementsByTagName("dc:"+p)[0] || doc.getElementsByTagName("cp:"+p)[0];
-                if(el) document.getElementById('meta-'+(p==='lastModifiedBy'?'lastMod':p)).value = el.textContent;
-            });
+    function getItemsForMode(mode) {
+      const all = Array.from(items.values());
+      if (mode === "comments") return all.filter(x => x.type === "com");
+      if (mode === "revisions") return all.filter(x => x.type === "ins" || x.type === "del");
+      return all;
+    }
+
+    function getPartOptions() {
+      const arr = Array.from(parts.keys());
+      arr.sort((a, b) => {
+        const la = partLabel(a).toLowerCase();
+        const lb = partLabel(b).toLowerCase();
+        if (la < lb) return -1;
+        if (la > lb) return 1;
+        return 0;
+      });
+      // Always keep main doc first
+      const mainIdx = arr.indexOf("word/document.xml");
+      if (mainIdx > 0) {
+        arr.splice(mainIdx, 1);
+        arr.unshift("word/document.xml");
+      }
+      return arr;
+    }
+
+    // ---------------------------
+    // MAIN TABLE (Activity)
+    // ---------------------------
+    const MAIN_COLS = [
+      { k: "_sel", label: "Sel", width: "60px" },
+      { k: "pg", label: "Pg", width: "55px" },
+      { k: "partLabel", label: "Part", width: "160px" },
+      { k: "type", label: "Type", width: "75px" },
+      { k: "txt", label: "Text", width: "" },
+      { k: "auth", label: "Author", width: "18%" },
+      { k: "date", label: "Date", width: "190px" },
+    ];
+
+    const tableBuilt = { main: false, forensics: false, rel: false };
+
+    function getProcessedMainData() {
+      const state = tableState.main;
+      let src = getItemsForMode(activityMode).map(x => ({
+        ...x,
+        partLabel: partLabel(x.part || ""),
+      }));
+
+      const filters = state.filters;
+      src = src.filter(row => {
+        for (const k of Object.keys(filters)) {
+          const needle = String(filters[k] || "").toLowerCase();
+          if (!needle) continue;
+          const hay = String(row[k] || "").toLowerCase();
+          if (!hay.includes(needle)) return false;
         }
-        if(type==='app') {
-            ['TotalTime', 'Revision', 'Pages'].forEach(p => {
-                const all = doc.getElementsByTagName("*");
-                for(let x of all) if(x.localName === p) document.getElementById('meta-'+(p==='TotalTime'?'time':p.toLowerCase())).value = x.textContent;
-            });
-        }
-    }
-    window.deepCleanMetadata = function() {
-        if(!confirm("Wipe forensics?")) return;
-        let docStr = new XMLSerializer().serializeToString(mainDocXml);
-        docStr = docStr.replace(/w:rsidR="[^"]*"/g, "").replace(/w:rsidRPr="[^"]*"/g, "").replace(/w:rsidRDefault="[^"]*"/g, "");
-        mainDocXml = new DOMParser().parseFromString(docStr, "text/xml");
-        if(coreXmlDoc) ['creator','lastModifiedBy'].forEach(id => { const els=coreXmlDoc.getElementsByTagName("*"); for(let el of els) if(el.localName===id) el.textContent="Microsoft Office User"; });
-        document.getElementById('meta-time').value = "0"; document.getElementById('meta-revision').value = "1";
-        alert("Wiped. Save to apply.");
+        return true;
+      });
+
+      const col = state.sortCol;
+      const dir = state.dir;
+      src = stableSort(src, (a, b) => {
+        let va = a[col], vb = b[col];
+        if (col === "pg") { va = Number(va) || 0; vb = Number(vb) || 0; }
+        else { va = String(va ?? "").toLowerCase(); vb = String(vb ?? "").toLowerCase(); }
+        if (va < vb) return -1 * dir;
+        if (va > vb) return 1 * dir;
+        return 0;
+      });
+
+      return src;
     }
 
-    // --- HELPERS ---
-    window.downloadAsset = async function(path) {
-        const file = zipObj.file(path);
-        if(file) { const blob = await file.async("blob"); saveAs(blob, path.split('/').pop()); }
+    function buildMainTableHead() {
+      if (tableBuilt.main) return;
+      tableBuilt.main = true;
+
+      dom.tableHead.textContent = "";
+
+      const trH = document.createElement("tr");
+      const trF = document.createElement("tr");
+      trF.className = "filter-row";
+
+      for (let i = 0; i < MAIN_COLS.length; i++) {
+        const col = MAIN_COLS[i];
+
+        const th = document.createElement("th");
+        th.textContent = col.label;
+        if (col.width) th.style.width = col.width;
+
+        // Selection header checkbox
+        if (col.k === "_sel") {
+          th.style.cursor = "default";
+          const master = document.createElement("input");
+          master.type = "checkbox";
+          master.style.transform = "scale(1.1)";
+          master.style.marginLeft = "8px";
+          master.addEventListener("change", () => {
+            const rows = getProcessedMainData();
+            if (master.checked) rows.forEach(r => selectedUids.add(r.uid));
+            else rows.forEach(r => selectedUids.delete(r.uid));
+            renderMainTableBody();
+          });
+          th.appendChild(master);
+        } else {
+          th.addEventListener("click", () => handleMainSort(col.k));
+        }
+        trH.appendChild(th);
+
+        const thF = document.createElement("th");
+        if (col.k !== "_sel") {
+          const inp = document.createElement("input");
+          inp.type = "text";
+          inp.className = "filter-input";
+          inp.value = tableState.main.filters[col.k] || "";
+          inp.addEventListener("input", () => handleMainFilter(col.k, inp.value));
+          thF.appendChild(inp);
+        }
+        trF.appendChild(thF);
+      }
+
+      const thAct = document.createElement("th");
+      thAct.textContent = "Act";
+      thAct.style.width = "70px";
+      trH.appendChild(thAct);
+
+      const thActF = document.createElement("th");
+      trF.appendChild(thActF);
+
+      dom.tableHead.appendChild(trH);
+      dom.tableHead.appendChild(trF);
+      syncMainSortIndicators();
     }
-    function parseISO(s) { if(!s) return {d:"",t:""}; try { return { d: s.split('T')[0], t: s.split('T')[1].substring(0,5) }; } catch(e) { return {d:s,t:""}; } }
-    function makeISO(d, t) { return `${d}T${t}:00Z`; }
-    window.openBatchModal = () => document.getElementById('batchModal').style.display='block';
-    window.closeBatchModal = () => document.getElementById('batchModal').style.display='none';
-    window.applyBatchTimes = function() {
-        const d = document.getElementById('batchDate').value;
-        const t = document.getElementById('batchStartTime').value;
-        if(!d || !t) return;
-        let target = currentTab==='comments'?commentsData:(currentTab==='revisions'?revisionsData:allData);
-        let base = new Date(d+"T"+t);
-        target.forEach(x => {
-            let iso = base.toISOString().split('.')[0]+"Z";
-            x.rawDate = iso;
-            base.setMinutes(base.getMinutes() + Math.floor(Math.random()*5)+3);
+
+    function syncMainSortIndicators() {
+      const trH = dom.tableHead.querySelector("tr");
+      if (!trH) return;
+      const ths = Array.from(trH.children);
+      const state = tableState.main;
+
+      for (const th of ths) th.classList.remove("sort-asc", "sort-desc");
+
+      const idx = MAIN_COLS.findIndex(c => c.k === state.sortCol);
+      if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir === 1 ? "sort-asc" : "sort-desc");
+    }
+
+    function handleMainSort(colKey) {
+      if (colKey === "_sel") return;
+      const state = tableState.main;
+      if (state.sortCol === colKey) state.dir *= -1;
+      else { state.sortCol = colKey; state.dir = 1; }
+      syncMainSortIndicators();
+      renderMainTableBody();
+    }
+
+    function handleMainFilter(colKey, val) {
+      const state = tableState.main;
+      if (val && val.trim()) state.filters[colKey] = val;
+      else delete state.filters[colKey];
+      renderMainTableBody();
+    }
+
+    function renderMainTableBody() {
+      buildMainTableHead();
+      dom.tableBody.textContent = "";
+
+      const data = getProcessedMainData();
+      for (const row of data) {
+        const tr = document.createElement("tr");
+
+        // Sel
+        const tdSel = document.createElement("td");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = selectedUids.has(row.uid);
+        cb.addEventListener("change", () => {
+          if (cb.checked) selectedUids.add(row.uid);
+          else selectedUids.delete(row.uid);
         });
-        renderTable();
-        closeBatchModal();
-    }
-    async function downloadWord() {
-        statusDiv.innerText = "Saving Text...";
-        const s = new XMLSerializer();
-        zipObj.file("word/document.xml", s.serializeToString(mainDocXml));
-        
-        statusDiv.innerText = "Saving Metadata...";
-        if(coreXmlDoc) {
-             ['title', 'creator', 'lastModifiedBy', 'created', 'modified'].forEach(p => {
-                const elInput = document.getElementById('meta-'+(p==='lastModifiedBy'?'lastMod':p));
-                if(elInput) { 
-                    const val = elInput.value;
-                    const el = coreXmlDoc.getElementsByTagName("*").namedItem(p) || coreXmlDoc.getElementsByTagName(p)[0] || coreXmlDoc.getElementsByTagName("dc:"+p)[0] || coreXmlDoc.getElementsByTagName("cp:"+p)[0];
-                    if(el) el.textContent = val;
-                }
-            });
-            zipObj.file("docProps/core.xml", s.serializeToString(coreXmlDoc));
-        }
-        if(appXmlDoc) {
-             ['TotalTime', 'Revision', 'Pages'].forEach(p => {
-                const elInput = document.getElementById('meta-'+(p==='TotalTime'?'time':p.toLowerCase()));
-                if(elInput) { 
-                    const val = elInput.value;
-                    const all = appXmlDoc.getElementsByTagName("*");
-                    for(let x of all) if(x.localName === p) x.textContent = val;
-                }
-            });
-            zipObj.file("docProps/app.xml", s.serializeToString(appXmlDoc));
-        }
-        
-        statusDiv.innerText = "Compressing...";
-        if(commentsData.length > 0 && zipObj.file("word/comments.xml")) {
-             let cXml = await zipObj.file("word/comments.xml").async("string");
-             let cDoc = new DOMParser().parseFromString(cXml, "text/xml");
-             let cMap = new Map();
-             Array.from(getTags(cDoc, "comment")).forEach(c => cMap.set(c.getAttribute("w:id"), c));
-             commentsData.forEach(cd => {
-                 let node = cMap.get(cd.id);
-                 if(node) {
-                     node.setAttribute("w:author", cd.author);
-                     node.setAttribute("w:date", cd.rawDate);
-                     while(node.firstChild) node.removeChild(node.firstChild);
-                     let p = cDoc.createElementNS(W_NS, "w:p");
-                     let r = cDoc.createElementNS(W_NS, "w:r");
-                     let t = cDoc.createElementNS(W_NS, "w:t");
-                     t.textContent = cd.text;
-                     r.appendChild(t); p.appendChild(r); node.appendChild(p);
-                 }
-             });
-             zipObj.file("word/comments.xml", s.serializeToString(cDoc));
-        }
-        const blob = await zipObj.generateAsync({type:"blob"});
-        saveAs(blob, "Cleaned_"+originalFileName);
-        statusDiv.innerText = "Saved.";
-    }
-    window.downloadExcel = () => {
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(allData.map(x=>({Type:x.objType, Text:x.text, Author:x.author, Date:x.rawDate})));
-        XLSX.utils.book_append_sheet(wb, ws, "Data");
-        const out = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-        saveAs(new Blob([out]), "export.xlsx");
-    };
-    window.copyTable = () => {
-        let h = "<table border='1'><tr>" + tableHeaders.innerHTML + "</tr>";
-        Array.from(tableBody.children).forEach(tr => h += "<tr>" + tr.innerHTML + "</tr>");
-        h += "</table>";
-        navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([h], {type:'text/html'})})]).then(()=>alert("Copied"));
-    };
-</script>
+        tdSel.appendChild(cb);
+        tr.appendChild(tdSel);
 
+        // Pg
+        const tdPg = document.createElement("td");
+        tdPg.textContent = (row.pg != null && row.pg !== 0) ? String(row.pg) : "";
+        tr.appendChild(tdPg);
+
+        // Part
+        const tdPart = document.createElement("td");
+        tdPart.textContent = row.partLabel || "";
+        tr.appendChild(tdPart);
+
+        // Type
+        const tdType = document.createElement("td");
+        tdType.style.textAlign = "center";
+        const badge = document.createElement("span");
+        badge.className = "badge " + (row.type === "com" ? "bg-com" : row.type === "ins" ? "bg-ins" : "bg-del");
+        badge.textContent = row.type === "com" ? "COM" : row.type === "ins" ? "INS" : "DEL";
+        tdType.appendChild(badge);
+        tr.appendChild(tdType);
+
+        // Text (editable)
+        const tdTxt = document.createElement("td");
+        tdTxt.className = "editable";
+        tdTxt.contentEditable = "true";
+        tdTxt.spellcheck = false;
+        tdTxt.textContent = row.txt || "";
+        tdTxt.addEventListener("blur", () => {
+          const it = items.get(row.uid);
+          if (it) it.txt = tdTxt.textContent.trim();
+          if (currentTab === "parts") renderSidebarForPart(activePartPath);
+        });
+        tr.appendChild(tdTxt);
+
+        // Author (editable)
+        const tdAuth = document.createElement("td");
+        tdAuth.className = "editable";
+        tdAuth.contentEditable = "true";
+        tdAuth.spellcheck = false;
+        tdAuth.textContent = row.auth || "";
+        tdAuth.addEventListener("blur", () => {
+          const it = items.get(row.uid);
+          if (it) it.auth = tdAuth.textContent.trim();
+          if (currentTab === "parts") renderSidebarForPart(activePartPath);
+        });
+        tr.appendChild(tdAuth);
+
+        // Date (editable)
+        const tdDate = document.createElement("td");
+        const inp = document.createElement("input");
+        inp.type = "datetime-local";
+        inp.className = "cell-input editish";
+        inp.value = toDatetimeLocal(row.date);
+        inp.addEventListener("change", () => {
+          const it = items.get(row.uid);
+          if (it) it.date = fromDatetimeLocal(inp.value);
+          if (currentTab === "parts") renderSidebarForPart(activePartPath);
+        });
+        tdDate.appendChild(inp);
+        tr.appendChild(tdDate);
+
+        // Act
+        const tdAct = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.className = "btn btn-secondary";
+        btn.type = "button";
+        btn.style.padding = "6px 8px";
+        btn.style.minWidth = "0";
+        btn.textContent = "↩";
+        btn.title = "Jump to item in Parts";
+        btn.addEventListener("click", () => stepInto(row.uid));
+        tdAct.appendChild(btn);
+        tr.appendChild(tdAct);
+
+        dom.tableBody.appendChild(tr);
+      }
+    }
+
+    // ---------------------------
+    // PARTS VIEW (Doc renderer + sidebar)
+    // ---------------------------
+    function getRenderRoot(xmlDoc, partPath) {
+      if (!xmlDoc) return null;
+      if (partPath === "word/document.xml") {
+        return xmlDoc.getElementsByTagName("w:body")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS, "body")?.[0] || xmlDoc.documentElement;
+      }
+      // headers/footers/footnotes/endnotes
+      const hdr = xmlDoc.getElementsByTagName("w:hdr")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS, "hdr")?.[0];
+      if (hdr) return hdr;
+      const ftr = xmlDoc.getElementsByTagName("w:ftr")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS, "ftr")?.[0];
+      if (ftr) return ftr;
+      const foot = xmlDoc.getElementsByTagName("w:footnotes")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS, "footnotes")?.[0];
+      if (foot) return foot;
+      const endn = xmlDoc.getElementsByTagName("w:endnotes")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS, "endnotes")?.[0];
+      if (endn) return endn;
+      return xmlDoc.documentElement;
+    }
+
+    function setActivePart(path) {
+      if (!parts.has(path)) return;
+      activePartPath = path;
+      dom.partSelect.value = path;
+      renderPart(path);
+    }
+
+    function renderPart(path) {
+      const p = parts.get(path);
+      if (!p) return;
+      renderDocView(p.xmlDoc, path);
+      renderSidebarForPart(path);
+    }
+
+    function getSidebarDataForPart(partPath) {
+      const mode = activityMode; // respects comments/revisions/all selection
+      let data = getItemsForMode(mode).filter(x => (x.part || "") === partPath);
+      // quick filter input (sidebar only)
+      const needle = String(dom.partFilter.value || "").toLowerCase().trim();
+      if (needle) {
+        data = data.filter(x =>
+          String(x.txt || "").toLowerCase().includes(needle) ||
+          String(x.auth || "").toLowerCase().includes(needle) ||
+          String(x.date || "").toLowerCase().includes(needle)
+        );
+      }
+      data = stableSort(data, (a, b) => {
+        const pa = Number(a.pg) || 0, pb = Number(b.pg) || 0;
+        if (pa !== pb) return pa - pb;
+        const da = String(a.date || ""), db = String(b.date || "");
+        if (da < db) return -1;
+        if (da > db) return 1;
+        return String(a.uid).localeCompare(String(b.uid));
+      });
+      return data;
+    }
+
+    function renderSidebarForPart(partPath) {
+      dom.docSidebar.textContent = "";
+      const data = getSidebarDataForPart(partPath);
+
+      for (const x of data) {
+        const card = document.createElement("div");
+        card.className = "comment-card";
+        card.id = "card-" + x.uid;
+
+        card.style.borderLeft = x.type === "com"
+          ? "4px solid #17a2b8"
+          : x.type === "ins"
+            ? "4px solid #28a745"
+            : "4px solid #dc3545";
+
+        const title = document.createElement("div");
+        title.style.fontWeight = "800";
+        title.textContent = (x.auth || "(no author)") + (x.date ? (" • " + safeSnippet(x.date, 30)) : "");
+        card.appendChild(title);
+
+        const body = document.createElement("div");
+        body.style.opacity = "0.95";
+        body.style.whiteSpace = "pre-wrap";
+        body.textContent = safeSnippet(x.txt, 140);
+        card.appendChild(body);
+
+        card.addEventListener("click", () => focusUidInCurrentPart(x.uid));
+        dom.docSidebar.appendChild(card);
+      }
+    }
+
+    function renderDocView(xmlDoc, partPath) {
+      dom.docContent.textContent = "";
+      const root = getRenderRoot(xmlDoc, partPath);
+      if (!root) return;
+
+      const activeComments = [];
+      const firstRendered = new Set(); // uids already got anchor id
+
+      function removeActiveComment(id) {
+        for (let i = activeComments.length - 1; i >= 0; i--) {
+          if (activeComments[i] === id) { activeComments.splice(i, 1); return; }
+        }
+      }
+
+      function wrapAndAppendElement(parent, el) {
+        let container = parent;
+        for (const cid of activeComments) {
+          const uid = "c" + cid;
+          const s = document.createElement("span");
+          s.className = "doc-com";
+          s.dataset.uid = uid;
+          // do not force id here (marker handles the anchor); but allow if missing and we have content:
+          if (!firstRendered.has(uid)) {
+            s.id = "hl-" + uid;
+            firstRendered.add(uid);
+          }
+          s.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            // if comment lives in another part (rare), jump there
+            const it = items.get(uid);
+            if (it && it.part && it.part !== activePartPath) stepInto(uid);
+            else focusUidInCurrentPart(uid);
+          });
+          container.appendChild(s);
+          container = s;
+        }
+        container.appendChild(el);
+      }
+
+      function appendText(parent, text) {
+        if (!text) return;
+        if (activeComments.length === 0) parent.appendChild(document.createTextNode(text));
+        else wrapAndAppendElement(parent, document.createTextNode(text));
+      }
+
+      function appendBr(parent) {
+        const br = document.createElement("br");
+        if (activeComments.length === 0) parent.appendChild(br);
+        else wrapAndAppendElement(parent, br);
+      }
+
+      function appendWalk(parent, node) {
+        if (!node) return;
+        const ln = node.localName;
+
+        if (ln === "commentRangeStart") {
+          const id = attrW(node, "id");
+          if (id !== "") {
+            activeComments.push(id);
+
+            // Always create an anchor marker so jump works even if no text is inside the range.
+            const uid = "c" + id;
+            if (!firstRendered.has(uid)) {
+              const marker = document.createElement("span");
+              marker.className = "doc-com";
+              marker.dataset.uid = uid;
+              marker.id = "hl-" + uid;
+              marker.style.padding = "0";
+              marker.style.border = "0";
+              marker.style.background = "transparent";
+              marker.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                const it = items.get(uid);
+                if (it && it.part && it.part !== activePartPath) stepInto(uid);
+                else focusUidInCurrentPart(uid);
+              });
+              // marker should sit within wrappers (which includes itself as active now)
+              wrapAndAppendElement(parent, marker);
+              firstRendered.add(uid);
+            }
+          }
+          return;
+        }
+        if (ln === "commentRangeEnd") {
+          const id = attrW(node, "id");
+          if (id !== "") removeActiveComment(id);
+          return;
+        }
+        if (ln === "commentReference") return;
+
+        if (ln === "p") {
+          const p = document.createElement("p");
+          parent.appendChild(p);
+          node.childNodes.forEach(ch => appendWalk(p, ch));
+          return;
+        }
+
+        if (ln === "t" || ln === "delText") {
+          appendText(parent, node.textContent || "");
+          return;
+        }
+
+        if (ln === "br") {
+          appendBr(parent);
+          return;
+        }
+
+        if (ln === "ins" || ln === "del") {
+          const id = attrW(node, "id");
+          const uid = "r" + id;
+
+          const span = document.createElement("span");
+          span.className = (ln === "ins") ? "doc-ins" : "doc-del";
+          span.id = "hl-" + uid;
+          span.dataset.uid = uid;
+          span.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            const it = items.get(uid);
+            if (it && it.part && it.part !== activePartPath) stepInto(uid);
+            else focusUidInCurrentPart(uid);
+          });
+
+          wrapAndAppendElement(parent, span);
+          node.childNodes.forEach(ch => appendWalk(span, ch));
+          return;
+        }
+
+        if (node.childNodes && node.childNodes.length) {
+          node.childNodes.forEach(ch => appendWalk(parent, ch));
+        }
+      }
+
+      appendWalk(dom.docContent, root);
+    }
+
+    function focusUidInCurrentPart(uid) {
+      setTimeout(() => {
+        const el = document.getElementById("hl-" + uid);
+        const card = document.getElementById("card-" + uid);
+
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.classList.add("flash-target");
+          setTimeout(() => el.classList.remove("flash-target"), 2000);
+        }
+        if (card) {
+          card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          card.classList.add("active-card");
+          setTimeout(() => card.classList.remove("active-card"), 2000);
+        }
+      }, 80);
+    }
+
+    function stepInto(uid) {
+      const it = items.get(uid);
+      if (it && it.part && parts.has(it.part)) {
+        switchTab("parts");
+        setActivePart(it.part);
+        focusUidInCurrentPart(uid);
+        return;
+      }
+      // Fallback: still go to parts and try in main doc
+      switchTab("parts");
+      setActivePart("word/document.xml");
+      focusUidInCurrentPart(uid);
+    }
+
+    // ---------------------------
+    // RELATIONSHIPS EXPLORER
+    // ---------------------------
+    const REL_COLS = [
+      { k: "risk", label: "Risk", width: "70px" },
+      { k: "sourceLabel", label: "From", width: "180px" },
+      { k: "typeLabel", label: "Type", width: "200px" },
+      { k: "target", label: "Target", width: "" },
+      { k: "mode", label: "Mode", width: "90px" },
+      { k: "existsLabel", label: "Exists", width: "90px" },
+      { k: "refs", label: "Refs", width: "70px" },
+    ];
+
+    function relTypeLabel(typeUri) {
+      const m = {
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink": "Hyperlink",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image": "Image",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles": "Styles",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering": "Numbering",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme": "Theme",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header": "Header",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer": "Footer",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments": "Comments",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes": "Footnotes",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes": "Endnotes",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate": "Attached Template",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject": "OLE Object",
+        "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties": "Core Properties",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml": "Custom XML",
+        "http://schemas.microsoft.com/office/2006/relationships/ui/extensibility": "Office Add-in/Extensibility",
+        "http://schemas.microsoft.com/office/2011/relationships/webextension": "Web Extension",
+      };
+      return m[typeUri] || (typeUri ? typeUri.split("/").pop() : "(unknown)");
+    }
+
+    function relRisk(typeUri, targetMode, target) {
+      const isExt = (String(targetMode || "").toLowerCase() === "external") ||
+                    /^https?:\/\//i.test(target || "") ||
+                    /^file:\/\//i.test(target || "");
+      if (isExt) return { label: "HIGH", rank: 1, cls: "bg-hi" };
+      const low = { label: "LOW", rank: 3, cls: "bg-lo" };
+      if (!typeUri) return low;
+      if (typeUri.includes("attachedTemplate") || typeUri.includes("webextension") || typeUri.includes("oleObject")) {
+        return { label: "MED", rank: 2, cls: "bg-med" };
+      }
+      return low;
+    }
+
+    function getSourcePartFromRelsPath(relsPath) {
+      if (relsPath === "_rels/.rels") return "[root]";
+      if (!relsPath.includes("/_rels/")) return "[unknown]";
+      return relsPath.replace("/_rels/", "/").replace(/\.rels$/i, "");
+    }
+
+    function countRefsInSource(sourcePart, rId) {
+      if (!rId || !sourcePart || !parts.has(sourcePart)) return 0;
+      try {
+        const xml = parts.get(sourcePart).xmlDoc;
+        const s = new XMLSerializer().serializeToString(xml);
+        // rough count; good enough to show "used / unused"
+        return Math.max(0, s.split(rId).length - 1);
+      } catch { return 0; }
+    }
+
+    async function buildRelationships() {
+      relationshipsData = [];
+      if (!zipObj) return;
+
+      const relPaths = [];
+      zipObj.forEach((path, file) => { if (path.toLowerCase().endsWith(".rels")) relPaths.push(path); });
+
+      const tasks = relPaths.map(async (relsPath) => {
+        const str = await zipObj.file(relsPath).async("string");
+        const relDoc = new DOMParser().parseFromString(str, "text/xml");
+        if (isParserError(relDoc)) return;
+
+        const relNodes = relDoc.getElementsByTagNameNS ? Array.from(relDoc.getElementsByTagNameNS("*", "Relationship"))
+                                                      : Array.from(relDoc.getElementsByTagName("Relationship"));
+
+        const sourcePart = getSourcePartFromRelsPath(relsPath);
+        const baseDir = (sourcePart === "[root]" || sourcePart === "[unknown]") ? "" : (sourcePart.substring(0, sourcePart.lastIndexOf("/") + 1));
+
+        for (const r of relNodes) {
+          const rId = r.getAttribute("Id") || "";
+          const typeUri = r.getAttribute("Type") || "";
+          const target = r.getAttribute("Target") || "";
+          const targetMode = r.getAttribute("TargetMode") || "";
+          const resolved = (String(targetMode).toLowerCase() === "external") ? target : normalizePath(baseDir, target);
+          const exists = (String(targetMode).toLowerCase() === "external") ? false : !!zipObj.file(resolved);
+
+          const risk = relRisk(typeUri, targetMode, target);
+          const refs = countRefsInSource(sourcePart, rId);
+
+          relationshipsData.push({
+            relsPath,
+            sourcePart,
+            sourceLabel: partLabel(sourcePart),
+            rId,
+            typeUri,
+            typeLabel: relTypeLabel(typeUri),
+            target,
+            mode: (targetMode || "Internal"),
+            resolvedTarget: resolved,
+            exists,
+            existsLabel: (String(targetMode).toLowerCase() === "external") ? "—" : (exists ? "Yes" : "No"),
+            risk: risk.label,
+            riskRank: risk.rank,
+            riskCls: risk.cls,
+            refs,
+          });
+        }
+      });
+
+      await Promise.all(tasks);
+      renderRelTable();
+    }
+
+    function getProcessedRelData() {
+      const state = tableState.rel;
+      let src = relationshipsData.slice();
+
+      const filters = state.filters;
+      src = src.filter(row => {
+        for (const k of Object.keys(filters)) {
+          const needle = String(filters[k] || "").toLowerCase();
+          if (!needle) continue;
+          const hay = String(row[k] || "").toLowerCase();
+          if (!hay.includes(needle)) return false;
+        }
+        return true;
+      });
+
+      const col = state.sortCol;
+      const dir = state.dir;
+      src = stableSort(src, (a, b) => {
+        let va = a[col], vb = b[col];
+        if (col === "riskRank" || col === "refs") { va = Number(va) || 0; vb = Number(vb) || 0; }
+        else { va = String(va ?? "").toLowerCase(); vb = String(vb ?? "").toLowerCase(); }
+        if (va < vb) return -1 * dir;
+        if (va > vb) return 1 * dir;
+        return 0;
+      });
+
+      return src;
+    }
+
+    function buildRelHead() {
+      if (tableBuilt.rel) return;
+      tableBuilt.rel = true;
+
+      dom.relHead.textContent = "";
+
+      const trH = document.createElement("tr");
+      const trF = document.createElement("tr");
+      trF.className = "filter-row";
+
+      // columns
+      for (const col of REL_COLS) {
+        const th = document.createElement("th");
+        th.textContent = col.label;
+        if (col.width) th.style.width = col.width;
+        th.addEventListener("click", () => handleRelSort(col.k === "risk" ? "riskRank" : col.k));
+        trH.appendChild(th);
+
+        const thF = document.createElement("th");
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.className = "filter-input";
+        inp.value = tableState.rel.filters[col.k] || "";
+        inp.addEventListener("input", () => {
+          const key = col.k;
+          if (inp.value && inp.value.trim()) tableState.rel.filters[key] = inp.value;
+          else delete tableState.rel.filters[key];
+          renderRelBody();
+        });
+        thF.appendChild(inp);
+        trF.appendChild(thF);
+      }
+
+      const thAct = document.createElement("th");
+      thAct.textContent = "Act";
+      thAct.style.width = "140px";
+      trH.appendChild(thAct);
+      const thActF = document.createElement("th");
+      trF.appendChild(thActF);
+
+      dom.relHead.appendChild(trH);
+      dom.relHead.appendChild(trF);
+      syncRelSortIndicators();
+    }
+
+    function syncRelSortIndicators() {
+      const trH = dom.relHead.querySelector("tr");
+      if (!trH) return;
+      const ths = Array.from(trH.children);
+      for (const th of ths) th.classList.remove("sort-asc", "sort-desc");
+
+      const state = tableState.rel;
+      // Map columns to sortable keys
+      const keys = REL_COLS.map(c => (c.k === "risk" ? "riskRank" : c.k)).concat(["_act"]);
+      const idx = keys.indexOf(state.sortCol);
+      if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir === 1 ? "sort-asc" : "sort-desc");
+    }
+
+    function handleRelSort(colKey) {
+      const state = tableState.rel;
+      if (state.sortCol === colKey) state.dir *= -1;
+      else { state.sortCol = colKey; state.dir = 1; }
+      syncRelSortIndicators();
+      renderRelBody();
+    }
+
+    function renderRelBody() {
+      buildRelHead();
+      dom.relBody.textContent = "";
+      const data = getProcessedRelData();
+
+      for (const r of data) {
+        const tr = document.createElement("tr");
+
+        // Risk
+        const tdRisk = document.createElement("td");
+        const badge = document.createElement("span");
+        badge.className = "badge " + r.riskCls;
+        badge.textContent = r.risk;
+        tdRisk.appendChild(badge);
+        tr.appendChild(tdRisk);
+
+        // From
+        const tdFrom = document.createElement("td");
+        tdFrom.textContent = r.sourceLabel || r.sourcePart;
+        tr.appendChild(tdFrom);
+
+        // Type
+        const tdType = document.createElement("td");
+        tdType.textContent = r.typeLabel || "";
+        tr.appendChild(tdType);
+
+        // Target
+        const tdTarget = document.createElement("td");
+        tdTarget.textContent = (r.mode.toLowerCase() === "external") ? r.target : (r.resolvedTarget || r.target);
+        tr.appendChild(tdTarget);
+
+        // Mode
+        const tdMode = document.createElement("td");
+        tdMode.textContent = r.mode;
+        tr.appendChild(tdMode);
+
+        // Exists
+        const tdEx = document.createElement("td");
+        tdEx.textContent = r.existsLabel;
+        tdEx.style.fontWeight = (r.existsLabel === "No") ? "800" : "400";
+        tdEx.style.color = (r.existsLabel === "No") ? "crimson" : "#333";
+        tr.appendChild(tdEx);
+
+        // Refs
+        const tdRefs = document.createElement("td");
+        tdRefs.textContent = String(r.refs || 0);
+        tr.appendChild(tdRefs);
+
+        // Actions
+        const tdAct = document.createElement("td");
+        tdAct.style.display = "flex";
+        tdAct.style.gap = "6px";
+
+        const btnOpen = document.createElement("button");
+        btnOpen.className = "btn btn-secondary";
+        btnOpen.type = "button";
+        btnOpen.style.padding = "6px 8px";
+        btnOpen.style.minWidth = "0";
+        btnOpen.textContent = "Open";
+        btnOpen.title = "Open source part in Parts tab";
+        btnOpen.addEventListener("click", () => {
+          if (parts.has(r.sourcePart)) {
+            switchTab("parts");
+            setActivePart(r.sourcePart);
+          } else {
+            alert("Source part not parsed (or not a Word part).");
+          }
+        });
+        tdAct.appendChild(btnOpen);
+
+        const btnDl = document.createElement("button");
+        btnDl.className = "btn btn-secondary";
+        btnDl.type = "button";
+        btnDl.style.padding = "6px 8px";
+        btnDl.style.minWidth = "0";
+        btnDl.textContent = "DL";
+        btnDl.title = "Download internal target";
+        btnDl.disabled = (r.mode.toLowerCase() === "external") || !r.exists;
+        btnDl.addEventListener("click", () => dlFile(r.resolvedTarget));
+        tdAct.appendChild(btnDl);
+
+        tr.appendChild(tdAct);
+        dom.relBody.appendChild(tr);
+      }
+    }
+
+    function renderRelTable() {
+      renderRelBody();
+    }
+
+    // ---------------------------
+    // FORENSICS (unchanged)
+    // ---------------------------
+    const FORENSICS_COLS = [
+      { k: "path", label: "File" },
+      { k: "type", label: "Type" },
+      { k: "size", label: "Size" },
+      { k: "risks", label: "Risks" },
+    ];
+
+    function getProcessedForensicsData() {
+      const state = tableState.forensics;
+      let src = forensicsData.slice();
+
+      const filters = state.filters;
+      src = src.filter(row => {
+        for (const k of Object.keys(filters)) {
+          const needle = String(filters[k] || "").toLowerCase();
+          if (!needle) continue;
+          const hay = String(row[k] || "").toLowerCase();
+          if (!hay.includes(needle)) return false;
+        }
+        return true;
+      });
+
+      const col = state.sortCol;
+      const dir = state.dir;
+      src = stableSort(src, (a, b) => {
+        let va = a[col], vb = b[col];
+        if (col === "size") { va = Number(va) || 0; vb = Number(vb) || 0; }
+        else { va = String(va ?? "").toLowerCase(); vb = String(vb ?? "").toLowerCase(); }
+        if (va < vb) return -1 * dir;
+        if (va > vb) return 1 * dir;
+        return 0;
+      });
+
+      return src;
+    }
+
+    function buildForensicsHead() {
+      if (tableBuilt.forensics) return;
+      tableBuilt.forensics = true;
+
+      dom.forHead.textContent = "";
+
+      const trH = document.createElement("tr");
+      const trF = document.createElement("tr");
+      trF.className = "filter-row";
+
+      for (const col of FORENSICS_COLS) {
+        const th = document.createElement("th");
+        th.textContent = col.label;
+        th.addEventListener("click", () => handleForensicsSort(col.k));
+        trH.appendChild(th);
+
+        const thF = document.createElement("th");
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.className = "filter-input";
+        inp.value = tableState.forensics.filters[col.k] || "";
+        inp.addEventListener("input", () => handleForensicsFilter(col.k, inp.value));
+        thF.appendChild(inp);
+        trF.appendChild(thF);
+      }
+
+      const thDl = document.createElement("th");
+      thDl.textContent = "DL";
+      thDl.style.width = "70px";
+      trH.appendChild(thDl);
+
+      const thDlF = document.createElement("th");
+      trF.appendChild(thDlF);
+
+      dom.forHead.appendChild(trH);
+      dom.forHead.appendChild(trF);
+
+      syncForensicsSortIndicators();
+    }
+
+    function syncForensicsSortIndicators() {
+      const trH = dom.forHead.querySelector("tr");
+      if (!trH) return;
+
+      const ths = Array.from(trH.children);
+      const state = tableState.forensics;
+      for (const th of ths) th.classList.remove("sort-asc", "sort-desc");
+
+      const idx = FORENSICS_COLS.findIndex(c => c.k === state.sortCol);
+      if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir === 1 ? "sort-asc" : "sort-desc");
+    }
+
+    function handleForensicsSort(colKey) {
+      const state = tableState.forensics;
+      if (state.sortCol === colKey) state.dir *= -1;
+      else { state.sortCol = colKey; state.dir = 1; }
+      syncForensicsSortIndicators();
+      renderForensicsBody();
+    }
+
+    function handleForensicsFilter(colKey, val) {
+      const state = tableState.forensics;
+      if (val && val.trim()) state.filters[colKey] = val;
+      else delete state.filters[colKey];
+      renderForensicsBody();
+    }
+
+    function renderForensicsBody() {
+      buildForensicsHead();
+      dom.forBody.textContent = "";
+
+      const data = getProcessedForensicsData();
+      for (const row of data) {
+        const tr = document.createElement("tr");
+
+        const tdPath = document.createElement("td"); tdPath.textContent = row.path || ""; tr.appendChild(tdPath);
+        const tdType = document.createElement("td"); tdType.textContent = row.type || ""; tr.appendChild(tdType);
+        const tdSize = document.createElement("td");
+        tdSize.textContent = (row.size != null) ? ((row.size / 1024).toFixed(1) + " KB") : "";
+        tr.appendChild(tdSize);
+
+        const tdRisk = document.createElement("td");
+        if (row.risks && row.risks !== "Clean") {
+          tdRisk.style.color = "crimson";
+          tdRisk.style.fontWeight = "800";
+          tdRisk.textContent = "⚠ " + row.risks;
+        } else {
+          tdRisk.style.color = "green";
+          tdRisk.textContent = "✓ Clean";
+        }
+        tr.appendChild(tdRisk);
+
+        const tdDl = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.className = "btn btn-secondary";
+        btn.type = "button";
+        btn.style.padding = "6px 8px";
+        btn.style.minWidth = "0";
+        btn.textContent = "⬇";
+        btn.title = "Download internal file";
+        btn.addEventListener("click", () => dlFile(row.path));
+        tdDl.appendChild(btn);
+        tr.appendChild(tdDl);
+
+        dom.forBody.appendChild(tr);
+      }
+    }
+
+    async function scanForensics() {
+      if (!zipObj) return;
+      setStatus("Scanning binaries…", true);
+
+      forensicsData = [];
+      const tasks = [];
+
+      zipObj.forEach((path, file) => {
+        const ext = (path.split(".").pop() || "").toLowerCase();
+        if (!["xml", "rels"].includes(ext) && path !== "[Content_Types].xml") {
+          tasks.push(
+            file.async("uint8array").then(data => {
+              let head = "";
+              try { head = new TextDecoder().decode(data.slice(0, 200)); }
+              catch { head = ""; }
+              const risks = [];
+              if (head.includes("Exif")) risks.push("EXIF");
+              if (head.includes("Adobe")) risks.push("XMP/Adobe");
+              if (head.includes("Photoshop")) risks.push("Photoshop");
+              forensicsData.push({
+                path,
+                type: ext ? ext.toUpperCase() : "(none)",
+                size: data.length,
+                risks: risks.join(", ") || "Clean",
+              });
+            })
+          );
+        }
+      });
+
+      await Promise.all(tasks);
+      renderForensicsBody();
+      setStatus("Scan complete.", true);
+    }
+
+    async function dlFile(path) {
+      if (!zipObj || !zipObj.file(path)) return;
+      const blob = await zipObj.file(path).async("blob");
+      saveAs(blob, path.split("/").pop() || "file.bin");
+    }
+
+    // ---------------------------
+    // GHOST WRITER (still main doc only)
+    // ---------------------------
+    function computeMaxChangeIdAll() {
+      let max = 0;
+      for (const p of parts.values()) {
+        for (const el of [...qAll(p.xmlDoc, "ins"), ...qAll(p.xmlDoc, "del")]) {
+          const id = parseInt(attrW(el, "id"), 10);
+          if (!isNaN(id)) max = Math.max(max, id);
+        }
+      }
+      return max;
+    }
+
+    function prepareGhost(docXml) {
+      ghostParagraphs = [];
+      ghostSelIdx = -1;
+
+      dom.ghostRender.textContent = "";
+      const ps = qAll(docXml, "p");
+
+      for (let i = 0; i < ps.length; i++) {
+        let t = "";
+        for (const r of qAll(ps[i], "r")) for (const tx of qAll(r, "t")) t += tx.textContent || "";
+        ghostParagraphs.push({ node: ps[i], txt: t });
+
+        if (t.trim()) {
+          const p = document.createElement("p");
+          p.dataset.idx = String(i);
+          p.textContent = t;
+          dom.ghostRender.appendChild(p);
+        }
+      }
+    }
+
+    function handleGhostSelection() {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !sel.anchorNode) return;
+
+      let el = sel.anchorNode.nodeType === Node.TEXT_NODE ? sel.anchorNode.parentElement : sel.anchorNode;
+      while (el && el !== dom.ghostRender && !el.dataset?.idx) el = el.parentElement;
+
+      if (el && el.dataset && el.dataset.idx != null) {
+        ghostSelIdx = parseInt(el.dataset.idx, 10);
+        dom.ghostTools.style.display = "block";
+        dom.ghostHint.style.display = "none";
+        const s = sel.toString();
+        dom.ghostSelText.textContent = s.length > 60 ? s.slice(0, 60) + "…" : s;
+
+        dom.ghostReplace.value = "";
+        if (!dom.ghostAuth.value) dom.ghostAuth.value = "Author";
+      }
+    }
+
+    function executeGhostEdit() {
+      if (ghostSelIdx === -1) { alert("Select text first"); return; }
+      const selection = window.getSelection();
+      const selTxt = selection ? selection.toString() : "";
+      if (!selTxt) { alert("Select text first"); return; }
+
+      const repTxt = dom.ghostReplace.value || "";
+      const auth = dom.ghostAuth.value?.trim() || "Author";
+      const dateIso = dom.ghostDate.value ? fromDatetimeLocal(dom.ghostDate.value) : new Date().toISOString();
+
+      const pObj = ghostParagraphs[ghostSelIdx];
+      const pNode = pObj.node;
+      const fullTxt = pObj.txt;
+
+      const start = fullTxt.indexOf(selTxt);
+      if (start === -1) {
+        alert("Match Error: Try selecting plain text (no line breaks).");
+        return;
+      }
+
+      const pre = fullTxt.substring(0, start);
+      const post = fullTxt.substring(start + selTxt.length);
+
+      const pPr = Array.from(pNode.childNodes).find(n => n.localName === "pPr") || null;
+      Array.from(pNode.childNodes).forEach(ch => { if (!(pPr && ch === pPr)) pNode.removeChild(ch); });
+      if (pPr && pNode.firstChild !== pPr) pNode.insertBefore(pPr, pNode.firstChild);
+
+      function makeRun(text, kind) {
+        const r = mainDocXml.createElementNS(W_NS, "w:r");
+        const t = mainDocXml.createElementNS(W_NS, "w:" + kind);
+        setAttrXmlSpacePreserve(t, text);
+        t.textContent = text;
+        r.appendChild(t);
+        return r;
+      }
+      function wrapChange(type, text) {
+        if (!text) return null;
+        const wrap = mainDocXml.createElementNS(W_NS, type === "del" ? "w:del" : "w:ins");
+        const id = String(nextChangeId++);
+        setAttrW(wrap, "id", id);
+        setAttrW(wrap, "author", auth);
+        setAttrW(wrap, "date", dateIso);
+        const run = makeRun(text, type === "del" ? "delText" : "t");
+        wrap.appendChild(run);
+        return wrap;
+      }
+      function appendNormal(text) {
+        if (!text) return;
+        pNode.appendChild(makeRun(text, "t"));
+      }
+
+      appendNormal(pre);
+      const delWrap = wrapChange("del", selTxt);
+      if (delWrap) pNode.appendChild(delWrap);
+      const insWrap = repTxt ? wrapChange("ins", repTxt) : null;
+      if (insWrap) pNode.appendChild(insWrap);
+      appendNormal(post);
+
+      alert("Injected.");
+
+      // update parts map for document.xml
+      parts.set("word/document.xml", { path: "word/document.xml", label: "Main Document", xmlDoc: mainDocXml });
+
+      rebuildActivityFromAllParts();
+      renderMainTableBody();
+      if (currentTab === "parts") renderPart(activePartPath);
+      prepareGhost(mainDocXml);
+    }
+
+    // ---------------------------
+    // WRITE-BACK / SAVE
+    // ---------------------------
+    function buildRevisionNodeIndexForDoc(doc) {
+      const idx = new Map();
+      for (const n of qAll(doc, "ins")) idx.set("ins:" + attrW(n, "id"), n);
+      for (const n of qAll(doc, "del")) idx.set("del:" + attrW(n, "id"), n);
+      return idx;
+    }
+
+    function ensureSingleTextNode(revEl, kindLocalName, text) {
+      const nodes = qAll(revEl, kindLocalName);
+      if (nodes.length > 0) {
+        nodes[0].textContent = text;
+        setAttrXmlSpacePreserve(nodes[0], text);
+        for (let i = nodes.length - 1; i >= 1; i--) nodes[i].parentNode && nodes[i].parentNode.removeChild(nodes[i]);
+      } else {
+        const r = revEl.ownerDocument.createElementNS(W_NS, "w:r");
+        const t = revEl.ownerDocument.createElementNS(W_NS, "w:" + kindLocalName);
+        setAttrXmlSpacePreserve(t, text);
+        t.textContent = text;
+        r.appendChild(t);
+        revEl.appendChild(r);
+      }
+    }
+
+    function applyEditsToAllParts() {
+      // Apply revision edits to the correct part document
+      const partIndexes = new Map();
+      for (const [path, p] of parts.entries()) {
+        partIndexes.set(path, buildRevisionNodeIndexForDoc(p.xmlDoc));
+      }
+
+      for (const it of items.values()) {
+        if (it.type !== "ins" && it.type !== "del") continue;
+        const p = it.part;
+        if (!p || !parts.has(p)) continue;
+
+        const idx = partIndexes.get(p);
+        if (!idx) continue;
+
+        const node = idx.get(it.type + ":" + it.id);
+        if (!node) continue;
+
+        setAttrW(node, "author", it.auth || "");
+        if (it.date) setAttrW(node, "date", it.date);
+
+        if (it.type === "ins") ensureSingleTextNode(node, "t", it.txt || "");
+        else ensureSingleTextNode(node, "delText", it.txt || "");
+      }
+    }
+
+    async function applyEditsToCommentsXmlAndWrite(zip) {
+      if (!zip.file("word/comments.xml")) return;
+
+      const s = await zip.file("word/comments.xml").async("string");
+      const cDoc = new DOMParser().parseFromString(s, "text/xml");
+      if (isParserError(cDoc)) throw new Error("Failed to parse comments.xml");
+
+      const map = new Map();
+      for (const c of qAll(cDoc, "comment")) map.set(attrW(c, "id"), c);
+
+      for (const it of items.values()) {
+        if (it.type !== "com") continue;
+        const n = map.get(it.id);
+        if (!n) continue;
+
+        setAttrW(n, "author", it.auth || "");
+        if (it.date) setAttrW(n, "date", it.date);
+
+        const ps = qAll(n, "p");
+        for (const p of ps) n.removeChild(p);
+
+        const p = cDoc.createElementNS(W_NS, "w:p");
+        const r = cDoc.createElementNS(W_NS, "w:r");
+        const t = cDoc.createElementNS(W_NS, "w:t");
+        setAttrXmlSpacePreserve(t, it.txt || "");
+        t.textContent = it.txt || "";
+        r.appendChild(t);
+        p.appendChild(r);
+        n.appendChild(p);
+      }
+
+      zip.file("word/comments.xml", new XMLSerializer().serializeToString(cDoc));
+    }
+
+    function populateMeta() {
+      if (coreXmlDoc) {
+        const creator = qAll(coreXmlDoc, "creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
+        const lastMod = qAll(coreXmlDoc, "lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
+        if (creator) dom.metaCreator.value = creator.textContent || "";
+        if (lastMod) dom.metaLastMod.value = lastMod.textContent || "";
+      }
+      if (appXmlDoc) {
+        const totalTime = qAll(appXmlDoc, "TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
+        const revision = qAll(appXmlDoc, "Revision")[0] || appXmlDoc.getElementsByTagName("Revision")[0];
+        if (totalTime) dom.metaTime.value = totalTime.textContent || "";
+        if (revision) dom.metaRevision.value = revision.textContent || "";
+      }
+    }
+
+    function writeMetaBackToZip() {
+      const ser = new XMLSerializer();
+
+      if (coreXmlDoc) {
+        const creator = qAll(coreXmlDoc, "creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
+        const lastMod = qAll(coreXmlDoc, "lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
+        if (creator) creator.textContent = dom.metaCreator.value || "";
+        if (lastMod) lastMod.textContent = dom.metaLastMod.value || "";
+        zipObj.file("docProps/core.xml", ser.serializeToString(coreXmlDoc));
+      }
+
+      if (appXmlDoc) {
+        const totalTime = qAll(appXmlDoc, "TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
+        const revision = qAll(appXmlDoc, "Revision")[0] || appXmlDoc.getElementsByTagName("Revision")[0];
+        if (totalTime) totalTime.textContent = String(dom.metaTime.value || "0");
+        if (revision) revision.textContent = String(dom.metaRevision.value || "0");
+        zipObj.file("docProps/app.xml", ser.serializeToString(appXmlDoc));
+      }
+    }
+
+    function wipeMetadata() {
+      if (!confirm("Wipe metadata (core/app + rsid across Word parts)?")) return;
+
+      if (coreXmlDoc) {
+        const creator = qAll(coreXmlDoc, "creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
+        const lastMod = qAll(coreXmlDoc, "lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
+        if (creator) creator.textContent = "Author";
+        if (lastMod) lastMod.textContent = "Author";
+        dom.metaCreator.value = "Author";
+        dom.metaLastMod.value = "Author";
+      }
+
+      if (appXmlDoc) {
+        const totalTime = qAll(appXmlDoc, "TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
+        if (totalTime) totalTime.textContent = "0";
+        dom.metaTime.value = "0";
+      }
+
+      // strip rsid on all parsed Word parts
+      for (const [path, p] of parts.entries()) {
+        try {
+          const s = new XMLSerializer().serializeToString(p.xmlDoc);
+          const cleaned = s
+            .replace(/\s+w:rsidR="[^"]*"/g, "")
+            .replace(/\s+w:rsidRDefault="[^"]*"/g, "")
+            .replace(/\s+w:rsidP="[^"]*"/g, "")
+            .replace(/\s+w:rsidDel="[^"]*"/g, "")
+            .replace(/\s+w:rsidRPr="[^"]*"/g, "");
+          const re = new DOMParser().parseFromString(cleaned, "text/xml");
+          parts.set(path, { ...p, xmlDoc: re });
+          if (path === "word/document.xml") mainDocXml = re;
+        } catch {}
+      }
+
+      alert("Metadata wiped.");
+      if (currentTab === "parts") renderPart(activePartPath);
+    }
+
+    async function downloadWord() {
+      if (!zipObj || !mainDocXml) return;
+
+      setStatus("Saving…", true);
+
+      applyEditsToAllParts();
+
+      // Write all parsed Word parts back
+      const ser = new XMLSerializer();
+      for (const [path, p] of parts.entries()) {
+        zipObj.file(path, ser.serializeToString(p.xmlDoc));
+      }
+
+      await applyEditsToCommentsXmlAndWrite(zipObj);
+      writeMetaBackToZip();
+
+      const blob = await zipObj.generateAsync({ type: "blob" });
+      saveAs(blob, "Edited_" + (originalFileName || "document.docx"));
+      setStatus("Saved!", true);
+    }
+
+    async function copyTable() {
+      const table = (currentTab === "relationships") ? document.getElementById("rel-table")
+                   : (currentTab === "forensics") ? document.getElementById("forensics-table")
+                   : document.getElementById("data-table");
+      if (!table) return alert("No table to copy");
+
+      const clone = table.cloneNode(true);
+
+      // Replace inputs (datetime) with text values
+      clone.querySelectorAll("input").forEach(inp => {
+        const td = inp.closest("td") || inp.closest("th");
+        if (!td) return;
+        const span = document.createElement("span");
+        if (inp.type === "checkbox") span.textContent = inp.checked ? "✓" : "";
+        else span.textContent = inp.value || "";
+        td.textContent = "";
+        td.appendChild(span);
+      });
+
+      try {
+        const html = clone.outerHTML;
+        const blob = new Blob([html], { type: "text/html" });
+        const data = [new ClipboardItem({ "text/html": blob })];
+        await navigator.clipboard.write(data);
+        alert("Table copied to clipboard!");
+      } catch (err) {
+        console.warn("Clipboard API failed, reverting:", err);
+        const range = document.createRange();
+        range.selectNode(table);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        try {
+          const ok = document.execCommand("copy");
+          if (ok) {
+            alert("Copied! (Legacy Mode)");
+            sel.removeAllRanges();
+          } else {
+            throw new Error("execCommand failed");
+          }
+        } catch {
+          alert("Auto-copy failed. Table is selected; please copy manually.");
+        }
+      }
+    }
+
+    // ---------------------------
+    // GLOBAL BATCH TOOLS
+    // ---------------------------
+    function openBatchTools() {
+      dom.btModal.style.display = "block";
+      dom.btModal.setAttribute("aria-hidden", "false");
+      refreshBatchUi();
+    }
+    function closeBatchTools() {
+      dom.btModal.style.display = "none";
+      dom.btModal.setAttribute("aria-hidden", "true");
+    }
+
+    function refreshBatchUi() {
+      const op = dom.btOp.value;
+      btRows.author.style.display = (op === "setAuthor") ? "block" : "none";
+      btRows.replace.style.display = (op === "replaceAuthor") ? "block" : "none";
+      btRows.date.style.display = (op === "setDate") ? "block" : "none";
+      btRows.seq.style.display = (op === "sequentialDate") ? "block" : "none";
+      btRows.shift.style.display = (op === "shiftDate") ? "block" : "none";
+    }
+
+    function getBatchCandidateRows(scope) {
+      let rows;
+      if (scope === "filtered") rows = getProcessedMainData().map(r => items.get(r.uid)).filter(Boolean);
+      else if (scope === "selected") rows = Array.from(selectedUids).map(uid => items.get(uid)).filter(Boolean);
+      else rows = Array.from(items.values());
+
+      // only activity types
+      rows = rows.filter(x => x && (x.type === "com" || x.type === "ins" || x.type === "del"));
+      return rows;
+    }
+
+    function batchFilter(rows) {
+      const wantCom = dom.btCom.checked;
+      const wantIns = dom.btIns.checked;
+      const wantDel = dom.btDel.checked;
+
+      const part = dom.btPart.value;
+
+      return rows.filter(x => {
+        if (x.type === "com" && !wantCom) return false;
+        if (x.type === "ins" && !wantIns) return false;
+        if (x.type === "del" && !wantDel) return false;
+        if (part !== "*" && (x.part || "") !== part) return false;
+        return true;
+      });
+    }
+
+    function batchOrder(rows, scope) {
+      if (scope === "filtered") {
+        // preserve current visible order
+        const visible = getProcessedMainData().map(r => r.uid);
+        const pos = new Map();
+        visible.forEach((u, i) => pos.set(u, i));
+        return stableSort(rows, (a, b) => (pos.get(a.uid) ?? 1e9) - (pos.get(b.uid) ?? 1e9));
+      }
+      // otherwise: part label, pg, uid
+      return stableSort(rows, (a, b) => {
+        const pa = String(a.part || ""), pb = String(b.part || "");
+        if (pa < pb) return -1;
+        if (pa > pb) return 1;
+        const ga = Number(a.pg) || 0, gb = Number(b.pg) || 0;
+        if (ga !== gb) return ga - gb;
+        return String(a.uid).localeCompare(String(b.uid));
+      });
+    }
+
+    function applyBatchTools() {
+      const scope = dom.btScope.value;
+      const op = dom.btOp.value;
+
+      let rows = getBatchCandidateRows(scope);
+      rows = batchFilter(rows);
+      rows = batchOrder(rows, scope);
+
+      if (rows.length === 0) {
+        alert("No matching items for that scope/type/part.");
+        return;
+      }
+
+      if (op === "setAuthor") {
+        const a = (dom.btAuthor.value || "").trim();
+        if (!a) { alert("Enter an author."); return; }
+        rows.forEach(x => x.auth = a);
+      }
+
+      if (op === "replaceAuthor") {
+        const from = (dom.btFromAuthor.value || "").trim().toLowerCase();
+        const to = (dom.btToAuthor.value || "").trim();
+        if (!from || !to) { alert("Enter both From and To."); return; }
+        rows.forEach(x => {
+          const cur = String(x.auth || "");
+          if (cur.toLowerCase() === from) x.auth = to;
+        });
+      }
+
+      if (op === "setDate") {
+        const iso = fromDatetimeLocal(dom.btDt.value);
+        if (!iso) { alert("Pick a date/time."); return; }
+        rows.forEach(x => x.date = iso);
+      }
+
+      if (op === "sequentialDate") {
+        const startIso = fromDatetimeLocal(dom.btSeqStart.value);
+        const step = Number(dom.btSeqStep.value);
+        if (!startIso || isNaN(step) || step < 0) { alert("Pick a start date/time and valid step."); return; }
+        let d = new Date(startIso);
+        rows.forEach(x => {
+          x.date = d.toISOString();
+          d.setMinutes(d.getMinutes() + step);
+        });
+      }
+
+      if (op === "shiftDate") {
+        const amt = Number(dom.btShiftAmt.value);
+        if (isNaN(amt) || amt === 0) { alert("Enter a non-zero shift amount."); return; }
+        const unit = dom.btShiftUnit.value;
+        let ms = amt * 60 * 1000;
+        if (unit === "hours") ms = amt * 60 * 60 * 1000;
+        if (unit === "days") ms = amt * 24 * 60 * 60 * 1000;
+
+        rows.forEach(x => {
+          if (!x.date) return;
+          const d = new Date(x.date);
+          if (isNaN(d.getTime())) return;
+          d.setTime(d.getTime() + ms);
+          x.date = d.toISOString();
+        });
+      }
+
+      renderMainTableBody();
+      if (currentTab === "parts") renderSidebarForPart(activePartPath);
+      closeBatchTools();
+      alert("Batch applied to " + rows.length + " item(s).");
+    }
+
+    // ---------------------------
+    // TAB SWITCHING
+    // ---------------------------
+    function switchTab(t) {
+      currentTab = t;
+      if (t === "comments" || t === "revisions" || t === "all") activityMode = t;
+
+      document.querySelectorAll(".view-section").forEach(e => e.style.display = "none");
+      document.querySelectorAll(".tab-btn").forEach(e => e.classList.remove("active"));
+
+      const btn = document.querySelector(`.tab-btn[data-tab="${t}"]`);
+      if (btn) btn.classList.add("active");
+
+      if (t === "forensics") {
+        dom.viewForensics.style.display = "block";
+        renderForensicsBody();
+      } else if (t === "relationships") {
+        dom.viewRel.style.display = "block";
+        renderRelBody();
+      } else if (t === "parts") {
+        dom.viewParts.style.display = "block";
+        if (!parts.has(activePartPath)) activePartPath = "word/document.xml";
+        renderPart(activePartPath);
+      } else if (t === "ghost") {
+        dom.viewGhost.style.display = "block";
+      } else if (t === "meta") {
+        dom.viewMeta.style.display = "block";
+      } else {
+        dom.viewTable.style.display = "block";
+        renderMainTableBody();
+      }
+    }
+
+    // ---------------------------
+    // LOAD / PARSE
+    // ---------------------------
+    async function parseWordParts(zip) {
+      parts.clear();
+
+      // Always include main document
+      const paths = new Set(["word/document.xml"]);
+
+      zip.forEach((path) => {
+        const p = path.toLowerCase();
+        if (p.match(/^word\/header\d+\.xml$/)) paths.add(path);
+        if (p.match(/^word\/footer\d+\.xml$/)) paths.add(path);
+        if (p === "word/footnotes.xml") paths.add(path);
+        if (p === "word/endnotes.xml") paths.add(path);
+      });
+
+      const list = Array.from(paths);
+      const tasks = list.map(async (path) => {
+        if (!zip.file(path)) return;
+        const s = await zip.file(path).async("string");
+        const doc = new DOMParser().parseFromString(s, "text/xml");
+        if (isParserError(doc)) throw new Error("Failed to parse " + path);
+        parts.set(path, { path, label: partLabel(path), xmlDoc: doc });
+        if (path === "word/document.xml") mainDocXml = doc;
+      });
+
+      await Promise.all(tasks);
+    }
+
+    function populatePartSelects() {
+      // Parts dropdown
+      dom.partSelect.textContent = "";
+      const opts = getPartOptions();
+      for (const p of opts) {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = partLabel(p);
+        dom.partSelect.appendChild(opt);
+      }
+      dom.partSelect.value = activePartPath;
+
+      // Batch part dropdown
+      dom.btPart.textContent = "";
+      const optAll = document.createElement("option");
+      optAll.value = "*";
+      optAll.textContent = "All parts";
+      dom.btPart.appendChild(optAll);
+      for (const p of opts) {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = partLabel(p);
+        dom.btPart.appendChild(opt);
+      }
+    }
+
+    function rebuildActivityFromAllParts() {
+      // Map comment anchors across all parts (first occurrence wins)
+      const anchorMap = new Map();
+
+      // revisions from parts
+      for (const [path, p] of parts.entries()) {
+        const ctx = mapContext(p.xmlDoc, path);
+
+        // capture comment anchors based on range start
+        for (const key of Object.keys(ctx.pg)) {
+          if (key.startsWith("c:")) {
+            const id = key.slice(2);
+            if (!anchorMap.has(id)) {
+              anchorMap.set(id, { part: path, pg: ctx.pg[key] ?? ((path === "word/document.xml") ? 1 : 0) });
+            }
+          }
+        }
+
+        mergeItems(extractRevisions(p.xmlDoc, path, ctx));
+      }
+
+      // comments text from comments.xml, but attach to anchor part
+      mergeItems(extractComments(commentsXmlDoc, anchorMap));
+
+      // nextChangeId should be beyond max across all parts
+      nextChangeId = computeMaxChangeIdAll() + 1;
+    }
+
+    async function loadFile(file) {
+      if (!file) return;
+      clearErrorLog();
+
+      originalFileName = file.name;
+      dom.status.style.color = "var(--secondary)";
+      dom.status.textContent = "Loading…";
+
+      try {
+        const buf = await file.arrayBuffer();
+        zipObj = await JSZip.loadAsync(buf);
+
+        // Remove protection (best effort)
+        try {
+          if (zipObj.file("word/settings.xml")) {
+            let s = await zipObj.file("word/settings.xml").async("string");
+            s = s
+              .replace(/<w:documentProtection\b[^>]*\/>/g, "")
+              .replace(/<w:writeProtection\b[^>]*\/>/g, "")
+              .replace(/<w:documentProtection\b[^>]*>[\s\S]*?<\/w:documentProtection>/g, "")
+              .replace(/<w:writeProtection\b[^>]*>[\s\S]*?<\/w:writeProtection>/g, "");
+            zipObj.file("word/settings.xml", s);
+          }
+        } catch {}
+
+        // Parse parts
+        await parseWordParts(zipObj);
+
+        // comments.xml
+        commentsXmlDoc = null;
+        if (zipObj.file("word/comments.xml")) {
+          const cStr = await zipObj.file("word/comments.xml").async("string");
+          commentsXmlDoc = new DOMParser().parseFromString(cStr, "text/xml");
+          if (isParserError(commentsXmlDoc)) throw new Error("Failed to parse word/comments.xml");
+        }
+
+        // core/app
+        coreXmlDoc = null; appXmlDoc = null;
+        if (zipObj.file("docProps/core.xml")) {
+          const s = await zipObj.file("docProps/core.xml").async("string");
+          coreXmlDoc = new DOMParser().parseFromString(s, "text/xml");
+          if (isParserError(coreXmlDoc)) coreXmlDoc = null;
+        }
+        if (zipObj.file("docProps/app.xml")) {
+          const s = await zipObj.file("docProps/app.xml").async("string");
+          appXmlDoc = new DOMParser().parseFromString(s, "text/xml");
+          if (isParserError(appXmlDoc)) appXmlDoc = null;
+        }
+
+        items.clear();
+        selectedUids.clear();
+
+        rebuildActivityFromAllParts();
+        populatePartSelects();
+        populateMeta();
+
+        // Build relationships after parts exist (so ref counting works)
+        await buildRelationships();
+
+        prepareGhost(mainDocXml);
+
+        dom.drop.style.display = "none";
+        dom.toolbar.style.display = "flex";
+        dom.tabs.style.display = "flex";
+        switchTab("all");
+
+        showStatusHtml("<span style='color:green'>Loaded successfully</span>", true);
+      } catch (e) {
+        console.error(e);
+        setStatus("Error loading file", false);
+        alert("Error: " + (e.message || e));
+      }
+    }
+
+    // ---------------------------
+    // EVENTS
+    // ---------------------------
+    function wireUi() {
+      dom.drop.addEventListener("click", () => dom.file.click());
+      dom.drop.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") dom.file.click();
+      });
+      dom.file.addEventListener("change", (e) => loadFile(e.target.files[0]));
+
+      ["dragenter", "dragover"].forEach(evt => {
+        dom.drop.addEventListener(evt, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dom.drop.classList.add("dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach(evt => {
+        dom.drop.addEventListener(evt, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dom.drop.classList.remove("dragover");
+        });
+      });
+      dom.drop.addEventListener("drop", (e) => {
+        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) loadFile(f);
+      });
+
+      dom.tabs.addEventListener("click", (e) => {
+        const btn = e.target.closest(".tab-btn");
+        if (!btn) return;
+        switchTab(btn.dataset.tab);
+      });
+
+      document.getElementById("btn-batch-tools").addEventListener("click", openBatchTools);
+      document.getElementById("btn-save").addEventListener("click", downloadWord);
+      document.getElementById("btn-copy").addEventListener("click", copyTable);
+      document.getElementById("btn-reset").addEventListener("click", () => location.reload());
+
+      document.getElementById("btn-scan").addEventListener("click", scanForensics);
+      document.getElementById("btn-wipe").addEventListener("click", wipeMetadata);
+
+      // Parts
+      dom.partSelect.addEventListener("change", () => setActivePart(dom.partSelect.value));
+      dom.partFilter.addEventListener("input", () => { if (currentTab === "parts") renderSidebarForPart(activePartPath); });
+      document.getElementById("btn-clear-selection").addEventListener("click", () => {
+        selectedUids.clear();
+        if (currentTab === "all" || currentTab === "comments" || currentTab === "revisions") renderMainTableBody();
+        alert("Selection cleared.");
+      });
+
+      // Ghost
+      dom.ghostRender.addEventListener("mouseup", handleGhostSelection);
+      dom.ghostRender.addEventListener("touchend", () => setTimeout(handleGhostSelection, 0));
+      document.addEventListener("selectionchange", () => {
+        if (dom.viewGhost.style.display === "block") handleGhostSelection();
+      });
+      document.getElementById("btn-inject").addEventListener("click", executeGhostEdit);
+
+      // Batch Tools modal
+      document.getElementById("btn-bt-cancel").addEventListener("click", closeBatchTools);
+      document.getElementById("btn-bt-apply").addEventListener("click", applyBatchTools);
+      dom.btModal.addEventListener("click", (e) => { if (e.target === dom.btModal) closeBatchTools(); });
+      dom.btOp.addEventListener("change", refreshBatchUi);
+    }
+
+    window.addEventListener("DOMContentLoaded", wireUi);
+  </script>
 </body>
 </html>
