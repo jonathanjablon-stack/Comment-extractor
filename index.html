@@ -5,313 +5,323 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Word Forensics Master</title>
 
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script defer src="jszip.min.js"></script>
+  <script defer src="xlsx.full.min.js"></script>
+  <script defer src="FileSaver.min.js"></script>
 
   <style>
-    :root {
-      --primary: #0d6efd;
-      --bg: #f8f9fa;
-      --dark: #212529;
-      --secondary: #6c757d;
-      --border: #dee2e6;
+    :root{
+      --primary:#0d6efd;
+      --bg:#f8f9fa;
+      --dark:#212529;
+      --secondary:#6c757d;
+      --border:#dee2e6;
+    }
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      margin:0;
+      padding:15px;
+      padding-bottom:55px;
+      background:var(--bg);
+      color:#333;
+    }
+    .container{
+      background:#fff;
+      padding:15px;
+      border-radius:12px;
+      box-shadow:0 4px 12px rgba(0,0,0,.08);
+      overflow:hidden;
+    }
+    h1{
+      margin:0 0 15px 0;
+      font-size:18px;
+      text-align:center;
+      color:var(--dark);
+      font-weight:800;
     }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      padding: 15px;
-      background-color: var(--bg);
-      color: #333;
-      margin: 0;
-      padding-bottom: 50px;
+    .drop-zone{
+      border:2px dashed #cbd5e0;
+      padding:40px 20px;
+      text-align:center;
+      color:#6c757d;
+      border-radius:8px;
+      background:#fff;
+      cursor:pointer;
+      margin-bottom:15px;
+      transition:.2s;
+      user-select:none;
+    }
+    .drop-zone.dragover{ background:#eef7ff; border-color:var(--primary); color:var(--primary); }
+
+    #status{
+      text-align:center;
+      font-size:12px;
+      margin-bottom:10px;
+      font-weight:800;
+      color:var(--secondary);
+      min-height:18px;
+    }
+    #error-log{
+      display:none;
+      background:#ffe6e6;
+      color:#721c24;
+      padding:10px;
+      font-size:11px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      margin-top:10px;
+      border:1px solid #f5c6cb;
+      white-space:pre-wrap;
+      border-radius:6px;
     }
 
-    .container {
-      background: white;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      overflow: hidden;
+    .tabs{
+      display:none;
+      overflow-x:auto;
+      white-space:nowrap;
+      margin-bottom:10px;
+      border-bottom:1px solid var(--border);
+      -webkit-overflow-scrolling:touch;
+      padding-bottom:2px;
+    }
+    .tab-btn{
+      display:inline-block;
+      padding:10px 15px;
+      background:none;
+      border:none;
+      font-size:13px;
+      font-weight:700;
+      color:#6c757d;
+      border-bottom:3px solid transparent;
+      cursor:pointer;
+    }
+    .tab-btn.active{ color:var(--primary); border-bottom-color:var(--primary); }
+
+    .toolbar{
+      display:none;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+      background:#e9ecef;
+      padding:10px;
+      border-radius:8px;
+      align-items:center;
+    }
+    .btn{
+      border:none;
+      padding:11px 12px;
+      font-size:12px;
+      font-weight:800;
+      border-radius:6px;
+      color:#fff;
+      cursor:pointer;
+      text-align:center;
+      white-space:nowrap;
+      flex:1 1 140px;
+    }
+    .btn:disabled{ opacity:.5; cursor:not-allowed; }
+    .btn-primary{ background:var(--primary); }
+    .btn-success{ background:#198754; }
+    .btn-warning{ background:#ffc107; color:#000; }
+    .btn-danger{ background:#dc3545; }
+    .btn-secondary{ background:#6c757d; }
+
+    .view-section{ display:none; animation:fadeIn .2s; }
+    @keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+
+    .table-wrap{
+      overflow:auto;
+      border:1px solid var(--border);
+      border-radius:6px;
+      max-height:62vh;
+      background:#fff;
+    }
+    table{ width:100%; min-width:920px; border-collapse:collapse; font-size:12px; }
+    th{
+      background:var(--dark);
+      color:#fff;
+      position:sticky;
+      top:0;
+      z-index:10;
+      padding:10px;
+      text-align:left;
+      white-space:nowrap;
+      cursor:pointer;
+    }
+    th:hover{ background:#495057; }
+    td{ padding:10px; border-bottom:1px solid #eee; vertical-align:top; }
+    th.sort-asc::after{ content:" ▲"; opacity:.85; }
+    th.sort-desc::after{ content:" ▼"; opacity:.85; }
+
+    .filter-row th{
+      background:#e9ecef;
+      padding:5px;
+      cursor:default;
+      position:sticky;
+      top:37px;
+      z-index:9;
+    }
+    .filter-input{
+      width:100%;
+      padding:5px;
+      border:1px solid #ced4da;
+      border-radius:4px;
+      font-size:11px;
+      box-sizing:border-box;
+      background:#fff;
     }
 
-    h1 {
-      margin: 0 0 15px 0;
-      font-size: 18px;
-      text-align: center;
-      color: var(--dark);
-      font-weight: 700;
-    }
+    .editable{ background:#fff8e1; border:1px solid transparent; }
+    .editable:focus{ outline:2px solid var(--primary); background:#fff; border-color:#ccc; }
 
-    .drop-zone {
-      border: 2px dashed #cbd5e0;
-      padding: 40px 20px;
-      text-align: center;
-      color: #6c757d;
-      border-radius: 8px;
-      background: #fff;
-      cursor: pointer;
-      margin-bottom: 15px;
-      transition: 0.2s;
-      user-select: none;
+    .cell-input{
+      width:100%;
+      box-sizing:border-box;
+      padding:6px;
+      border:1px solid #ced4da;
+      border-radius:4px;
+      font-size:11px;
+      background:#fff;
     }
-    .drop-zone:active { background: #eef7ff; border-color: var(--primary); color: var(--primary); }
-    .drop-zone.dragover { background: #eef7ff; border-color: var(--primary); color: var(--primary); }
+    .cell-input.editish{ background:#fff8e1; }
 
-    .tabs {
-      display: none;
-      overflow-x: auto;
-      white-space: nowrap;
-      margin-bottom: 15px;
-      border-bottom: 1px solid var(--border);
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 2px;
-      gap: 4px;
+    .badge{
+      padding:3px 6px;
+      border-radius:3px;
+      color:#fff;
+      font-size:10px;
+      display:inline-block;
+      min-width:44px;
+      text-align:center;
     }
-    .tab-btn {
-      display: inline-block;
-      padding: 10px 15px;
-      background: none;
-      border: none;
-      font-size: 13px;
-      font-weight: 600;
-      color: #6c757d;
-      border-bottom: 3px solid transparent;
-      cursor: pointer;
-    }
-    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .bg-com{ background:#17a2b8; }
+    .bg-ins{ background:#28a745; }
+    .bg-del{ background:#dc3545; }
+    .bg-hi{ background:#dc3545; }
+    .bg-med{ background:#ffc107; color:#000; }
+    .bg-lo{ background:#198754; }
 
-    .toolbar {
-      display: none;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 15px;
-      background: #e9ecef;
-      padding: 10px;
-      border-radius: 8px;
+    /* Parts view */
+    .doc-topbar{
+      display:flex;
+      gap:8px;
+      padding:10px;
+      background:#f1f3f5;
+      border:1px solid #ccc;
+      border-bottom:none;
+      border-radius:6px 6px 0 0;
+      align-items:center;
+      flex-wrap:wrap;
     }
-    .btn {
-      flex: 1 1 40%;
-      border: none;
-      padding: 12px;
-      font-size: 12px;
-      font-weight: 600;
-      border-radius: 6px;
-      color: white;
-      cursor: pointer;
-      text-align: center;
-      white-space: nowrap;
+    .doc-topbar select, .doc-topbar input{
+      padding:8px;
+      border:1px solid #ccc;
+      border-radius:6px;
+      font-size:12px;
+      background:#fff;
+      flex:1 1 240px;
+      min-width:170px;
     }
-    .btn-primary { background: var(--primary); }
-    .btn-success { background: #198754; }
-    .btn-warning { background: #ffc107; color: #000; }
-    .btn-danger { background: #dc3545; }
-    .btn-secondary { background: #6c757d; }
+    .doc-topbar .mini{
+      width:auto;
+      flex:0 0 auto;
+      padding:8px 10px;
+      border-radius:6px;
+      border:none;
+      font-weight:900;
+      cursor:pointer;
+      background:#6c757d;
+      color:#fff;
+    }
+    .doc-view-wrapper{
+      display:flex;
+      flex-direction:column;
+      height:66vh;
+      border:1px solid #ccc;
+      border-radius:0 0 6px 6px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .doc-content{
+      flex:1;
+      padding:15px;
+      overflow-y:auto;
+      background:#fff;
+      font-family:'Times New Roman',serif;
+      font-size:14px;
+      line-height:1.6;
+    }
+    .doc-sidebar{
+      height:170px;
+      overflow-y:auto;
+      background:#f8f9fa;
+      border-top:1px solid #ccc;
+      padding:10px;
+    }
+    .doc-ins{ background:#d4edda; border-bottom:2px solid #28a745; cursor:pointer; text-decoration:none; }
+    .doc-del{ background:#f8d7da; text-decoration:line-through; color:#721c24; cursor:pointer; }
+    .doc-com{ background:#fff3cd; border-bottom:2px solid #ffc107; cursor:pointer; }
+    .comment-card{
+      background:#fff;
+      border:1px solid #ddd;
+      padding:8px;
+      margin-bottom:8px;
+      border-radius:4px;
+      font-size:11px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .active-card{ border-left:4px solid var(--primary); background:#eef7ff; }
 
-    .view-section { display: none; animation: fadeIn 0.2s; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    /* Ghost */
+    .ghost-render{
+      height:35vh;
+      overflow-y:auto;
+      padding:15px;
+      border:1px solid #ccc;
+      margin-bottom:10px;
+      font-family:serif;
+      background:#fff;
+      border-radius:4px;
+    }
+    .ghost-render p{ padding:8px 6px; border-bottom:1px solid #eee; margin:0; }
+    .ghost-toolbar{ background:#f8f9fa; padding:15px; border-radius:6px; border:1px solid #ddd; display:none; }
+    .row-inline{ display:flex; gap:8px; }
+    .row-inline > *{ flex:1; }
+    .tiny{ font-size:11px; opacity:.8; margin-top:4px; }
 
-    .table-wrap {
-      overflow: auto;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      max-height: 60vh;
-      background: #fff;
-    }
-    table { width: 100%; min-width: 860px; border-collapse: collapse; font-size: 12px; }
-    th {
-      background-color: var(--dark);
-      color: white;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      padding: 10px;
-      text-align: left;
-      white-space: nowrap;
-      cursor: pointer;
-    }
-    th:hover { background-color: #495057; }
-    td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+    .flash-target{ animation:flash 2s linear 1; background:yellow!important; }
+    @keyframes flash{ 0%{background:yellow} 50%{background:orange} 100%{background:yellow} }
 
-    th.sort-asc::after { content: " ▲"; opacity: 0.85; }
-    th.sort-desc::after { content: " ▼"; opacity: 0.85; }
-
-    .filter-row th {
-      background-color: #e9ecef;
-      padding: 5px;
-      cursor: default;
-      position: sticky;
-      top: 37px;
-      z-index: 9;
+    /* Modal */
+    .modal{
+      display:none;
+      position:fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      background:rgba(0,0,0,.5);
+      z-index:999;
     }
-    .filter-input {
-      width: 100%;
-      padding: 5px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      font-size: 11px;
-      box-sizing: border-box;
-      background: #fff;
+    .modal-content{
+      background:#fff;
+      margin:10vh auto;
+      padding:18px;
+      width:92%;
+      max-width:520px;
+      border-radius:10px;
+      box-shadow:0 5px 15px rgba(0,0,0,.3);
     }
-
-    .editable { background-color: #fff8e1; border: 1px solid transparent; }
-    .editable:focus { outline: 2px solid var(--primary); background: white; border-color: #ccc; }
-
-    .cell-input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 6px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      font-size: 11px;
-      background: #fff;
+    .form-row{ margin-bottom:12px; }
+    .form-row label{ display:block; margin-bottom:6px; font-size:12px; font-weight:900; }
+    input,select,textarea{
+      width:100%;
+      padding:10px;
+      box-sizing:border-box;
+      border:1px solid #ccc;
+      border-radius:6px;
+      font-size:12px;
+      background:#fff;
     }
-    .cell-input.editish { background: #fff8e1; }
-
-    .doc-topbar {
-      display: flex;
-      gap: 8px;
-      padding: 10px;
-      background: #f1f3f5;
-      border: 1px solid #ccc;
-      border-bottom: none;
-      border-radius: 6px 6px 0 0;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .doc-topbar select, .doc-topbar input {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 12px;
-      background: #fff;
-      flex: 1 1 220px;
-      min-width: 160px;
-    }
-    .doc-topbar .mini {
-      width: auto;
-      flex: 0 0 auto;
-      padding: 8px 10px;
-      border-radius: 6px;
-      border: none;
-      font-weight: 700;
-      cursor: pointer;
-      background: #6c757d;
-      color: white;
-    }
-
-    .doc-view-wrapper {
-      display: flex;
-      flex-direction: column;
-      height: 65vh;
-      border: 1px solid #ccc;
-      border-radius: 0 0 6px 6px;
-      overflow: hidden;
-      background: #fff;
-    }
-    .doc-content {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      background: #fff;
-      font-family: 'Times New Roman', serif;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    .doc-sidebar {
-      height: 170px;
-      overflow-y: auto;
-      background: #f8f9fa;
-      border-top: 1px solid #ccc;
-      padding: 10px;
-    }
-
-    .doc-ins { background: #d4edda; border-bottom: 2px solid #28a745; cursor: pointer; text-decoration: none; }
-    .doc-del { background: #f8d7da; text-decoration: line-through; color: #721c24; cursor: pointer; }
-    .doc-com { background: #fff3cd; border-bottom: 2px solid #ffc107; cursor: pointer; }
-
-    .comment-card {
-      background: white;
-      border: 1px solid #ddd;
-      padding: 8px;
-      margin-bottom: 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .active-card { border-left: 4px solid var(--primary); background: #eef7ff; }
-
-    .ghost-render {
-      height: 35vh;
-      overflow-y: auto;
-      padding: 15px;
-      border: 1px solid #ccc;
-      margin-bottom: 10px;
-      font-family: serif;
-      background: white;
-      border-radius: 4px;
-    }
-    .ghost-render p { padding: 8px 6px; border-bottom: 1px solid #eee; margin: 0; }
-    .ghost-toolbar { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd; display: none; }
-    ::selection { background: #b3d7ff; }
-
-    .badge {
-      padding: 3px 6px;
-      border-radius: 3px;
-      color: white;
-      font-size: 10px;
-      display: inline-block;
-      min-width: 44px;
-      text-align: center;
-    }
-    .bg-com { background: #17a2b8; }
-    .bg-ins { background: #28a745; }
-    .bg-del { background: #dc3545; }
-    .bg-hi { background: #dc3545; }
-    .bg-med { background: #ffc107; color: #000; }
-    .bg-lo { background: #198754; }
-
-    #error-log {
-      display: none;
-      background: #ffe6e6;
-      color: #721c24;
-      padding: 10px;
-      font-size: 11px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      margin-top: 10px;
-      border: 1px solid #f5c6cb;
-      white-space: pre-wrap;
-      border-radius: 6px;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 999;
-    }
-    .modal-content {
-      background: white;
-      margin: 10vh auto;
-      padding: 18px;
-      width: 92%;
-      max-width: 520px;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-    .form-row { margin-bottom: 12px; }
-    .form-row label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 800; }
-    input, select, textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 12px; background: #fff; }
-
-    .row-inline { display: flex; gap: 8px; }
-    .row-inline > * { flex: 1; }
-    .tiny { font-size: 11px; opacity: 0.8; margin-top: 4px; }
-
-    .flash-target { animation: flash 2s linear 1; background: yellow !important; }
-    @keyframes flash { 0% { background: yellow; } 50% { background: orange; } 100% { background: yellow; } }
   </style>
 </head>
 
@@ -324,7 +334,7 @@
     </div>
     <input type="file" id="file-input" accept=".docx" style="display:none;" />
 
-    <div id="status" style="text-align:center; font-size:12px; margin-bottom:10px; font-weight:bold; color: var(--secondary);"></div>
+    <div id="status"></div>
     <div id="error-log"></div>
 
     <div class="tabs" id="tabs">
@@ -342,10 +352,11 @@
       <button class="btn btn-warning" id="btn-batch-tools">Batch Tools</button>
       <button class="btn btn-primary" id="btn-save">Save Docx</button>
       <button class="btn btn-secondary" id="btn-copy">Copy Table</button>
+      <button class="btn btn-success" id="btn-export">Export XLSX</button>
       <button class="btn btn-danger" id="btn-reset">Reset</button>
     </div>
 
-    <!-- Main Activity Table -->
+    <!-- Activity table -->
     <div id="view-table" class="view-section table-wrap">
       <table id="data-table">
         <thead id="data-head"></thead>
@@ -353,7 +364,7 @@
       </table>
     </div>
 
-    <!-- Parts View -->
+    <!-- Parts -->
     <div id="view-parts" class="view-section">
       <div class="doc-topbar">
         <select id="part-select" aria-label="Part selector"></select>
@@ -363,6 +374,9 @@
       <div class="doc-view-wrapper">
         <div class="doc-content" id="doc-content"></div>
         <div class="doc-sidebar" id="doc-sidebar"></div>
+      </div>
+      <div class="tiny" style="margin-top:8px;">
+        Parts load on demand to avoid long startup freezes. Your export buttons still work here: they export the sidebar list for this part.
       </div>
     </div>
 
@@ -377,7 +391,7 @@
     <!-- Forensics -->
     <div id="view-forensics" class="view-section table-wrap">
       <div style="padding:15px; text-align:center; background:#f1f3f5;">
-        <button class="btn btn-primary" style="width:auto; padding:10px 20px;" id="btn-scan">
+        <button class="btn btn-primary" style="width:auto; padding:10px 20px; flex:0 0 auto;" id="btn-scan">
           🔍 Click to Run Deep Scan
         </button>
       </div>
@@ -399,24 +413,26 @@
           <input type="text" id="ghost-auth" placeholder="Author">
           <input type="datetime-local" id="ghost-date">
         </div>
-        <button class="btn btn-warning" style="width:100%; margin-top:10px;" id="btn-inject">Inject Revision</button>
+        <button class="btn btn-warning" style="width:100%; margin-top:10px; flex:1;" id="btn-inject">Inject Revision</button>
       </div>
       <div style="text-align:center; color:#999; padding:20px; font-size:12px;" id="ghost-hint">
         Highlight text above to edit
       </div>
+      <div class="tiny" style="margin-top:8px;">Export/Copy is disabled on this tab (there’s no table).</div>
     </div>
 
     <!-- Metadata -->
     <div id="view-meta" class="view-section">
       <div style="padding:15px;">
-        <h3>Core Properties</h3>
+        <h3 style="margin:0 0 10px 0;">Core Properties</h3>
         <div class="form-row"><label>Author</label><input type="text" id="meta-creator"></div>
         <div class="form-row"><label>Modified By</label><input type="text" id="meta-lastMod"></div>
-        <h3>App Stats</h3>
+        <h3 style="margin:14px 0 10px 0;">App Stats</h3>
         <div class="form-row"><label>Total Minutes</label><input type="number" id="meta-time"></div>
         <div class="form-row"><label>Revisions</label><input type="number" id="meta-revision"></div>
-        <button class="btn btn-danger" style="width:100%; margin-top:20px;" id="btn-wipe">🧽 Wipe All Metadata</button>
+        <button class="btn btn-danger" style="width:100%; margin-top:10px; flex:1;" id="btn-wipe">🧽 Wipe All Metadata</button>
       </div>
+      <div class="tiny" style="margin-top:8px;">Export/Copy is disabled on this tab (there’s no table).</div>
     </div>
   </div>
 
@@ -432,7 +448,7 @@
           <option value="filtered">Filtered (current table)</option>
           <option value="selected">Selected (checkboxes)</option>
         </select>
-        <div class="tiny">Tip: “Filtered” respects your current Comments/Changes/All mode + filters.</div>
+        <div class="tiny">“Filtered” respects your current Comments/Changes/All mode + filters.</div>
       </div>
 
       <div class="form-row">
@@ -445,9 +461,9 @@
       <div class="form-row">
         <label>Types</label>
         <div class="row-inline">
-          <label style="font-weight:700;"><input type="checkbox" id="bt-com" checked> Comments</label>
-          <label style="font-weight:700;"><input type="checkbox" id="bt-ins" checked> Insertions</label>
-          <label style="font-weight:700;"><input type="checkbox" id="bt-del" checked> Deletions</label>
+          <label style="font-weight:800;"><input type="checkbox" id="bt-com" checked> Comments</label>
+          <label style="font-weight:800;"><input type="checkbox" id="bt-ins" checked> Insertions</label>
+          <label style="font-weight:800;"><input type="checkbox" id="bt-del" checked> Deletions</label>
         </div>
       </div>
 
@@ -503,18 +519,19 @@
       </div>
 
       <div style="text-align:right; display:flex; gap:10px; margin-top:10px;">
-        <button class="btn btn-secondary" id="btn-bt-cancel">Cancel</button>
-        <button class="btn btn-warning" id="btn-bt-apply">Apply</button>
+        <button class="btn btn-secondary" id="btn-bt-cancel" style="flex:1;">Cancel</button>
+        <button class="btn btn-warning" id="btn-bt-apply" style="flex:1;">Apply</button>
       </div>
     </div>
   </div>
 
   <script>
+    // ------- Error logging -------
     window.onerror = function (msg, url, line, col, err) {
       const d = document.getElementById("error-log");
       d.style.display = "block";
       const detail = err && err.stack ? err.stack : String(msg);
-      d.innerText += `ERR: ${detail} (Line ${line}${col ? ":" + col : ""})\n`;
+      d.innerText += `ERR: ${detail} (Line ${line}${col ? ":" + col : ""})\\n`;
       return false;
     };
 
@@ -523,34 +540,42 @@
 
     let zipObj = null;
     let originalFileName = "";
-    let mainDocXml = null, coreXmlDoc = null, appXmlDoc = null, commentsXmlDoc = null;
 
-    // parts: path -> { path, label, xmlDoc }
-    const parts = new Map();
+    // Core docs
+    let mainDocXml = null;
+    let coreXmlDoc = null;
+    let appXmlDoc = null;
+    let commentsXmlDoc = null;
+
+    // parts index: path -> { path, label, loaded, xmlDoc }
+    const partsIndex = new Map();
     let activePartPath = "word/document.xml";
 
     // Activity items: uid -> { uid,id,type,pg,part,txt,auth,date }
     const items = new Map();
     const selectedUids = new Set();
 
-    // Relationships data
+    // relationships
+    let relationshipsBuilt = false;
     let relationshipsData = [];
+
+    // forensics
+    let forensicsData = [];
+
+    // ghost
+    let ghostReady = false;
+    let ghostParagraphs = [];
+    let ghostSelIdx = -1;
+    let nextChangeId = 1;
 
     let currentTab = "all";
     let activityMode = "all";
 
     const tableState = {
       main: { sortCol: "pg", dir: 1, filters: {} },
-      forensics: { sortCol: "path", dir: 1, filters: {} },
       rel: { sortCol: "riskRank", dir: 1, filters: {} },
+      forensics: { sortCol: "path", dir: 1, filters: {} },
     };
-
-    let forensicsData = [];
-
-    // Ghost
-    let ghostParagraphs = [];
-    let ghostSelIdx = -1;
-    let nextChangeId = 1;
 
     const dom = {
       drop: document.getElementById("drop-zone"),
@@ -560,6 +585,9 @@
 
       tabs: document.getElementById("tabs"),
       toolbar: document.getElementById("toolbar"),
+
+      btnCopy: document.getElementById("btn-copy"),
+      btnExport: document.getElementById("btn-export"),
 
       viewTable: document.getElementById("view-table"),
       tableHead: document.getElementById("data-head"),
@@ -623,39 +651,42 @@
       dom.status.textContent = text;
       dom.status.style.color = ok ? "green" : "crimson";
     }
-    function showStatusHtml(html, ok = true) {
-      dom.status.innerHTML = html;
-      dom.status.style.color = ok ? "green" : "crimson";
-    }
+
     function clearErrorLog() {
       dom.error.style.display = "none";
       dom.error.textContent = "";
     }
+
     function isParserError(xmldoc) {
       const pe = xmldoc.getElementsByTagName("parsererror");
       return pe && pe.length > 0;
     }
+
     function qAll(node, localName) {
       if (!node) return [];
       if (node.getElementsByTagNameNS) return Array.from(node.getElementsByTagNameNS("*", localName));
       return Array.from(node.getElementsByTagName("w:" + localName));
     }
+
     function attrW(node, name) {
       if (!node) return "";
       return node.getAttribute("w:" + name) || node.getAttribute(name) || "";
     }
+
     function setAttrW(node, name, value) {
       if (!node) return;
       try { node.setAttributeNS(W_NS, "w:" + name, value); }
       catch { node.setAttribute("w:" + name, value); }
     }
+
     function setAttrXmlSpacePreserve(node, text) {
       if (!node) return;
-      if (typeof text === "string" && (/^\s/.test(text) || /\s$/.test(text) || /\s{2,}/.test(text))) {
+      if (typeof text === "string" && (/^\\s/.test(text) || /\\s$/.test(text) || /\\s{2,}/.test(text))) {
         try { node.setAttributeNS(XML_NS, "xml:space", "preserve"); }
         catch { node.setAttribute("xml:space", "preserve"); }
       }
     }
+
     function toDatetimeLocal(iso) {
       if (!iso) return "";
       try {
@@ -665,16 +696,36 @@
         return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
       } catch { return ""; }
     }
+
     function fromDatetimeLocal(val) {
       if (!val) return "";
       const d = new Date(val);
       if (isNaN(d.getTime())) return "";
       return d.toISOString();
     }
+
     function safeSnippet(s, n = 60) {
       const t = String(s || "");
       return t.length > n ? t.slice(0, n) + "…" : t;
     }
+
+    function stableSort(arr, cmp) {
+      return arr.map((v, i) => ({ v, i }))
+        .sort((a, b) => cmp(a.v, b.v) || (a.i - b.i))
+        .map(x => x.v);
+    }
+
+    function partLabel(path) {
+      if (path === "word/document.xml") return "Main Document";
+      const mH = (path || "").match(/^word\\/header(\\d+)\\.xml$/i);
+      if (mH) return "Header " + mH[1];
+      const mF = (path || "").match(/^word\\/footer(\\d+)\\.xml$/i);
+      if (mF) return "Footer " + mF[1];
+      if (path === "word/footnotes.xml") return "Footnotes";
+      if (path === "word/endnotes.xml") return "Endnotes";
+      return (path || "").split("/").pop() || path || "";
+    }
+
     function normalizePath(baseDir, target) {
       let t = target || "";
       if (t.startsWith("/")) t = t.slice(1);
@@ -688,25 +739,89 @@
       }
       return out.join("/");
     }
-    function partLabel(path) {
-      if (path === "word/document.xml") return "Main Document";
-      const mH = path.match(/^word\/header(\d+)\.xml$/i);
-      if (mH) return "Header " + mH[1];
-      const mF = path.match(/^word\/footer(\d+)\.xml$/i);
-      if (mF) return "Footer " + mF[1];
-      if (path === "word/footnotes.xml") return "Footnotes";
-      if (path === "word/endnotes.xml") return "Endnotes";
-      return path.split("/").pop() || path;
+
+    function yieldToUI() {
+      return new Promise(res => setTimeout(res, 0));
     }
 
-    function stableSort(arr, cmp) {
-      return arr.map((v, i) => ({ v, i }))
-        .sort((a, b) => cmp(a.v, b.v) || (a.i - b.i))
-        .map(x => x.v);
+    // ---------------------------
+    // Build parts INDEX (no parsing, fast)
+    // ---------------------------
+    function buildPartsIndex(zip) {
+      partsIndex.clear();
+      partsIndex.set("word/document.xml", { path:"word/document.xml", label:"Main Document", loaded:false, xmlDoc:null });
+
+      zip.forEach((path) => {
+        const p = path.toLowerCase();
+        if (p.match(/^word\\/header\\d+\\.xml$/) ||
+            p.match(/^word\\/footer\\d+\\.xml$/) ||
+            p === "word/footnotes.xml" ||
+            p === "word/endnotes.xml") {
+          partsIndex.set(path, { path, label: partLabel(path), loaded:false, xmlDoc:null });
+        }
+      });
     }
 
+    function getPartOptions() {
+      const arr = Array.from(partsIndex.keys());
+      arr.sort((a,b) => partLabel(a).localeCompare(partLabel(b)));
+      const idx = arr.indexOf("word/document.xml");
+      if (idx > 0) { arr.splice(idx,1); arr.unshift("word/document.xml"); }
+      return arr;
+    }
+
+    function populatePartSelects() {
+      // Parts dropdown
+      dom.partSelect.textContent = "";
+      const opts = getPartOptions();
+      for (const p of opts) {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = partLabel(p);
+        dom.partSelect.appendChild(opt);
+      }
+      dom.partSelect.value = activePartPath;
+
+      // Batch part dropdown
+      dom.btPart.textContent = "";
+      const optAll = document.createElement("option");
+      optAll.value = "*";
+      optAll.textContent = "All parts";
+      dom.btPart.appendChild(optAll);
+      for (const p of opts) {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = partLabel(p);
+        dom.btPart.appendChild(opt);
+      }
+    }
+
+    async function ensurePartLoaded(path) {
+      const meta = partsIndex.get(path);
+      if (!meta || meta.loaded) return meta;
+      if (!zipObj || !zipObj.file(path)) throw new Error("Missing part: " + path);
+
+      setStatus("Loading part: " + partLabel(path) + "…", true);
+      const s = await zipObj.file(path).async("string");
+      const doc = new DOMParser().parseFromString(s, "text/xml");
+      if (isParserError(doc)) throw new Error("Failed to parse " + path);
+
+      meta.loaded = true;
+      meta.xmlDoc = doc;
+      partsIndex.set(path, meta);
+      if (path === "word/document.xml") mainDocXml = doc;
+
+      // Rebuild revision items and refresh anchors now that a new part exists
+      rebuildRevisionsAndAnchorsFromLoadedParts();
+
+      setStatus("Ready.", true);
+      return meta;
+    }
+
+    // ---------------------------
+    // Activity extraction
+    // ---------------------------
     function mapContext(xml, partPath) {
-      // Page numbers only meaningful for main document; other parts get pg=0.
       let pg = (partPath === "word/document.xml") ? 1 : 0;
       const pgMap = {};
       const all = xml.getElementsByTagName("*");
@@ -723,34 +838,6 @@
         }
       }
       return { pg: pgMap };
-    }
-
-    function extractComments(commentsXml, anchorMap) {
-      if (!commentsXml) return [];
-      const arr = [];
-      const nodes = qAll(commentsXml, "comment");
-      for (const n of nodes) {
-        const id = attrW(n, "id");
-        let txt = "";
-        const ps = qAll(n, "p");
-        for (let j = 0; j < ps.length; j++) {
-          if (j > 0) txt += "\n";
-          txt += ps[j].textContent || "";
-        }
-
-        const anchor = anchorMap.get(id) || null;
-        arr.push({
-          uid: "c" + id,
-          id,
-          type: "com",
-          pg: anchor?.pg ?? 0,
-          part: anchor?.part ?? "",
-          txt,
-          auth: attrW(n, "author") || "",
-          date: attrW(n, "date") || "",
-        });
-      }
-      return arr;
     }
 
     function extractRevisions(partXml, partPath, ctx) {
@@ -779,18 +866,115 @@
       return arr;
     }
 
+    function extractComments(commentsXml, anchorMap) {
+      if (!commentsXml) return [];
+      const arr = [];
+      const nodes = qAll(commentsXml, "comment");
+      for (const n of nodes) {
+        const id = attrW(n, "id");
+        let txt = "";
+        const ps = qAll(n, "p");
+        for (let j = 0; j < ps.length; j++) {
+          if (j > 0) txt += "\\n";
+          txt += ps[j].textContent || "";
+        }
+        const anchor = anchorMap.get(id) || null;
+
+        arr.push({
+          uid: "c" + id,
+          id,
+          type: "com",
+          pg: anchor?.pg ?? 0,
+          part: anchor?.part ?? "",
+          txt,
+          auth: attrW(n, "author") || "",
+          date: attrW(n, "date") || "",
+        });
+      }
+      return arr;
+    }
+
     function mergeItems(freshList) {
       for (const fresh of freshList) {
         const existing = items.get(fresh.uid);
         if (existing) {
           existing.pg = fresh.pg;
-          if (!existing.type) existing.type = fresh.type;
-          if (!existing.id) existing.id = fresh.id;
-          if (!existing.part) existing.part = fresh.part;
+          existing.part = fresh.part;
+          if (fresh.txt != null) existing.txt = fresh.txt;
+          if (fresh.auth != null) existing.auth = fresh.auth;
+          if (fresh.date != null) existing.date = fresh.date;
         } else {
           items.set(fresh.uid, fresh);
         }
       }
+    }
+
+    function rebuildRevisionsAndAnchorsFromLoadedParts() {
+      // remove old revisions
+      for (const [uid, it] of items.entries()) {
+        if (it.type === "ins" || it.type === "del") items.delete(uid);
+      }
+
+      const anchorMap = new Map();
+      let maxChange = 0;
+
+      for (const meta of partsIndex.values()) {
+        if (!meta.loaded || !meta.xmlDoc) continue;
+        const ctx = mapContext(meta.xmlDoc, meta.path);
+
+        // anchors
+        for (const key of Object.keys(ctx.pg)) {
+          if (key.startsWith("c:")) {
+            const id = key.slice(2);
+            if (!anchorMap.has(id)) anchorMap.set(id, { part: meta.path, pg: ctx.pg[key] ?? 0 });
+          }
+        }
+
+        // revisions
+        const revs = extractRevisions(meta.xmlDoc, meta.path, ctx);
+        for (const r of revs) {
+          const n = parseInt(r.id, 10);
+          if (!isNaN(n)) maxChange = Math.max(maxChange, n);
+        }
+        mergeItems(revs);
+      }
+
+      // update comment anchors (do not overwrite user edits to txt/auth/date)
+      for (const it of items.values()) {
+        if (it.type !== "com") continue;
+        const a = anchorMap.get(it.id);
+        if (a) { it.part = a.part; it.pg = a.pg; }
+      }
+
+      nextChangeId = maxChange + 1;
+    }
+
+    function buildInitialActivityFast() {
+      items.clear();
+      selectedUids.clear();
+
+      // Build anchors + revisions ONLY from main doc (fast)
+      const anchorMap = new Map();
+
+      if (mainDocXml) {
+        const ctx = mapContext(mainDocXml, "word/document.xml");
+        for (const key of Object.keys(ctx.pg)) {
+          if (key.startsWith("c:")) {
+            anchorMap.set(key.slice(2), { part:"word/document.xml", pg: ctx.pg[key] ?? 1 });
+          }
+        }
+        mergeItems(extractRevisions(mainDocXml, "word/document.xml", ctx));
+
+        // compute nextChangeId from main doc only
+        let max = 0;
+        for (const el of [...qAll(mainDocXml, "ins"), ...qAll(mainDocXml, "del")]) {
+          const id = parseInt(attrW(el, "id"), 10);
+          if (!isNaN(id)) max = Math.max(max, id);
+        }
+        nextChangeId = max + 1;
+      }
+
+      mergeItems(extractComments(commentsXmlDoc, anchorMap));
     }
 
     function getItemsForMode(mode) {
@@ -800,26 +984,8 @@
       return all;
     }
 
-    function getPartOptions() {
-      const arr = Array.from(parts.keys());
-      arr.sort((a, b) => {
-        const la = partLabel(a).toLowerCase();
-        const lb = partLabel(b).toLowerCase();
-        if (la < lb) return -1;
-        if (la > lb) return 1;
-        return 0;
-      });
-      // Always keep main doc first
-      const mainIdx = arr.indexOf("word/document.xml");
-      if (mainIdx > 0) {
-        arr.splice(mainIdx, 1);
-        arr.unshift("word/document.xml");
-      }
-      return arr;
-    }
-
     // ---------------------------
-    // MAIN TABLE (Activity)
+    // Activity table UI
     // ---------------------------
     const MAIN_COLS = [
       { k: "_sel", label: "Sel", width: "60px" },
@@ -831,15 +997,13 @@
       { k: "date", label: "Date", width: "190px" },
     ];
 
-    const tableBuilt = { main: false, forensics: false, rel: false };
+    let mainHeadBuilt = false;
 
     function getProcessedMainData() {
       const state = tableState.main;
-      let src = getItemsForMode(activityMode).map(x => ({
-        ...x,
-        partLabel: partLabel(x.part || ""),
-      }));
+      let src = getItemsForMode(activityMode).map(x => ({...x, partLabel: partLabel(x.part || "")}));
 
+      // filters
       const filters = state.filters;
       src = src.filter(row => {
         for (const k of Object.keys(filters)) {
@@ -851,38 +1015,46 @@
         return true;
       });
 
+      // sort
       const col = state.sortCol;
       const dir = state.dir;
-      src = stableSort(src, (a, b) => {
+      src = stableSort(src, (a,b) => {
         let va = a[col], vb = b[col];
-        if (col === "pg") { va = Number(va) || 0; vb = Number(vb) || 0; }
+        if (col === "pg") { va = Number(va)||0; vb = Number(vb)||0; }
         else { va = String(va ?? "").toLowerCase(); vb = String(vb ?? "").toLowerCase(); }
-        if (va < vb) return -1 * dir;
-        if (va > vb) return 1 * dir;
+        if (va < vb) return -1*dir;
+        if (va > vb) return 1*dir;
         return 0;
       });
 
       return src;
     }
 
-    function buildMainTableHead() {
-      if (tableBuilt.main) return;
-      tableBuilt.main = true;
+    function syncMainSortIndicators() {
+      const trH = dom.tableHead.querySelector("tr");
+      if (!trH) return;
+      const ths = Array.from(trH.children);
+      for (const th of ths) th.classList.remove("sort-asc","sort-desc");
 
+      const state = tableState.main;
+      const idx = MAIN_COLS.findIndex(c => c.k === state.sortCol);
+      if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir === 1 ? "sort-asc" : "sort-desc");
+    }
+
+    function buildMainTableHead() {
+      if (mainHeadBuilt) return;
+      mainHeadBuilt = true;
       dom.tableHead.textContent = "";
 
       const trH = document.createElement("tr");
       const trF = document.createElement("tr");
       trF.className = "filter-row";
 
-      for (let i = 0; i < MAIN_COLS.length; i++) {
-        const col = MAIN_COLS[i];
-
+      for (const col of MAIN_COLS) {
         const th = document.createElement("th");
         th.textContent = col.label;
         if (col.width) th.style.width = col.width;
 
-        // Selection header checkbox
         if (col.k === "_sel") {
           th.style.cursor = "default";
           const master = document.createElement("input");
@@ -897,7 +1069,13 @@
           });
           th.appendChild(master);
         } else {
-          th.addEventListener("click", () => handleMainSort(col.k));
+          th.addEventListener("click", () => {
+            const state = tableState.main;
+            if (state.sortCol === col.k) state.dir *= -1;
+            else { state.sortCol = col.k; state.dir = 1; }
+            syncMainSortIndicators();
+            renderMainTableBody();
+          });
         }
         trH.appendChild(th);
 
@@ -907,7 +1085,11 @@
           inp.type = "text";
           inp.className = "filter-input";
           inp.value = tableState.main.filters[col.k] || "";
-          inp.addEventListener("input", () => handleMainFilter(col.k, inp.value));
+          inp.addEventListener("input", () => {
+            if (inp.value && inp.value.trim()) tableState.main.filters[col.k] = inp.value;
+            else delete tableState.main.filters[col.k];
+            renderMainTableBody();
+          });
           thF.appendChild(inp);
         }
         trF.appendChild(thF);
@@ -917,41 +1099,12 @@
       thAct.textContent = "Act";
       thAct.style.width = "70px";
       trH.appendChild(thAct);
-
       const thActF = document.createElement("th");
       trF.appendChild(thActF);
 
       dom.tableHead.appendChild(trH);
       dom.tableHead.appendChild(trF);
       syncMainSortIndicators();
-    }
-
-    function syncMainSortIndicators() {
-      const trH = dom.tableHead.querySelector("tr");
-      if (!trH) return;
-      const ths = Array.from(trH.children);
-      const state = tableState.main;
-
-      for (const th of ths) th.classList.remove("sort-asc", "sort-desc");
-
-      const idx = MAIN_COLS.findIndex(c => c.k === state.sortCol);
-      if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir === 1 ? "sort-asc" : "sort-desc");
-    }
-
-    function handleMainSort(colKey) {
-      if (colKey === "_sel") return;
-      const state = tableState.main;
-      if (state.sortCol === colKey) state.dir *= -1;
-      else { state.sortCol = colKey; state.dir = 1; }
-      syncMainSortIndicators();
-      renderMainTableBody();
-    }
-
-    function handleMainFilter(colKey, val) {
-      const state = tableState.main;
-      if (val && val.trim()) state.filters[colKey] = val;
-      else delete state.filters[colKey];
-      renderMainTableBody();
     }
 
     function renderMainTableBody() {
@@ -976,7 +1129,7 @@
 
         // Pg
         const tdPg = document.createElement("td");
-        tdPg.textContent = (row.pg != null && row.pg !== 0) ? String(row.pg) : "";
+        tdPg.textContent = (row.pg && row.pg !== 0) ? String(row.pg) : "";
         tr.appendChild(tdPg);
 
         // Part
@@ -987,10 +1140,10 @@
         // Type
         const tdType = document.createElement("td");
         tdType.style.textAlign = "center";
-        const badge = document.createElement("span");
-        badge.className = "badge " + (row.type === "com" ? "bg-com" : row.type === "ins" ? "bg-ins" : "bg-del");
-        badge.textContent = row.type === "com" ? "COM" : row.type === "ins" ? "INS" : "DEL";
-        tdType.appendChild(badge);
+        const b = document.createElement("span");
+        b.className = "badge " + (row.type==="com" ? "bg-com" : row.type==="ins" ? "bg-ins" : "bg-del");
+        b.textContent = row.type==="com" ? "COM" : row.type==="ins" ? "INS" : "DEL";
+        tdType.appendChild(b);
         tr.appendChild(tdType);
 
         // Text (editable)
@@ -1040,6 +1193,7 @@
         btn.type = "button";
         btn.style.padding = "6px 8px";
         btn.style.minWidth = "0";
+        btn.style.flex = "0 0 auto";
         btn.textContent = "↩";
         btn.title = "Jump to item in Parts";
         btn.addEventListener("click", () => stepInto(row.uid));
@@ -1051,43 +1205,37 @@
     }
 
     // ---------------------------
-    // PARTS VIEW (Doc renderer + sidebar)
+    // Parts renderer + sidebar
     // ---------------------------
     function getRenderRoot(xmlDoc, partPath) {
       if (!xmlDoc) return null;
       if (partPath === "word/document.xml") {
-        return xmlDoc.getElementsByTagName("w:body")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS, "body")?.[0] || xmlDoc.documentElement;
+        return xmlDoc.getElementsByTagName("w:body")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS,"body")?.[0] || xmlDoc.documentElement;
       }
-      // headers/footers/footnotes/endnotes
-      const hdr = xmlDoc.getElementsByTagName("w:hdr")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS, "hdr")?.[0];
+      const hdr = xmlDoc.getElementsByTagName("w:hdr")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS,"hdr")?.[0];
       if (hdr) return hdr;
-      const ftr = xmlDoc.getElementsByTagName("w:ftr")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS, "ftr")?.[0];
+      const ftr = xmlDoc.getElementsByTagName("w:ftr")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS,"ftr")?.[0];
       if (ftr) return ftr;
-      const foot = xmlDoc.getElementsByTagName("w:footnotes")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS, "footnotes")?.[0];
+      const foot = xmlDoc.getElementsByTagName("w:footnotes")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS,"footnotes")?.[0];
       if (foot) return foot;
-      const endn = xmlDoc.getElementsByTagName("w:endnotes")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS, "endnotes")?.[0];
+      const endn = xmlDoc.getElementsByTagName("w:endnotes")[0] || xmlDoc.getElementsByTagNameNS?.(W_NS,"endnotes")?.[0];
       if (endn) return endn;
       return xmlDoc.documentElement;
     }
 
-    function setActivePart(path) {
-      if (!parts.has(path)) return;
+    async function setActivePart(path) {
+      if (!partsIndex.has(path)) return;
       activePartPath = path;
       dom.partSelect.value = path;
+
+      await ensurePartLoaded(path);
       renderPart(path);
     }
 
-    function renderPart(path) {
-      const p = parts.get(path);
-      if (!p) return;
-      renderDocView(p.xmlDoc, path);
-      renderSidebarForPart(path);
-    }
-
     function getSidebarDataForPart(partPath) {
-      const mode = activityMode; // respects comments/revisions/all selection
+      const mode = activityMode;
       let data = getItemsForMode(mode).filter(x => (x.part || "") === partPath);
-      // quick filter input (sidebar only)
+
       const needle = String(dom.partFilter.value || "").toLowerCase().trim();
       if (needle) {
         data = data.filter(x =>
@@ -1096,14 +1244,16 @@
           String(x.date || "").toLowerCase().includes(needle)
         );
       }
-      data = stableSort(data, (a, b) => {
-        const pa = Number(a.pg) || 0, pb = Number(b.pg) || 0;
+
+      data = stableSort(data, (a,b) => {
+        const pa = Number(a.pg)||0, pb = Number(b.pg)||0;
         if (pa !== pb) return pa - pb;
-        const da = String(a.date || ""), db = String(b.date || "");
+        const da = String(a.date||""), db = String(b.date||"");
         if (da < db) return -1;
         if (da > db) return 1;
         return String(a.uid).localeCompare(String(b.uid));
       });
+
       return data;
     }
 
@@ -1115,15 +1265,12 @@
         const card = document.createElement("div");
         card.className = "comment-card";
         card.id = "card-" + x.uid;
-
-        card.style.borderLeft = x.type === "com"
-          ? "4px solid #17a2b8"
-          : x.type === "ins"
-            ? "4px solid #28a745"
-            : "4px solid #dc3545";
+        card.style.borderLeft = x.type === "com" ? "4px solid #17a2b8"
+                         : x.type === "ins" ? "4px solid #28a745"
+                         : "4px solid #dc3545";
 
         const title = document.createElement("div");
-        title.style.fontWeight = "800";
+        title.style.fontWeight = "900";
         title.textContent = (x.auth || "(no author)") + (x.date ? (" • " + safeSnippet(x.date, 30)) : "");
         card.appendChild(title);
 
@@ -1144,133 +1291,100 @@
       if (!root) return;
 
       const activeComments = [];
-      const firstRendered = new Set(); // uids already got anchor id
+      const firstRendered = new Set();
 
-      function removeActiveComment(id) {
-        for (let i = activeComments.length - 1; i >= 0; i--) {
-          if (activeComments[i] === id) { activeComments.splice(i, 1); return; }
+      function removeActiveComment(id){
+        for (let i=activeComments.length-1;i>=0;i--){
+          if (activeComments[i]===id){ activeComments.splice(i,1); return; }
         }
       }
 
-      function wrapAndAppendElement(parent, el) {
+      function wrapAndAppend(parent, el){
         let container = parent;
         for (const cid of activeComments) {
           const uid = "c" + cid;
           const s = document.createElement("span");
           s.className = "doc-com";
           s.dataset.uid = uid;
-          // do not force id here (marker handles the anchor); but allow if missing and we have content:
-          if (!firstRendered.has(uid)) {
-            s.id = "hl-" + uid;
-            firstRendered.add(uid);
-          }
-          s.addEventListener("click", (ev) => {
-            ev.stopPropagation();
-            // if comment lives in another part (rare), jump there
-            const it = items.get(uid);
-            if (it && it.part && it.part !== activePartPath) stepInto(uid);
-            else focusUidInCurrentPart(uid);
-          });
+          if (!firstRendered.has(uid)) { s.id = "hl-" + uid; firstRendered.add(uid); }
+          s.addEventListener("click",(ev)=>{ ev.stopPropagation(); stepInto(uid); });
           container.appendChild(s);
           container = s;
         }
         container.appendChild(el);
       }
 
-      function appendText(parent, text) {
+      function appendText(parent, text){
         if (!text) return;
-        if (activeComments.length === 0) parent.appendChild(document.createTextNode(text));
-        else wrapAndAppendElement(parent, document.createTextNode(text));
+        if (activeComments.length===0) parent.appendChild(document.createTextNode(text));
+        else wrapAndAppend(parent, document.createTextNode(text));
       }
-
-      function appendBr(parent) {
+      function appendBr(parent){
         const br = document.createElement("br");
-        if (activeComments.length === 0) parent.appendChild(br);
-        else wrapAndAppendElement(parent, br);
+        if (activeComments.length===0) parent.appendChild(br);
+        else wrapAndAppend(parent, br);
       }
 
-      function appendWalk(parent, node) {
+      function walk(parent, node){
         if (!node) return;
         const ln = node.localName;
 
         if (ln === "commentRangeStart") {
-          const id = attrW(node, "id");
+          const id = attrW(node,"id");
           if (id !== "") {
             activeComments.push(id);
-
-            // Always create an anchor marker so jump works even if no text is inside the range.
             const uid = "c" + id;
             if (!firstRendered.has(uid)) {
               const marker = document.createElement("span");
               marker.className = "doc-com";
               marker.dataset.uid = uid;
               marker.id = "hl-" + uid;
-              marker.style.padding = "0";
-              marker.style.border = "0";
-              marker.style.background = "transparent";
-              marker.addEventListener("click", (ev) => {
-                ev.stopPropagation();
-                const it = items.get(uid);
-                if (it && it.part && it.part !== activePartPath) stepInto(uid);
-                else focusUidInCurrentPart(uid);
-              });
-              // marker should sit within wrappers (which includes itself as active now)
-              wrapAndAppendElement(parent, marker);
+              marker.style.padding="0";
+              marker.style.border="0";
+              marker.style.background="transparent";
+              marker.addEventListener("click",(ev)=>{ ev.stopPropagation(); stepInto(uid); });
+              wrapAndAppend(parent, marker);
               firstRendered.add(uid);
             }
           }
           return;
         }
-        if (ln === "commentRangeEnd") {
-          const id = attrW(node, "id");
-          if (id !== "") removeActiveComment(id);
-          return;
-        }
+        if (ln === "commentRangeEnd") { const id = attrW(node,"id"); if (id !== "") removeActiveComment(id); return; }
         if (ln === "commentReference") return;
 
         if (ln === "p") {
           const p = document.createElement("p");
           parent.appendChild(p);
-          node.childNodes.forEach(ch => appendWalk(p, ch));
+          node.childNodes.forEach(ch => walk(p,ch));
           return;
         }
-
-        if (ln === "t" || ln === "delText") {
-          appendText(parent, node.textContent || "");
-          return;
-        }
-
-        if (ln === "br") {
-          appendBr(parent);
-          return;
-        }
+        if (ln === "t" || ln === "delText") { appendText(parent, node.textContent || ""); return; }
+        if (ln === "br") { appendBr(parent); return; }
 
         if (ln === "ins" || ln === "del") {
-          const id = attrW(node, "id");
+          const id = attrW(node,"id");
           const uid = "r" + id;
-
           const span = document.createElement("span");
           span.className = (ln === "ins") ? "doc-ins" : "doc-del";
           span.id = "hl-" + uid;
           span.dataset.uid = uid;
-          span.addEventListener("click", (ev) => {
-            ev.stopPropagation();
-            const it = items.get(uid);
-            if (it && it.part && it.part !== activePartPath) stepInto(uid);
-            else focusUidInCurrentPart(uid);
-          });
-
-          wrapAndAppendElement(parent, span);
-          node.childNodes.forEach(ch => appendWalk(span, ch));
+          span.addEventListener("click",(ev)=>{ ev.stopPropagation(); stepInto(uid); });
+          wrapAndAppend(parent, span);
+          node.childNodes.forEach(ch => walk(span,ch));
           return;
         }
 
-        if (node.childNodes && node.childNodes.length) {
-          node.childNodes.forEach(ch => appendWalk(parent, ch));
-        }
+        if (node.childNodes && node.childNodes.length) node.childNodes.forEach(ch => walk(parent,ch));
       }
 
-      appendWalk(dom.docContent, root);
+      walk(dom.docContent, root);
+    }
+
+    function renderPart(path) {
+      const meta = partsIndex.get(path);
+      if (!meta || !meta.loaded || !meta.xmlDoc) return;
+      renderDocView(meta.xmlDoc, path);
+      renderSidebarForPart(path);
     }
 
     function focusUidInCurrentPart(uid) {
@@ -1279,76 +1393,76 @@
         const card = document.getElementById("card-" + uid);
 
         if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.scrollIntoView({ behavior:"smooth", block:"center" });
           el.classList.add("flash-target");
-          setTimeout(() => el.classList.remove("flash-target"), 2000);
+          setTimeout(()=>el.classList.remove("flash-target"), 2000);
         }
         if (card) {
-          card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          card.scrollIntoView({ behavior:"smooth", block:"nearest" });
           card.classList.add("active-card");
-          setTimeout(() => card.classList.remove("active-card"), 2000);
+          setTimeout(()=>card.classList.remove("active-card"), 2000);
         }
       }, 80);
     }
 
-    function stepInto(uid) {
+    async function stepInto(uid) {
       const it = items.get(uid);
-      if (it && it.part && parts.has(it.part)) {
+      if (it && it.part && partsIndex.has(it.part)) {
         switchTab("parts");
-        setActivePart(it.part);
+        await setActivePart(it.part);
         focusUidInCurrentPart(uid);
         return;
       }
-      // Fallback: still go to parts and try in main doc
       switchTab("parts");
-      setActivePart("word/document.xml");
+      await setActivePart("word/document.xml");
       focusUidInCurrentPart(uid);
     }
 
     // ---------------------------
-    // RELATIONSHIPS EXPLORER
+    // Relationships (build on demand)
     // ---------------------------
     const REL_COLS = [
-      { k: "risk", label: "Risk", width: "70px" },
-      { k: "sourceLabel", label: "From", width: "180px" },
-      { k: "typeLabel", label: "Type", width: "200px" },
-      { k: "target", label: "Target", width: "" },
-      { k: "mode", label: "Mode", width: "90px" },
-      { k: "existsLabel", label: "Exists", width: "90px" },
-      { k: "refs", label: "Refs", width: "70px" },
+      { k:"risk", label:"Risk", width:"70px" },
+      { k:"sourceLabel", label:"From", width:"180px" },
+      { k:"typeLabel", label:"Type", width:"200px" },
+      { k:"targetShown", label:"Target", width:"" },
+      { k:"mode", label:"Mode", width:"90px" },
+      { k:"existsLabel", label:"Exists", width:"90px" },
+      { k:"refs", label:"Refs", width:"70px" },
     ];
+    let relHeadBuilt = false;
 
     function relTypeLabel(typeUri) {
       const m = {
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink": "Hyperlink",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image": "Image",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles": "Styles",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering": "Numbering",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme": "Theme",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header": "Header",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer": "Footer",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments": "Comments",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes": "Footnotes",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes": "Endnotes",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate": "Attached Template",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject": "OLE Object",
-        "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties": "Core Properties",
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml": "Custom XML",
-        "http://schemas.microsoft.com/office/2006/relationships/ui/extensibility": "Office Add-in/Extensibility",
-        "http://schemas.microsoft.com/office/2011/relationships/webextension": "Web Extension",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink":"Hyperlink",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image":"Image",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles":"Styles",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering":"Numbering",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme":"Theme",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header":"Header",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer":"Footer",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments":"Comments",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes":"Footnotes",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes":"Endnotes",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate":"Attached Template",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject":"OLE Object",
+        "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties":"Core Properties",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml":"Custom XML",
+        "http://schemas.microsoft.com/office/2011/relationships/webextension":"Web Extension",
+        "http://schemas.microsoft.com/office/2006/relationships/ui/extensibility":"Office Add-in/Extensibility",
       };
       return m[typeUri] || (typeUri ? typeUri.split("/").pop() : "(unknown)");
     }
 
     function relRisk(typeUri, targetMode, target) {
-      const isExt = (String(targetMode || "").toLowerCase() === "external") ||
-                    /^https?:\/\//i.test(target || "") ||
-                    /^file:\/\//i.test(target || "");
-      if (isExt) return { label: "HIGH", rank: 1, cls: "bg-hi" };
-      const low = { label: "LOW", rank: 3, cls: "bg-lo" };
+      const isExt = (String(targetMode||"").toLowerCase()==="external") ||
+                    /^https?:\\/\\//i.test(target||"") ||
+                    /^file:\\/\\//i.test(target||"");
+      if (isExt) return { label:"HIGH", rank:1, cls:"bg-hi" };
+      const low = { label:"LOW", rank:3, cls:"bg-lo" };
       if (!typeUri) return low;
       if (typeUri.includes("attachedTemplate") || typeUri.includes("webextension") || typeUri.includes("oleObject")) {
-        return { label: "MED", rank: 2, cls: "bg-med" };
+        return { label:"MED", rank:2, cls:"bg-med" };
       }
       return low;
     }
@@ -1356,47 +1470,63 @@
     function getSourcePartFromRelsPath(relsPath) {
       if (relsPath === "_rels/.rels") return "[root]";
       if (!relsPath.includes("/_rels/")) return "[unknown]";
-      return relsPath.replace("/_rels/", "/").replace(/\.rels$/i, "");
+      return relsPath.replace("/_rels/","/").replace(/\\.rels$/i,"");
     }
 
-    function countRefsInSource(sourcePart, rId) {
-      if (!rId || !sourcePart || !parts.has(sourcePart)) return 0;
-      try {
-        const xml = parts.get(sourcePart).xmlDoc;
-        const s = new XMLSerializer().serializeToString(xml);
-        // rough count; good enough to show "used / unused"
-        return Math.max(0, s.split(rId).length - 1);
-      } catch { return 0; }
+    function countOccurrences(hay, needle) {
+      if (!hay || !needle) return 0;
+      let count = 0, idx = 0;
+      while (true) {
+        idx = hay.indexOf(needle, idx);
+        if (idx === -1) break;
+        count++;
+        idx += needle.length;
+      }
+      return count;
     }
 
-    async function buildRelationships() {
-      relationshipsData = [];
+    async function buildRelationshipsOnDemand() {
       if (!zipObj) return;
+      relationshipsData = [];
+      relationshipsBuilt = true;
+
+      setStatus("Building relationship index…", true);
 
       const relPaths = [];
-      zipObj.forEach((path, file) => { if (path.toLowerCase().endsWith(".rels")) relPaths.push(path); });
+      zipObj.forEach((path) => { if (path.toLowerCase().endsWith(".rels")) relPaths.push(path); });
 
-      const tasks = relPaths.map(async (relsPath) => {
-        const str = await zipObj.file(relsPath).async("string");
-        const relDoc = new DOMParser().parseFromString(str, "text/xml");
-        if (isParserError(relDoc)) return;
+      // cache source xml strings so we don't parse DOM just to count refs
+      const srcXmlCache = new Map();
 
-        const relNodes = relDoc.getElementsByTagNameNS ? Array.from(relDoc.getElementsByTagNameNS("*", "Relationship"))
+      let processed = 0;
+      for (const relsPath of relPaths) {
+        const relStr = await zipObj.file(relsPath).async("string");
+        const relDoc = new DOMParser().parseFromString(relStr, "text/xml");
+        if (isParserError(relDoc)) continue;
+
+        const relNodes = relDoc.getElementsByTagNameNS ? Array.from(relDoc.getElementsByTagNameNS("*","Relationship"))
                                                       : Array.from(relDoc.getElementsByTagName("Relationship"));
 
         const sourcePart = getSourcePartFromRelsPath(relsPath);
         const baseDir = (sourcePart === "[root]" || sourcePart === "[unknown]") ? "" : (sourcePart.substring(0, sourcePart.lastIndexOf("/") + 1));
+
+        let srcXml = "";
+        if ((sourcePart.startsWith("word/") || sourcePart.startsWith("docProps/")) && zipObj.file(sourcePart)) {
+          if (!srcXmlCache.has(sourcePart)) srcXmlCache.set(sourcePart, await zipObj.file(sourcePart).async("string"));
+          srcXml = srcXmlCache.get(sourcePart) || "";
+        }
 
         for (const r of relNodes) {
           const rId = r.getAttribute("Id") || "";
           const typeUri = r.getAttribute("Type") || "";
           const target = r.getAttribute("Target") || "";
           const targetMode = r.getAttribute("TargetMode") || "";
-          const resolved = (String(targetMode).toLowerCase() === "external") ? target : normalizePath(baseDir, target);
-          const exists = (String(targetMode).toLowerCase() === "external") ? false : !!zipObj.file(resolved);
+
+          const resolved = (String(targetMode).toLowerCase()==="external") ? target : normalizePath(baseDir, target);
+          const exists = (String(targetMode).toLowerCase()==="external") ? false : !!zipObj.file(resolved);
 
           const risk = relRisk(typeUri, targetMode, target);
-          const refs = countRefsInSource(sourcePart, rId);
+          const refs = srcXml ? countOccurrences(srcXml, rId) : 0;
 
           relationshipsData.push({
             relsPath,
@@ -1406,19 +1536,26 @@
             typeUri,
             typeLabel: relTypeLabel(typeUri),
             target,
-            mode: (targetMode || "Internal"),
+            mode: targetMode || "Internal",
             resolvedTarget: resolved,
+            targetShown: (String(targetMode).toLowerCase()==="external") ? target : resolved,
             exists,
-            existsLabel: (String(targetMode).toLowerCase() === "external") ? "—" : (exists ? "Yes" : "No"),
+            existsLabel: (String(targetMode).toLowerCase()==="external") ? "—" : (exists ? "Yes" : "No"),
             risk: risk.label,
             riskRank: risk.rank,
             riskCls: risk.cls,
             refs,
           });
-        }
-      });
 
-      await Promise.all(tasks);
+          processed++;
+          if (processed % 600 === 0) {
+            setStatus("Building relationship index… (" + processed + ")", true);
+            await yieldToUI();
+          }
+        }
+      }
+
+      setStatus("Relationships ready.", true);
       renderRelTable();
     }
 
@@ -1426,6 +1563,7 @@
       const state = tableState.rel;
       let src = relationshipsData.slice();
 
+      // filters
       const filters = state.filters;
       src = src.filter(row => {
         for (const k of Object.keys(filters)) {
@@ -1437,36 +1575,54 @@
         return true;
       });
 
+      // sort
       const col = state.sortCol;
       const dir = state.dir;
-      src = stableSort(src, (a, b) => {
+      src = stableSort(src, (a,b) => {
         let va = a[col], vb = b[col];
-        if (col === "riskRank" || col === "refs") { va = Number(va) || 0; vb = Number(vb) || 0; }
+        if (col === "riskRank" || col === "refs") { va = Number(va)||0; vb = Number(vb)||0; }
         else { va = String(va ?? "").toLowerCase(); vb = String(vb ?? "").toLowerCase(); }
-        if (va < vb) return -1 * dir;
-        if (va > vb) return 1 * dir;
+        if (va < vb) return -1*dir;
+        if (va > vb) return 1*dir;
         return 0;
       });
 
       return src;
     }
 
+    function syncRelSortIndicators() {
+      const trH = dom.relHead.querySelector("tr");
+      if (!trH) return;
+      const ths = Array.from(trH.children);
+      for (const th of ths) th.classList.remove("sort-asc","sort-desc");
+
+      const keys = REL_COLS.map(c => (c.k==="risk" ? "riskRank" : c.k)).concat(["_act"]);
+      const state = tableState.rel;
+      const idx = keys.indexOf(state.sortCol);
+      if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir===1 ? "sort-asc" : "sort-desc");
+    }
+
     function buildRelHead() {
-      if (tableBuilt.rel) return;
-      tableBuilt.rel = true;
+      if (relHeadBuilt) return;
+      relHeadBuilt = true;
 
       dom.relHead.textContent = "";
-
       const trH = document.createElement("tr");
       const trF = document.createElement("tr");
       trF.className = "filter-row";
 
-      // columns
       for (const col of REL_COLS) {
         const th = document.createElement("th");
         th.textContent = col.label;
         if (col.width) th.style.width = col.width;
-        th.addEventListener("click", () => handleRelSort(col.k === "risk" ? "riskRank" : col.k));
+        th.addEventListener("click", () => {
+          const key = (col.k==="risk") ? "riskRank" : col.k;
+          const state = tableState.rel;
+          if (state.sortCol === key) state.dir *= -1;
+          else { state.sortCol = key; state.dir = 1; }
+          syncRelSortIndicators();
+          renderRelBody();
+        });
         trH.appendChild(th);
 
         const thF = document.createElement("th");
@@ -1475,9 +1631,8 @@
         inp.className = "filter-input";
         inp.value = tableState.rel.filters[col.k] || "";
         inp.addEventListener("input", () => {
-          const key = col.k;
-          if (inp.value && inp.value.trim()) tableState.rel.filters[key] = inp.value;
-          else delete tableState.rel.filters[key];
+          if (inp.value && inp.value.trim()) tableState.rel.filters[col.k] = inp.value;
+          else delete tableState.rel.filters[col.k];
           renderRelBody();
         });
         thF.appendChild(inp);
@@ -1488,6 +1643,7 @@
       thAct.textContent = "Act";
       thAct.style.width = "140px";
       trH.appendChild(thAct);
+
       const thActF = document.createElement("th");
       trF.appendChild(thActF);
 
@@ -1496,25 +1652,10 @@
       syncRelSortIndicators();
     }
 
-    function syncRelSortIndicators() {
-      const trH = dom.relHead.querySelector("tr");
-      if (!trH) return;
-      const ths = Array.from(trH.children);
-      for (const th of ths) th.classList.remove("sort-asc", "sort-desc");
-
-      const state = tableState.rel;
-      // Map columns to sortable keys
-      const keys = REL_COLS.map(c => (c.k === "risk" ? "riskRank" : c.k)).concat(["_act"]);
-      const idx = keys.indexOf(state.sortCol);
-      if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir === 1 ? "sort-asc" : "sort-desc");
-    }
-
-    function handleRelSort(colKey) {
-      const state = tableState.rel;
-      if (state.sortCol === colKey) state.dir *= -1;
-      else { state.sortCol = colKey; state.dir = 1; }
-      syncRelSortIndicators();
-      renderRelBody();
+    async function dlFile(path) {
+      if (!zipObj || !zipObj.file(path)) return;
+      const blob = await zipObj.file(path).async("blob");
+      saveAs(blob, path.split("/").pop() || "file.bin");
     }
 
     function renderRelBody() {
@@ -1525,7 +1666,6 @@
       for (const r of data) {
         const tr = document.createElement("tr");
 
-        // Risk
         const tdRisk = document.createElement("td");
         const badge = document.createElement("span");
         badge.className = "badge " + r.riskCls;
@@ -1533,68 +1673,61 @@
         tdRisk.appendChild(badge);
         tr.appendChild(tdRisk);
 
-        // From
         const tdFrom = document.createElement("td");
         tdFrom.textContent = r.sourceLabel || r.sourcePart;
         tr.appendChild(tdFrom);
 
-        // Type
         const tdType = document.createElement("td");
         tdType.textContent = r.typeLabel || "";
         tr.appendChild(tdType);
 
-        // Target
         const tdTarget = document.createElement("td");
-        tdTarget.textContent = (r.mode.toLowerCase() === "external") ? r.target : (r.resolvedTarget || r.target);
+        tdTarget.textContent = r.targetShown || r.target || "";
         tr.appendChild(tdTarget);
 
-        // Mode
         const tdMode = document.createElement("td");
         tdMode.textContent = r.mode;
         tr.appendChild(tdMode);
 
-        // Exists
         const tdEx = document.createElement("td");
         tdEx.textContent = r.existsLabel;
-        tdEx.style.fontWeight = (r.existsLabel === "No") ? "800" : "400";
-        tdEx.style.color = (r.existsLabel === "No") ? "crimson" : "#333";
+        tdEx.style.fontWeight = (r.existsLabel==="No") ? "900" : "400";
+        tdEx.style.color = (r.existsLabel==="No") ? "crimson" : "#333";
         tr.appendChild(tdEx);
 
-        // Refs
         const tdRefs = document.createElement("td");
         tdRefs.textContent = String(r.refs || 0);
         tr.appendChild(tdRefs);
 
-        // Actions
         const tdAct = document.createElement("td");
-        tdAct.style.display = "flex";
-        tdAct.style.gap = "6px";
+        tdAct.style.display="flex";
+        tdAct.style.gap="6px";
 
         const btnOpen = document.createElement("button");
-        btnOpen.className = "btn btn-secondary";
-        btnOpen.type = "button";
-        btnOpen.style.padding = "6px 8px";
-        btnOpen.style.minWidth = "0";
-        btnOpen.textContent = "Open";
-        btnOpen.title = "Open source part in Parts tab";
-        btnOpen.addEventListener("click", () => {
-          if (parts.has(r.sourcePart)) {
+        btnOpen.className="btn btn-secondary";
+        btnOpen.type="button";
+        btnOpen.style.padding="6px 8px";
+        btnOpen.style.minWidth="0";
+        btnOpen.style.flex="0 0 auto";
+        btnOpen.textContent="Open";
+        btnOpen.addEventListener("click", async () => {
+          if (partsIndex.has(r.sourcePart)) {
             switchTab("parts");
-            setActivePart(r.sourcePart);
+            await setActivePart(r.sourcePart);
           } else {
-            alert("Source part not parsed (or not a Word part).");
+            alert("Source part not in Word parts list.");
           }
         });
         tdAct.appendChild(btnOpen);
 
         const btnDl = document.createElement("button");
-        btnDl.className = "btn btn-secondary";
-        btnDl.type = "button";
-        btnDl.style.padding = "6px 8px";
-        btnDl.style.minWidth = "0";
-        btnDl.textContent = "DL";
-        btnDl.title = "Download internal target";
-        btnDl.disabled = (r.mode.toLowerCase() === "external") || !r.exists;
+        btnDl.className="btn btn-secondary";
+        btnDl.type="button";
+        btnDl.style.padding="6px 8px";
+        btnDl.style.minWidth="0";
+        btnDl.style.flex="0 0 auto";
+        btnDl.textContent="DL";
+        btnDl.disabled = (String(r.mode).toLowerCase()==="external") || !r.exists;
         btnDl.addEventListener("click", () => dlFile(r.resolvedTarget));
         tdAct.appendChild(btnDl);
 
@@ -1608,14 +1741,15 @@
     }
 
     // ---------------------------
-    // FORENSICS (unchanged)
+    // Forensics (on demand)
     // ---------------------------
     const FORENSICS_COLS = [
-      { k: "path", label: "File" },
-      { k: "type", label: "Type" },
-      { k: "size", label: "Size" },
-      { k: "risks", label: "Risks" },
+      { k:"path", label:"File" },
+      { k:"type", label:"Type" },
+      { k:"size", label:"Size" },
+      { k:"risks", label:"Risks" },
     ];
+    let forHeadBuilt = false;
 
     function getProcessedForensicsData() {
       const state = tableState.forensics;
@@ -1634,83 +1768,74 @@
 
       const col = state.sortCol;
       const dir = state.dir;
-      src = stableSort(src, (a, b) => {
+      src = stableSort(src, (a,b) => {
         let va = a[col], vb = b[col];
-        if (col === "size") { va = Number(va) || 0; vb = Number(vb) || 0; }
+        if (col === "size") { va = Number(va)||0; vb = Number(vb)||0; }
         else { va = String(va ?? "").toLowerCase(); vb = String(vb ?? "").toLowerCase(); }
-        if (va < vb) return -1 * dir;
-        if (va > vb) return 1 * dir;
+        if (va < vb) return -1*dir;
+        if (va > vb) return 1*dir;
         return 0;
       });
 
       return src;
     }
 
+    function syncForSortIndicators() {
+      const trH = dom.forHead.querySelector("tr");
+      if (!trH) return;
+      const ths = Array.from(trH.children);
+      for (const th of ths) th.classList.remove("sort-asc","sort-desc");
+
+      const state = tableState.forensics;
+      const idx = FORENSICS_COLS.findIndex(c => c.k === state.sortCol);
+      if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir===1 ? "sort-asc" : "sort-desc");
+    }
+
     function buildForensicsHead() {
-      if (tableBuilt.forensics) return;
-      tableBuilt.forensics = true;
+      if (forHeadBuilt) return;
+      forHeadBuilt = true;
 
       dom.forHead.textContent = "";
-
       const trH = document.createElement("tr");
       const trF = document.createElement("tr");
-      trF.className = "filter-row";
+      trF.className="filter-row";
 
       for (const col of FORENSICS_COLS) {
         const th = document.createElement("th");
         th.textContent = col.label;
-        th.addEventListener("click", () => handleForensicsSort(col.k));
+        th.addEventListener("click", () => {
+          const state = tableState.forensics;
+          if (state.sortCol === col.k) state.dir *= -1;
+          else { state.sortCol = col.k; state.dir = 1; }
+          syncForSortIndicators();
+          renderForensicsBody();
+        });
         trH.appendChild(th);
 
         const thF = document.createElement("th");
         const inp = document.createElement("input");
-        inp.type = "text";
-        inp.className = "filter-input";
+        inp.type="text";
+        inp.className="filter-input";
         inp.value = tableState.forensics.filters[col.k] || "";
-        inp.addEventListener("input", () => handleForensicsFilter(col.k, inp.value));
+        inp.addEventListener("input", () => {
+          if (inp.value && inp.value.trim()) tableState.forensics.filters[col.k] = inp.value;
+          else delete tableState.forensics.filters[col.k];
+          renderForensicsBody();
+        });
         thF.appendChild(inp);
         trF.appendChild(thF);
       }
 
       const thDl = document.createElement("th");
-      thDl.textContent = "DL";
-      thDl.style.width = "70px";
+      thDl.textContent="DL";
+      thDl.style.width="70px";
       trH.appendChild(thDl);
-
       const thDlF = document.createElement("th");
       trF.appendChild(thDlF);
 
       dom.forHead.appendChild(trH);
       dom.forHead.appendChild(trF);
-
-      syncForensicsSortIndicators();
-    }
-
-    function syncForensicsSortIndicators() {
-      const trH = dom.forHead.querySelector("tr");
-      if (!trH) return;
-
-      const ths = Array.from(trH.children);
-      const state = tableState.forensics;
-      for (const th of ths) th.classList.remove("sort-asc", "sort-desc");
-
-      const idx = FORENSICS_COLS.findIndex(c => c.k === state.sortCol);
-      if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir === 1 ? "sort-asc" : "sort-desc");
-    }
-
-    function handleForensicsSort(colKey) {
-      const state = tableState.forensics;
-      if (state.sortCol === colKey) state.dir *= -1;
-      else { state.sortCol = colKey; state.dir = 1; }
-      syncForensicsSortIndicators();
-      renderForensicsBody();
-    }
-
-    function handleForensicsFilter(colKey, val) {
-      const state = tableState.forensics;
-      if (val && val.trim()) state.filters[colKey] = val;
-      else delete state.filters[colKey];
-      renderForensicsBody();
+      syncForSortIndicators();
     }
 
     function renderForensicsBody() {
@@ -1723,29 +1848,27 @@
 
         const tdPath = document.createElement("td"); tdPath.textContent = row.path || ""; tr.appendChild(tdPath);
         const tdType = document.createElement("td"); tdType.textContent = row.type || ""; tr.appendChild(tdType);
-        const tdSize = document.createElement("td");
-        tdSize.textContent = (row.size != null) ? ((row.size / 1024).toFixed(1) + " KB") : "";
-        tr.appendChild(tdSize);
+        const tdSize = document.createElement("td"); tdSize.textContent = (row.size!=null) ? ((row.size/1024).toFixed(1) + " KB") : ""; tr.appendChild(tdSize);
 
         const tdRisk = document.createElement("td");
         if (row.risks && row.risks !== "Clean") {
-          tdRisk.style.color = "crimson";
-          tdRisk.style.fontWeight = "800";
+          tdRisk.style.color="crimson";
+          tdRisk.style.fontWeight="900";
           tdRisk.textContent = "⚠ " + row.risks;
         } else {
-          tdRisk.style.color = "green";
+          tdRisk.style.color="green";
           tdRisk.textContent = "✓ Clean";
         }
         tr.appendChild(tdRisk);
 
         const tdDl = document.createElement("td");
         const btn = document.createElement("button");
-        btn.className = "btn btn-secondary";
-        btn.type = "button";
-        btn.style.padding = "6px 8px";
-        btn.style.minWidth = "0";
-        btn.textContent = "⬇";
-        btn.title = "Download internal file";
+        btn.className="btn btn-secondary";
+        btn.type="button";
+        btn.style.padding="6px 8px";
+        btn.style.minWidth="0";
+        btn.style.flex="0 0 auto";
+        btn.textContent="⬇";
         btn.addEventListener("click", () => dlFile(row.path));
         tdDl.appendChild(btn);
         tr.appendChild(tdDl);
@@ -1757,30 +1880,26 @@
     async function scanForensics() {
       if (!zipObj) return;
       setStatus("Scanning binaries…", true);
-
       forensicsData = [];
-      const tasks = [];
 
+      const tasks = [];
       zipObj.forEach((path, file) => {
         const ext = (path.split(".").pop() || "").toLowerCase();
-        if (!["xml", "rels"].includes(ext) && path !== "[Content_Types].xml") {
-          tasks.push(
-            file.async("uint8array").then(data => {
-              let head = "";
-              try { head = new TextDecoder().decode(data.slice(0, 200)); }
-              catch { head = ""; }
-              const risks = [];
-              if (head.includes("Exif")) risks.push("EXIF");
-              if (head.includes("Adobe")) risks.push("XMP/Adobe");
-              if (head.includes("Photoshop")) risks.push("Photoshop");
-              forensicsData.push({
-                path,
-                type: ext ? ext.toUpperCase() : "(none)",
-                size: data.length,
-                risks: risks.join(", ") || "Clean",
-              });
-            })
-          );
+        if (!["xml","rels"].includes(ext) && path !== "[Content_Types].xml") {
+          tasks.push(file.async("uint8array").then(data => {
+            let head = "";
+            try { head = new TextDecoder().decode(data.slice(0, 200)); } catch { head = ""; }
+            const risks = [];
+            if (head.includes("Exif")) risks.push("EXIF");
+            if (head.includes("Adobe")) risks.push("XMP/Adobe");
+            if (head.includes("Photoshop")) risks.push("Photoshop");
+            forensicsData.push({
+              path,
+              type: ext ? ext.toUpperCase() : "(none)",
+              size: data.length,
+              risks: risks.join(", ") || "Clean",
+            });
+          }));
         }
       });
 
@@ -1789,36 +1908,219 @@
       setStatus("Scan complete.", true);
     }
 
-    async function dlFile(path) {
-      if (!zipObj || !zipObj.file(path)) return;
-      const blob = await zipObj.file(path).async("blob");
-      saveAs(blob, path.split("/").pop() || "file.bin");
+    // ---------------------------
+    // Export / Copy (per current tab)
+    // ---------------------------
+    function getExportSpecForCurrentTab() {
+      // returns { filename, sheet, headers, rows (array of arrays) }
+      const nowTag = new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
+      const base = (originalFileName || "document.docx").replace(/\\.docx$/i,"");
+
+      if (currentTab === "comments" || currentTab === "revisions" || currentTab === "all") {
+        const data = getProcessedMainData();
+        const headers = ["Pg","Part","Type","Text","Author","Date"];
+        const rows = data.map(r => [
+          r.pg || "",
+          r.partLabel || "",
+          (r.type==="com" ? "COM" : r.type==="ins" ? "INS" : "DEL"),
+          r.txt || "",
+          r.auth || "",
+          r.date || ""
+        ]);
+        const name = (currentTab === "comments") ? "Comments"
+                   : (currentTab === "revisions") ? "Changes"
+                   : "All-Activity";
+        return { filename: `${base}_${name}_${nowTag}.xlsx`, sheet: name, headers, rows };
+      }
+
+      if (currentTab === "parts") {
+        const partPath = activePartPath;
+        const data = getSidebarDataForPart(partPath);
+        const headers = ["Pg","Part","Type","Text","Author","Date","UID"];
+        const rows = data.map(r => [
+          r.pg || "",
+          partLabel(r.part || partPath),
+          (r.type==="com" ? "COM" : r.type==="ins" ? "INS" : "DEL"),
+          r.txt || "",
+          r.auth || "",
+          r.date || "",
+          r.uid || ""
+        ]);
+        const name = `Part-${partLabel(partPath).replace(/\\s+/g,"-")}`;
+        return { filename: `${base}_${name}_${nowTag}.xlsx`, sheet: "Part", headers, rows };
+      }
+
+      if (currentTab === "relationships") {
+        const data = getProcessedRelData();
+        const headers = ["Risk","From","Type","Target","Mode","Exists","Refs","rId","relsPath","typeUri"];
+        const rows = data.map(r => [
+          r.risk || "",
+          r.sourceLabel || r.sourcePart || "",
+          r.typeLabel || "",
+          r.targetShown || "",
+          r.mode || "",
+          r.existsLabel || "",
+          r.refs || 0,
+          r.rId || "",
+          r.relsPath || "",
+          r.typeUri || ""
+        ]);
+        return { filename: `${base}_Relationships_${nowTag}.xlsx`, sheet:"Relationships", headers, rows };
+      }
+
+      if (currentTab === "forensics") {
+        const data = getProcessedForensicsData();
+        const headers = ["File","Type","SizeBytes","Risks"];
+        const rows = data.map(r => [ r.path || "", r.type || "", r.size || 0, r.risks || "" ]);
+        return { filename: `${base}_Forensics_${nowTag}.xlsx`, sheet:"Forensics", headers, rows };
+      }
+
+      return null;
     }
 
-    // ---------------------------
-    // GHOST WRITER (still main doc only)
-    // ---------------------------
-    function computeMaxChangeIdAll() {
-      let max = 0;
-      for (const p of parts.values()) {
-        for (const el of [...qAll(p.xmlDoc, "ins"), ...qAll(p.xmlDoc, "del")]) {
-          const id = parseInt(attrW(el, "id"), 10);
-          if (!isNaN(id)) max = Math.max(max, id);
+    function getCopyTextForCurrentTab() {
+      const spec = getExportSpecForCurrentTab();
+      if (!spec) return null;
+      const esc = (v) => String(v ?? "").replace(/\\r?\\n/g,"\\n");
+      const lines = [];
+      lines.push(spec.headers.map(esc).join("\\t"));
+      for (const row of spec.rows) lines.push(row.map(esc).join("\\t"));
+      return lines.join("\\n");
+    }
+
+    async function copyCurrentTab() {
+      const txt = getCopyTextForCurrentTab();
+      if (!txt) { alert("Nothing to copy on this tab."); return; }
+      try {
+        await navigator.clipboard.writeText(txt);
+        alert("Copied (TSV).");
+      } catch {
+        // fallback
+        const ta = document.createElement("textarea");
+        ta.value = txt;
+        ta.style.position="fixed";
+        ta.style.left="-2000px";
+        ta.style.top="0";
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          const ok = document.execCommand("copy");
+          alert(ok ? "Copied (legacy)." : "Copy failed.");
+        } finally {
+          document.body.removeChild(ta);
         }
       }
-      return max;
     }
 
+    function exportCurrentTabXlsx() {
+      const spec = getExportSpecForCurrentTab();
+      if (!spec) { alert("Nothing to export on this tab."); return; }
+
+      const aoa = [spec.headers, ...spec.rows];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, spec.sheet || "Sheet1");
+      const out = XLSX.write(wb, { bookType:"xlsx", type:"array" });
+      const blob = new Blob([out], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      saveAs(blob, spec.filename || "export.xlsx");
+    }
+
+    function refreshExportButtons() {
+      const enabled = (currentTab === "comments" || currentTab === "revisions" || currentTab === "all" ||
+                       currentTab === "parts" || currentTab === "relationships" || currentTab === "forensics");
+      dom.btnCopy.disabled = !enabled;
+      dom.btnExport.disabled = !enabled;
+    }
+
+    // ---------------------------
+    // Metadata
+    // ---------------------------
+    function populateMeta() {
+      if (coreXmlDoc) {
+        const creator = qAll(coreXmlDoc,"creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
+        const lastMod = qAll(coreXmlDoc,"lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
+        if (creator) dom.metaCreator.value = creator.textContent || "";
+        if (lastMod) dom.metaLastMod.value = lastMod.textContent || "";
+      }
+      if (appXmlDoc) {
+        const totalTime = qAll(appXmlDoc,"TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
+        const revision = qAll(appXmlDoc,"Revision")[0] || appXmlDoc.getElementsByTagName("Revision")[0];
+        if (totalTime) dom.metaTime.value = totalTime.textContent || "";
+        if (revision) dom.metaRevision.value = revision.textContent || "";
+      }
+    }
+
+    function writeMetaBackToZip() {
+      if (!zipObj) return;
+      const ser = new XMLSerializer();
+
+      if (coreXmlDoc) {
+        const creator = qAll(coreXmlDoc,"creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
+        const lastMod = qAll(coreXmlDoc,"lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
+        if (creator) creator.textContent = dom.metaCreator.value || "";
+        if (lastMod) lastMod.textContent = dom.metaLastMod.value || "";
+        zipObj.file("docProps/core.xml", ser.serializeToString(coreXmlDoc));
+      }
+      if (appXmlDoc) {
+        const totalTime = qAll(appXmlDoc,"TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
+        const revision = qAll(appXmlDoc,"Revision")[0] || appXmlDoc.getElementsByTagName("Revision")[0];
+        if (totalTime) totalTime.textContent = String(dom.metaTime.value || "0");
+        if (revision) revision.textContent = String(dom.metaRevision.value || "0");
+        zipObj.file("docProps/app.xml", ser.serializeToString(appXmlDoc));
+      }
+    }
+
+    function wipeMetadata() {
+      if (!confirm("Wipe metadata (core/app + rsid across LOADED Word parts)?")) return;
+
+      if (coreXmlDoc) {
+        const creator = qAll(coreXmlDoc,"creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
+        const lastMod = qAll(coreXmlDoc,"lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
+        if (creator) creator.textContent = "Author";
+        if (lastMod) lastMod.textContent = "Author";
+        dom.metaCreator.value = "Author";
+        dom.metaLastMod.value = "Author";
+      }
+      if (appXmlDoc) {
+        const totalTime = qAll(appXmlDoc,"TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
+        if (totalTime) totalTime.textContent = "0";
+        dom.metaTime.value = "0";
+      }
+
+      // strip rsid on loaded Word parts only (fast + avoids rewriting entire zip)
+      for (const meta of partsIndex.values()) {
+        if (!meta.loaded || !meta.xmlDoc) continue;
+        try {
+          const s = new XMLSerializer().serializeToString(meta.xmlDoc);
+          const cleaned = s
+            .replace(/\\s+w:rsidR="[^"]*"/g,"")
+            .replace(/\\s+w:rsidRDefault="[^"]*"/g,"")
+            .replace(/\\s+w:rsidP="[^"]*"/g,"")
+            .replace(/\\s+w:rsidDel="[^"]*"/g,"")
+            .replace(/\\s+w:rsidRPr="[^"]*"/g,"");
+          const re = new DOMParser().parseFromString(cleaned,"text/xml");
+          meta.xmlDoc = re;
+          partsIndex.set(meta.path, meta);
+          if (meta.path === "word/document.xml") mainDocXml = re;
+        } catch {}
+      }
+
+      alert("Metadata wiped (loaded parts).");
+      if (currentTab === "parts") renderPart(activePartPath);
+    }
+
+    // ---------------------------
+    // Ghost Writer (lazy init)
+    // ---------------------------
     function prepareGhost(docXml) {
       ghostParagraphs = [];
       ghostSelIdx = -1;
-
       dom.ghostRender.textContent = "";
-      const ps = qAll(docXml, "p");
 
-      for (let i = 0; i < ps.length; i++) {
+      const ps = qAll(docXml, "p");
+      for (let i=0;i<ps.length;i++){
         let t = "";
-        for (const r of qAll(ps[i], "r")) for (const tx of qAll(r, "t")) t += tx.textContent || "";
+        for (const r of qAll(ps[i],"r")) for (const tx of qAll(r,"t")) t += tx.textContent || "";
         ghostParagraphs.push({ node: ps[i], txt: t });
 
         if (t.trim()) {
@@ -1828,6 +2130,7 @@
           dom.ghostRender.appendChild(p);
         }
       }
+      ghostReady = true;
     }
 
     function handleGhostSelection() {
@@ -1842,8 +2145,7 @@
         dom.ghostTools.style.display = "block";
         dom.ghostHint.style.display = "none";
         const s = sel.toString();
-        dom.ghostSelText.textContent = s.length > 60 ? s.slice(0, 60) + "…" : s;
-
+        dom.ghostSelText.textContent = s.length > 60 ? s.slice(0,60) + "…" : s;
         dom.ghostReplace.value = "";
         if (!dom.ghostAuth.value) dom.ghostAuth.value = "Author";
       }
@@ -1856,7 +2158,7 @@
       if (!selTxt) { alert("Select text first"); return; }
 
       const repTxt = dom.ghostReplace.value || "";
-      const auth = dom.ghostAuth.value?.trim() || "Author";
+      const auth = (dom.ghostAuth.value || "").trim() || "Author";
       const dateIso = dom.ghostDate.value ? fromDatetimeLocal(dom.ghostDate.value) : new Date().toISOString();
 
       const pObj = ghostParagraphs[ghostSelIdx];
@@ -1864,16 +2166,13 @@
       const fullTxt = pObj.txt;
 
       const start = fullTxt.indexOf(selTxt);
-      if (start === -1) {
-        alert("Match Error: Try selecting plain text (no line breaks).");
-        return;
-      }
+      if (start === -1) { alert("Match Error: Try selecting plain text (no line breaks)."); return; }
 
       const pre = fullTxt.substring(0, start);
       const post = fullTxt.substring(start + selTxt.length);
 
       const pPr = Array.from(pNode.childNodes).find(n => n.localName === "pPr") || null;
-      Array.from(pNode.childNodes).forEach(ch => { if (!(pPr && ch === pPr)) pNode.removeChild(ch); });
+      Array.from(pNode.childNodes).forEach(ch => { if (!(pPr && ch===pPr)) pNode.removeChild(ch); });
       if (pPr && pNode.firstChild !== pPr) pNode.insertBefore(pPr, pNode.firstChild);
 
       function makeRun(text, kind) {
@@ -1895,10 +2194,7 @@
         wrap.appendChild(run);
         return wrap;
       }
-      function appendNormal(text) {
-        if (!text) return;
-        pNode.appendChild(makeRun(text, "t"));
-      }
+      function appendNormal(text) { if (!text) return; pNode.appendChild(makeRun(text, "t")); }
 
       appendNormal(pre);
       const delWrap = wrapChange("del", selTxt);
@@ -1907,24 +2203,25 @@
       if (insWrap) pNode.appendChild(insWrap);
       appendNormal(post);
 
-      alert("Injected.");
+      // mark main doc part as loaded and updated
+      const meta = partsIndex.get("word/document.xml");
+      if (meta) { meta.loaded = true; meta.xmlDoc = mainDocXml; partsIndex.set("word/document.xml", meta); }
 
-      // update parts map for document.xml
-      parts.set("word/document.xml", { path: "word/document.xml", label: "Main Document", xmlDoc: mainDocXml });
-
-      rebuildActivityFromAllParts();
+      rebuildRevisionsAndAnchorsFromLoadedParts();
       renderMainTableBody();
       if (currentTab === "parts") renderPart(activePartPath);
+
       prepareGhost(mainDocXml);
+      alert("Injected.");
     }
 
     // ---------------------------
-    // WRITE-BACK / SAVE
+    // Save / write-back
     // ---------------------------
-    function buildRevisionNodeIndexForDoc(doc) {
+    function buildRevisionNodeIndex(doc) {
       const idx = new Map();
-      for (const n of qAll(doc, "ins")) idx.set("ins:" + attrW(n, "id"), n);
-      for (const n of qAll(doc, "del")) idx.set("del:" + attrW(n, "id"), n);
+      for (const n of qAll(doc,"ins")) idx.set("ins:" + attrW(n,"id"), n);
+      for (const n of qAll(doc,"del")) idx.set("del:" + attrW(n,"id"), n);
       return idx;
     }
 
@@ -1944,18 +2241,18 @@
       }
     }
 
-    function applyEditsToAllParts() {
-      // Apply revision edits to the correct part document
+    function applyEditsToLoadedPartsRevisions() {
       const partIndexes = new Map();
-      for (const [path, p] of parts.entries()) {
-        partIndexes.set(path, buildRevisionNodeIndexForDoc(p.xmlDoc));
+      for (const meta of partsIndex.values()) {
+        if (!meta.loaded || !meta.xmlDoc) continue;
+        partIndexes.set(meta.path, buildRevisionNodeIndex(meta.xmlDoc));
       }
 
       for (const it of items.values()) {
         if (it.type !== "ins" && it.type !== "del") continue;
         const p = it.part;
-        if (!p || !parts.has(p)) continue;
-
+        const meta = partsIndex.get(p);
+        if (!meta || !meta.loaded || !meta.xmlDoc) continue;
         const idx = partIndexes.get(p);
         if (!idx) continue;
 
@@ -2004,166 +2301,44 @@
       zip.file("word/comments.xml", new XMLSerializer().serializeToString(cDoc));
     }
 
-    function populateMeta() {
-      if (coreXmlDoc) {
-        const creator = qAll(coreXmlDoc, "creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
-        const lastMod = qAll(coreXmlDoc, "lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
-        if (creator) dom.metaCreator.value = creator.textContent || "";
-        if (lastMod) dom.metaLastMod.value = lastMod.textContent || "";
-      }
-      if (appXmlDoc) {
-        const totalTime = qAll(appXmlDoc, "TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
-        const revision = qAll(appXmlDoc, "Revision")[0] || appXmlDoc.getElementsByTagName("Revision")[0];
-        if (totalTime) dom.metaTime.value = totalTime.textContent || "";
-        if (revision) dom.metaRevision.value = revision.textContent || "";
-      }
-    }
-
-    function writeMetaBackToZip() {
-      const ser = new XMLSerializer();
-
-      if (coreXmlDoc) {
-        const creator = qAll(coreXmlDoc, "creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
-        const lastMod = qAll(coreXmlDoc, "lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
-        if (creator) creator.textContent = dom.metaCreator.value || "";
-        if (lastMod) lastMod.textContent = dom.metaLastMod.value || "";
-        zipObj.file("docProps/core.xml", ser.serializeToString(coreXmlDoc));
-      }
-
-      if (appXmlDoc) {
-        const totalTime = qAll(appXmlDoc, "TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
-        const revision = qAll(appXmlDoc, "Revision")[0] || appXmlDoc.getElementsByTagName("Revision")[0];
-        if (totalTime) totalTime.textContent = String(dom.metaTime.value || "0");
-        if (revision) revision.textContent = String(dom.metaRevision.value || "0");
-        zipObj.file("docProps/app.xml", ser.serializeToString(appXmlDoc));
-      }
-    }
-
-    function wipeMetadata() {
-      if (!confirm("Wipe metadata (core/app + rsid across Word parts)?")) return;
-
-      if (coreXmlDoc) {
-        const creator = qAll(coreXmlDoc, "creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
-        const lastMod = qAll(coreXmlDoc, "lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
-        if (creator) creator.textContent = "Author";
-        if (lastMod) lastMod.textContent = "Author";
-        dom.metaCreator.value = "Author";
-        dom.metaLastMod.value = "Author";
-      }
-
-      if (appXmlDoc) {
-        const totalTime = qAll(appXmlDoc, "TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
-        if (totalTime) totalTime.textContent = "0";
-        dom.metaTime.value = "0";
-      }
-
-      // strip rsid on all parsed Word parts
-      for (const [path, p] of parts.entries()) {
-        try {
-          const s = new XMLSerializer().serializeToString(p.xmlDoc);
-          const cleaned = s
-            .replace(/\s+w:rsidR="[^"]*"/g, "")
-            .replace(/\s+w:rsidRDefault="[^"]*"/g, "")
-            .replace(/\s+w:rsidP="[^"]*"/g, "")
-            .replace(/\s+w:rsidDel="[^"]*"/g, "")
-            .replace(/\s+w:rsidRPr="[^"]*"/g, "");
-          const re = new DOMParser().parseFromString(cleaned, "text/xml");
-          parts.set(path, { ...p, xmlDoc: re });
-          if (path === "word/document.xml") mainDocXml = re;
-        } catch {}
-      }
-
-      alert("Metadata wiped.");
-      if (currentTab === "parts") renderPart(activePartPath);
-    }
-
     async function downloadWord() {
-      if (!zipObj || !mainDocXml) return;
-
+      if (!zipObj) return;
       setStatus("Saving…", true);
 
-      applyEditsToAllParts();
+      // Ensure main doc is loaded at minimum
+      await ensurePartLoaded("word/document.xml");
 
-      // Write all parsed Word parts back
+      applyEditsToLoadedPartsRevisions();
+
       const ser = new XMLSerializer();
-      for (const [path, p] of parts.entries()) {
-        zipObj.file(path, ser.serializeToString(p.xmlDoc));
+
+      // Write only LOADED Word parts back (unloaded parts remain untouched in zip)
+      for (const meta of partsIndex.values()) {
+        if (!meta.loaded || !meta.xmlDoc) continue;
+        zipObj.file(meta.path, ser.serializeToString(meta.xmlDoc));
       }
 
       await applyEditsToCommentsXmlAndWrite(zipObj);
       writeMetaBackToZip();
 
-      const blob = await zipObj.generateAsync({ type: "blob" });
+      const blob = await zipObj.generateAsync({ type:"blob" });
       saveAs(blob, "Edited_" + (originalFileName || "document.docx"));
       setStatus("Saved!", true);
     }
 
-    async function copyTable() {
-      const table = (currentTab === "relationships") ? document.getElementById("rel-table")
-                   : (currentTab === "forensics") ? document.getElementById("forensics-table")
-                   : document.getElementById("data-table");
-      if (!table) return alert("No table to copy");
-
-      const clone = table.cloneNode(true);
-
-      // Replace inputs (datetime) with text values
-      clone.querySelectorAll("input").forEach(inp => {
-        const td = inp.closest("td") || inp.closest("th");
-        if (!td) return;
-        const span = document.createElement("span");
-        if (inp.type === "checkbox") span.textContent = inp.checked ? "✓" : "";
-        else span.textContent = inp.value || "";
-        td.textContent = "";
-        td.appendChild(span);
-      });
-
-      try {
-        const html = clone.outerHTML;
-        const blob = new Blob([html], { type: "text/html" });
-        const data = [new ClipboardItem({ "text/html": blob })];
-        await navigator.clipboard.write(data);
-        alert("Table copied to clipboard!");
-      } catch (err) {
-        console.warn("Clipboard API failed, reverting:", err);
-        const range = document.createRange();
-        range.selectNode(table);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-        try {
-          const ok = document.execCommand("copy");
-          if (ok) {
-            alert("Copied! (Legacy Mode)");
-            sel.removeAllRanges();
-          } else {
-            throw new Error("execCommand failed");
-          }
-        } catch {
-          alert("Auto-copy failed. Table is selected; please copy manually.");
-        }
-      }
-    }
-
     // ---------------------------
-    // GLOBAL BATCH TOOLS
+    // Batch Tools (same behavior, scopes)
     // ---------------------------
-    function openBatchTools() {
-      dom.btModal.style.display = "block";
-      dom.btModal.setAttribute("aria-hidden", "false");
-      refreshBatchUi();
-    }
-    function closeBatchTools() {
-      dom.btModal.style.display = "none";
-      dom.btModal.setAttribute("aria-hidden", "true");
-    }
+    function openBatchTools(){ dom.btModal.style.display="block"; dom.btModal.setAttribute("aria-hidden","false"); refreshBatchUi(); }
+    function closeBatchTools(){ dom.btModal.style.display="none"; dom.btModal.setAttribute("aria-hidden","true"); }
 
     function refreshBatchUi() {
       const op = dom.btOp.value;
-      btRows.author.style.display = (op === "setAuthor") ? "block" : "none";
-      btRows.replace.style.display = (op === "replaceAuthor") ? "block" : "none";
-      btRows.date.style.display = (op === "setDate") ? "block" : "none";
-      btRows.seq.style.display = (op === "sequentialDate") ? "block" : "none";
-      btRows.shift.style.display = (op === "shiftDate") ? "block" : "none";
+      btRows.author.style.display = (op==="setAuthor") ? "block" : "none";
+      btRows.replace.style.display = (op==="replaceAuthor") ? "block" : "none";
+      btRows.date.style.display = (op==="setDate") ? "block" : "none";
+      btRows.seq.style.display = (op==="sequentialDate") ? "block" : "none";
+      btRows.shift.style.display = (op==="shiftDate") ? "block" : "none";
     }
 
     function getBatchCandidateRows(scope) {
@@ -2172,8 +2347,7 @@
       else if (scope === "selected") rows = Array.from(selectedUids).map(uid => items.get(uid)).filter(Boolean);
       else rows = Array.from(items.values());
 
-      // only activity types
-      rows = rows.filter(x => x && (x.type === "com" || x.type === "ins" || x.type === "del"));
+      rows = rows.filter(x => x && (x.type==="com" || x.type==="ins" || x.type==="del"));
       return rows;
     }
 
@@ -2181,13 +2355,12 @@
       const wantCom = dom.btCom.checked;
       const wantIns = dom.btIns.checked;
       const wantDel = dom.btDel.checked;
-
       const part = dom.btPart.value;
 
       return rows.filter(x => {
-        if (x.type === "com" && !wantCom) return false;
-        if (x.type === "ins" && !wantIns) return false;
-        if (x.type === "del" && !wantDel) return false;
+        if (x.type==="com" && !wantCom) return false;
+        if (x.type==="ins" && !wantIns) return false;
+        if (x.type==="del" && !wantDel) return false;
         if (part !== "*" && (x.part || "") !== part) return false;
         return true;
       });
@@ -2195,18 +2368,16 @@
 
     function batchOrder(rows, scope) {
       if (scope === "filtered") {
-        // preserve current visible order
         const visible = getProcessedMainData().map(r => r.uid);
         const pos = new Map();
-        visible.forEach((u, i) => pos.set(u, i));
-        return stableSort(rows, (a, b) => (pos.get(a.uid) ?? 1e9) - (pos.get(b.uid) ?? 1e9));
+        visible.forEach((u,i)=>pos.set(u,i));
+        return stableSort(rows, (a,b)=> (pos.get(a.uid) ?? 1e9) - (pos.get(b.uid) ?? 1e9));
       }
-      // otherwise: part label, pg, uid
-      return stableSort(rows, (a, b) => {
-        const pa = String(a.part || ""), pb = String(b.part || "");
+      return stableSort(rows, (a,b) => {
+        const pa = String(a.part||""), pb = String(b.part||"");
         if (pa < pb) return -1;
         if (pa > pb) return 1;
-        const ga = Number(a.pg) || 0, gb = Number(b.pg) || 0;
+        const ga = Number(a.pg)||0, gb = Number(b.pg)||0;
         if (ga !== gb) return ga - gb;
         return String(a.uid).localeCompare(String(b.uid));
       });
@@ -2216,14 +2387,9 @@
       const scope = dom.btScope.value;
       const op = dom.btOp.value;
 
-      let rows = getBatchCandidateRows(scope);
-      rows = batchFilter(rows);
-      rows = batchOrder(rows, scope);
+      let rows = batchOrder(batchFilter(getBatchCandidateRows(scope)), scope);
 
-      if (rows.length === 0) {
-        alert("No matching items for that scope/type/part.");
-        return;
-      }
+      if (rows.length === 0) { alert("No matching items for that scope/type/part."); return; }
 
       if (op === "setAuthor") {
         const a = (dom.btAuthor.value || "").trim();
@@ -2235,10 +2401,7 @@
         const from = (dom.btFromAuthor.value || "").trim().toLowerCase();
         const to = (dom.btToAuthor.value || "").trim();
         if (!from || !to) { alert("Enter both From and To."); return; }
-        rows.forEach(x => {
-          const cur = String(x.auth || "");
-          if (cur.toLowerCase() === from) x.auth = to;
-        });
+        rows.forEach(x => { if (String(x.auth||"").toLowerCase() === from) x.auth = to; });
       }
 
       if (op === "setDate") {
@@ -2252,10 +2415,7 @@
         const step = Number(dom.btSeqStep.value);
         if (!startIso || isNaN(step) || step < 0) { alert("Pick a start date/time and valid step."); return; }
         let d = new Date(startIso);
-        rows.forEach(x => {
-          x.date = d.toISOString();
-          d.setMinutes(d.getMinutes() + step);
-        });
+        rows.forEach(x => { x.date = d.toISOString(); d.setMinutes(d.getMinutes() + step); });
       }
 
       if (op === "shiftDate") {
@@ -2282,149 +2442,84 @@
     }
 
     // ---------------------------
-    // TAB SWITCHING
+    // Tab switching
     // ---------------------------
-    function switchTab(t) {
+    async function switchTab(t) {
       currentTab = t;
       if (t === "comments" || t === "revisions" || t === "all") activityMode = t;
 
-      document.querySelectorAll(".view-section").forEach(e => e.style.display = "none");
+      document.querySelectorAll(".view-section").forEach(e => e.style.display="none");
       document.querySelectorAll(".tab-btn").forEach(e => e.classList.remove("active"));
-
       const btn = document.querySelector(`.tab-btn[data-tab="${t}"]`);
       if (btn) btn.classList.add("active");
 
-      if (t === "forensics") {
-        dom.viewForensics.style.display = "block";
+      if (t === "relationships") {
+        dom.viewRel.style.display="block";
+        if (!relationshipsBuilt) {
+          await buildRelationshipsOnDemand();
+        } else {
+          renderRelTable();
+        }
+      } else if (t === "forensics") {
+        dom.viewForensics.style.display="block";
         renderForensicsBody();
-      } else if (t === "relationships") {
-        dom.viewRel.style.display = "block";
-        renderRelBody();
       } else if (t === "parts") {
-        dom.viewParts.style.display = "block";
-        if (!parts.has(activePartPath)) activePartPath = "word/document.xml";
+        dom.viewParts.style.display="block";
+        if (!partsIndex.has(activePartPath)) activePartPath = "word/document.xml";
+        await ensurePartLoaded(activePartPath);
         renderPart(activePartPath);
       } else if (t === "ghost") {
-        dom.viewGhost.style.display = "block";
+        dom.viewGhost.style.display="block";
+        if (!ghostReady) {
+          await ensurePartLoaded("word/document.xml");
+          setStatus("Preparing Ghost Writer…", true);
+          await yieldToUI();
+          prepareGhost(mainDocXml);
+          setStatus("Ready.", true);
+        }
       } else if (t === "meta") {
-        dom.viewMeta.style.display = "block";
+        dom.viewMeta.style.display="block";
       } else {
-        dom.viewTable.style.display = "block";
+        dom.viewTable.style.display="block";
         renderMainTableBody();
       }
+
+      refreshExportButtons();
     }
 
     // ---------------------------
-    // LOAD / PARSE
+    // Load file (optimized: no relationships, no ghost, no extra parts parsing)
     // ---------------------------
-    async function parseWordParts(zip) {
-      parts.clear();
-
-      // Always include main document
-      const paths = new Set(["word/document.xml"]);
-
-      zip.forEach((path) => {
-        const p = path.toLowerCase();
-        if (p.match(/^word\/header\d+\.xml$/)) paths.add(path);
-        if (p.match(/^word\/footer\d+\.xml$/)) paths.add(path);
-        if (p === "word/footnotes.xml") paths.add(path);
-        if (p === "word/endnotes.xml") paths.add(path);
-      });
-
-      const list = Array.from(paths);
-      const tasks = list.map(async (path) => {
-        if (!zip.file(path)) return;
-        const s = await zip.file(path).async("string");
-        const doc = new DOMParser().parseFromString(s, "text/xml");
-        if (isParserError(doc)) throw new Error("Failed to parse " + path);
-        parts.set(path, { path, label: partLabel(path), xmlDoc: doc });
-        if (path === "word/document.xml") mainDocXml = doc;
-      });
-
-      await Promise.all(tasks);
-    }
-
-    function populatePartSelects() {
-      // Parts dropdown
-      dom.partSelect.textContent = "";
-      const opts = getPartOptions();
-      for (const p of opts) {
-        const opt = document.createElement("option");
-        opt.value = p;
-        opt.textContent = partLabel(p);
-        dom.partSelect.appendChild(opt);
-      }
-      dom.partSelect.value = activePartPath;
-
-      // Batch part dropdown
-      dom.btPart.textContent = "";
-      const optAll = document.createElement("option");
-      optAll.value = "*";
-      optAll.textContent = "All parts";
-      dom.btPart.appendChild(optAll);
-      for (const p of opts) {
-        const opt = document.createElement("option");
-        opt.value = p;
-        opt.textContent = partLabel(p);
-        dom.btPart.appendChild(opt);
-      }
-    }
-
-    function rebuildActivityFromAllParts() {
-      // Map comment anchors across all parts (first occurrence wins)
-      const anchorMap = new Map();
-
-      // revisions from parts
-      for (const [path, p] of parts.entries()) {
-        const ctx = mapContext(p.xmlDoc, path);
-
-        // capture comment anchors based on range start
-        for (const key of Object.keys(ctx.pg)) {
-          if (key.startsWith("c:")) {
-            const id = key.slice(2);
-            if (!anchorMap.has(id)) {
-              anchorMap.set(id, { part: path, pg: ctx.pg[key] ?? ((path === "word/document.xml") ? 1 : 0) });
-            }
-          }
-        }
-
-        mergeItems(extractRevisions(p.xmlDoc, path, ctx));
-      }
-
-      // comments text from comments.xml, but attach to anchor part
-      mergeItems(extractComments(commentsXmlDoc, anchorMap));
-
-      // nextChangeId should be beyond max across all parts
-      nextChangeId = computeMaxChangeIdAll() + 1;
-    }
-
     async function loadFile(file) {
       if (!file) return;
       clearErrorLog();
 
       originalFileName = file.name;
-      dom.status.style.color = "var(--secondary)";
-      dom.status.textContent = "Loading…";
+      setStatus("Loading…", true);
 
       try {
         const buf = await file.arrayBuffer();
         zipObj = await JSZip.loadAsync(buf);
 
-        // Remove protection (best effort)
+        // best effort: remove protection
         try {
           if (zipObj.file("word/settings.xml")) {
             let s = await zipObj.file("word/settings.xml").async("string");
             s = s
-              .replace(/<w:documentProtection\b[^>]*\/>/g, "")
-              .replace(/<w:writeProtection\b[^>]*\/>/g, "")
-              .replace(/<w:documentProtection\b[^>]*>[\s\S]*?<\/w:documentProtection>/g, "")
-              .replace(/<w:writeProtection\b[^>]*>[\s\S]*?<\/w:writeProtection>/g, "");
+              .replace(/<w:documentProtection\\b[^>]*\\/>/g, "")
+              .replace(/<w:writeProtection\\b[^>]*\\/>/g, "")
+              .replace(/<w:documentProtection\\b[^>]*>[\\s\\S]*?<\\/w:documentProtection>/g, "")
+              .replace(/<w:writeProtection\\b[^>]*>[\\s\\S]*?<\\/w:writeProtection>/g, "");
             zipObj.file("word/settings.xml", s);
           }
         } catch {}
 
-        // Parse parts
-        await parseWordParts(zipObj);
+        // Build parts index (fast)
+        buildPartsIndex(zipObj);
+        populatePartSelects();
+
+        // Parse ONLY document.xml now
+        await ensurePartLoaded("word/document.xml");
 
         // comments.xml
         commentsXmlDoc = null;
@@ -2434,7 +2529,7 @@
           if (isParserError(commentsXmlDoc)) throw new Error("Failed to parse word/comments.xml");
         }
 
-        // core/app
+        // core/app (optional)
         coreXmlDoc = null; appXmlDoc = null;
         if (zipObj.file("docProps/core.xml")) {
           const s = await zipObj.file("docProps/core.xml").async("string");
@@ -2446,25 +2541,30 @@
           appXmlDoc = new DOMParser().parseFromString(s, "text/xml");
           if (isParserError(appXmlDoc)) appXmlDoc = null;
         }
-
-        items.clear();
-        selectedUids.clear();
-
-        rebuildActivityFromAllParts();
-        populatePartSelects();
         populateMeta();
 
-        // Build relationships after parts exist (so ref counting works)
-        await buildRelationships();
+        // Build activity fast (main doc + comments only)
+        buildInitialActivityFast();
 
-        prepareGhost(mainDocXml);
+        relationshipsBuilt = false;
+        relationshipsData = [];
+        relHeadBuilt = false;
+        dom.relHead.textContent = "";
+        dom.relBody.textContent = "";
 
-        dom.drop.style.display = "none";
-        dom.toolbar.style.display = "flex";
-        dom.tabs.style.display = "flex";
-        switchTab("all");
+        ghostReady = false;
+        ghostParagraphs = [];
+        dom.ghostRender.textContent = "";
+        dom.ghostTools.style.display = "none";
+        dom.ghostHint.style.display = "block";
 
-        showStatusHtml("<span style='color:green'>Loaded successfully</span>", true);
+        // show UI
+        dom.drop.style.display="none";
+        dom.toolbar.style.display="flex";
+        dom.tabs.style.display="flex";
+
+        setStatus("Loaded. (Relationships and other parts load on demand.)", true);
+        await switchTab("all");
       } catch (e) {
         console.error(e);
         setStatus("Error loading file", false);
@@ -2473,70 +2573,54 @@
     }
 
     // ---------------------------
-    // EVENTS
+    // Wiring
     // ---------------------------
     function wireUi() {
       dom.drop.addEventListener("click", () => dom.file.click());
-      dom.drop.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") dom.file.click();
-      });
+      dom.drop.addEventListener("keydown", (e) => { if (e.key==="Enter" || e.key===" ") dom.file.click(); });
       dom.file.addEventListener("change", (e) => loadFile(e.target.files[0]));
 
-      ["dragenter", "dragover"].forEach(evt => {
-        dom.drop.addEventListener(evt, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          dom.drop.classList.add("dragover");
-        });
-      });
-      ["dragleave", "drop"].forEach(evt => {
-        dom.drop.addEventListener(evt, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          dom.drop.classList.remove("dragover");
-        });
-      });
-      dom.drop.addEventListener("drop", (e) => {
-        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-        if (f) loadFile(f);
-      });
+      ["dragenter","dragover"].forEach(evt => dom.drop.addEventListener(evt, (e)=>{ e.preventDefault(); e.stopPropagation(); dom.drop.classList.add("dragover"); }));
+      ["dragleave","drop"].forEach(evt => dom.drop.addEventListener(evt, (e)=>{ e.preventDefault(); e.stopPropagation(); dom.drop.classList.remove("dragover"); }));
+      dom.drop.addEventListener("drop", (e)=>{ const f = e.dataTransfer?.files?.[0]; if (f) loadFile(f); });
 
-      dom.tabs.addEventListener("click", (e) => {
+      dom.tabs.addEventListener("click", async (e) => {
         const btn = e.target.closest(".tab-btn");
         if (!btn) return;
-        switchTab(btn.dataset.tab);
+        await switchTab(btn.dataset.tab);
       });
 
-      document.getElementById("btn-batch-tools").addEventListener("click", openBatchTools);
       document.getElementById("btn-save").addEventListener("click", downloadWord);
-      document.getElementById("btn-copy").addEventListener("click", copyTable);
       document.getElementById("btn-reset").addEventListener("click", () => location.reload());
+      document.getElementById("btn-batch-tools").addEventListener("click", openBatchTools);
 
-      document.getElementById("btn-scan").addEventListener("click", scanForensics);
-      document.getElementById("btn-wipe").addEventListener("click", wipeMetadata);
+      dom.btnCopy.addEventListener("click", copyCurrentTab);
+      dom.btnExport.addEventListener("click", exportCurrentTabXlsx);
 
       // Parts
-      dom.partSelect.addEventListener("change", () => setActivePart(dom.partSelect.value));
+      dom.partSelect.addEventListener("change", async () => { await setActivePart(dom.partSelect.value); });
       dom.partFilter.addEventListener("input", () => { if (currentTab === "parts") renderSidebarForPart(activePartPath); });
-      document.getElementById("btn-clear-selection").addEventListener("click", () => {
-        selectedUids.clear();
-        if (currentTab === "all" || currentTab === "comments" || currentTab === "revisions") renderMainTableBody();
-        alert("Selection cleared.");
-      });
+      document.getElementById("btn-clear-selection").addEventListener("click", () => { selectedUids.clear(); if (currentTab!=="relationships") renderMainTableBody(); alert("Selection cleared."); });
+
+      // Forensics
+      document.getElementById("btn-scan").addEventListener("click", scanForensics);
+
+      // Metadata
+      document.getElementById("btn-wipe").addEventListener("click", wipeMetadata);
 
       // Ghost
       dom.ghostRender.addEventListener("mouseup", handleGhostSelection);
       dom.ghostRender.addEventListener("touchend", () => setTimeout(handleGhostSelection, 0));
-      document.addEventListener("selectionchange", () => {
-        if (dom.viewGhost.style.display === "block") handleGhostSelection();
-      });
+      document.addEventListener("selectionchange", () => { if (dom.viewGhost.style.display === "block") handleGhostSelection(); });
       document.getElementById("btn-inject").addEventListener("click", executeGhostEdit);
 
-      // Batch Tools modal
+      // Batch modal
       document.getElementById("btn-bt-cancel").addEventListener("click", closeBatchTools);
       document.getElementById("btn-bt-apply").addEventListener("click", applyBatchTools);
-      dom.btModal.addEventListener("click", (e) => { if (e.target === dom.btModal) closeBatchTools(); });
+      dom.btModal.addEventListener("click", (e)=>{ if (e.target === dom.btModal) closeBatchTools(); });
       dom.btOp.addEventListener("change", refreshBatchUi);
+
+      refreshExportButtons();
     }
 
     window.addEventListener("DOMContentLoaded", wireUi);
