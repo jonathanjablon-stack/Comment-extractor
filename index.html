@@ -366,6 +366,7 @@
       <button class="tab-btn" data-tab="relationships">Relationships</button>
       <button class="tab-btn" data-tab="forensics">Forensics</button>
       <button class="tab-btn" data-tab="ghost">Ghost Writer</button>
+      <button class="tab-btn" data-tab="regex">Regex Replace</button>
       <button class="tab-btn" data-tab="meta">Metadata</button>
     </div>
 
@@ -442,6 +443,44 @@
       <div class="tiny" style="margin-top:8px;">Export/Copy is disabled on this tab (there’s no table).</div>
     </div>
 
+
+    <!-- Regex Replace -->
+    <div id="view-regex" class="view-section">
+      <div class="doc-topbar" style="border-radius:6px; border-bottom:1px solid #ccc;">
+        <input id="rx-pattern" type="text" placeholder="Regex pattern (no / /)" aria-label="Regex pattern" />
+        <input id="rx-replace" type="text" placeholder="Replacement" aria-label="Replacement" />
+        <select id="rx-scope" aria-label="Scope">
+          <option value="main">Main document only</option>
+          <option value="active">Current part only</option>
+          <option value="loaded">All loaded parts</option>
+          <option value="all">All parts (will load headers/footers/etc.)</option>
+        </select>
+        <label style="display:flex; align-items:center; gap:6px; font-weight:900; font-size:12px; flex:0 0 auto;">
+          <input type="checkbox" id="rx-i" /> i
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-weight:900; font-size:12px; flex:0 0 auto;">
+          <input type="checkbox" id="rx-m" /> m
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-weight:900; font-size:12px; flex:0 0 auto;">
+          <input type="checkbox" id="rx-s" /> s
+        </label>
+        <button class="mini" id="btn-rx-run" title="Run replace (text nodes only)">Run</button>
+        <button class="mini" id="btn-rx-clear" title="Clear results">Clear</button>
+      </div>
+
+      <div class="tiny" style="margin:8px 0 10px 0;">
+        This operates on <b>text only</b> (w:t and w:delText) and does not remove or rewrite XML tags.
+        It may miss patterns that span multiple Word runs.
+      </div>
+
+      <div class="table-wrap">
+        <table id="rx-table">
+          <thead id="rx-head"></thead>
+          <tbody id="rx-body"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Metadata -->
     <div id="view-meta" class="view-section">
       <div style="padding:15px;">
@@ -507,8 +546,11 @@
       <div class="form-row" id="row-replace">
         <label>Replace Author</label>
         <div class="row-inline">
-          <input type="text" id="batch-from-author" placeholder="From (case-insensitive)">
-          <input type="text" id="batch-to-author" placeholder="To">
+          <select id="batch-from-author" aria-label="From author"></select>
+          <select id="batch-to-author" aria-label="To author"></select>
+</div>
+        <div id="batch-to-custom-row" style="display:none; margin-top:8px;">
+          <input type="text" id="batch-to-author-custom" placeholder="Custom ‘To’ author">
         </div>
       </div>
 
@@ -584,6 +626,10 @@
     // forensics
     let forensicsData = [];
 
+    // regex
+    let regexChanges = [];
+    let regexHeadBuilt = false;
+
     // ghost
     let ghostReady = false;
     let ghostParagraphs = [];
@@ -597,6 +643,7 @@
       main: { sortCol: "pg", dir: 1, filters: {} },
       rel: { sortCol: "riskRank", dir: 1, filters: {} },
       forensics: { sortCol: "path", dir: 1, filters: {} },
+      regex: { sortCol: "pg", dir: 1, filters: {} },
     };
 
     const dom = {
@@ -629,6 +676,16 @@
       forHead: document.getElementById("forensics-head"),
       forBody: document.getElementById("forensics-body"),
 
+      viewRegex: document.getElementById("view-regex"),
+      rxPattern: document.getElementById("rx-pattern"),
+      rxReplace: document.getElementById("rx-replace"),
+      rxScope: document.getElementById("rx-scope"),
+      rxI: document.getElementById("rx-i"),
+      rxM: document.getElementById("rx-m"),
+      rxS: document.getElementById("rx-s"),
+      rxHead: document.getElementById("rx-head"),
+      rxBody: document.getElementById("rx-body"),
+
       viewGhost: document.getElementById("view-ghost"),
       ghostRender: document.getElementById("ghost-render"),
       ghostTools: document.getElementById("ghost-tools"),
@@ -654,6 +711,8 @@
       btAuthor: document.getElementById("batch-author"),
       btFromAuthor: document.getElementById("batch-from-author"),
       btToAuthor: document.getElementById("batch-to-author"),
+      btToAuthorCustom: document.getElementById("batch-to-author-custom"),
+      btToCustomRow: document.getElementById("batch-to-custom-row"),
       btDt: document.getElementById("batch-dt"),
       btSeqStart: document.getElementById("batch-seq-start"),
       btSeqStep: document.getElementById("batch-seq-step"),
@@ -2055,6 +2114,256 @@
       setStatus("Scan complete.", true);
     }
 
+
+    // ---------------------------
+    // Regex Replace (text-only) + log table
+    // ---------------------------
+    const RX_COLS = [
+      { k:"pg", label:"Pg", width:"60px" },
+      { k:"part", label:"Part", width:"180px" },
+      { k:"node", label:"Node", width:"90px" },
+      { k:"before", label:"Original", width:"" },
+      { k:"after", label:"Revised", width:"" },
+    ];
+
+    function getProcessedRegexData() {
+      const state = tableState.regex;
+      let src = regexChanges.slice();
+
+      // filters
+      const filters = state.filters;
+      src = src.filter(row => {
+        for (const k of Object.keys(filters)) {
+          const needle = String(filters[k] || "").toLowerCase();
+          if (!needle) continue;
+          const hay = String(row[k] || "").toLowerCase();
+          if (!hay.includes(needle)) return false;
+        }
+        return true;
+      });
+
+      // sort
+      const col = state.sortCol;
+      const dir = state.dir;
+      src = stableSort(src, (a,b) => {
+        let va = a[col], vb = b[col];
+        if (col === "pg") { va = Number(va)||0; vb = Number(vb)||0; }
+        else { va = String(va ?? "").toLowerCase(); vb = String(vb ?? "").toLowerCase(); }
+        if (va < vb) return -1*dir;
+        if (va > vb) return 1*dir;
+        return 0;
+      });
+
+      return src;
+    }
+
+    function syncRxSortIndicators() {
+      const trH = dom.rxHead.querySelector("tr");
+      if (!trH) return;
+      const ths = Array.from(trH.children);
+      for (const th of ths) th.classList.remove("sort-asc","sort-desc");
+
+      const state = tableState.regex;
+      const idx = RX_COLS.findIndex(c => c.k === state.sortCol);
+      if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir===1 ? "sort-asc" : "sort-desc");
+    }
+
+    function buildRegexHead() {
+      if (regexHeadBuilt) return;
+      regexHeadBuilt = true;
+      dom.rxHead.textContent = "";
+
+      const trH = document.createElement("tr");
+      const trF = document.createElement("tr");
+      trF.className = "filter-row";
+
+      for (const col of RX_COLS) {
+        const th = document.createElement("th");
+        th.textContent = col.label;
+        if (col.width) th.style.width = col.width;
+        th.addEventListener("click", () => {
+          const state = tableState.regex;
+          if (state.sortCol === col.k) state.dir *= -1;
+          else { state.sortCol = col.k; state.dir = 1; }
+          syncRxSortIndicators();
+          renderRegexBody();
+        });
+        trH.appendChild(th);
+
+        const thF = document.createElement("th");
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.className = "filter-input";
+        inp.value = tableState.regex.filters[col.k] || "";
+        inp.addEventListener("input", () => {
+          if (inp.value && inp.value.trim()) tableState.regex.filters[col.k] = inp.value;
+          else delete tableState.regex.filters[col.k];
+          renderRegexBody();
+        });
+        thF.appendChild(inp);
+        trF.appendChild(thF);
+      }
+
+      dom.rxHead.appendChild(trH);
+      dom.rxHead.appendChild(trF);
+      syncRxSortIndicators();
+    }
+
+    function renderRegexBody() {
+      buildRegexHead();
+      dom.rxBody.textContent = "";
+
+      const data = getProcessedRegexData();
+      for (const r of data) {
+        const tr = document.createElement("tr");
+
+        const tdPg = document.createElement("td");
+        tdPg.textContent = (r.pg && r.pg !== 0) ? String(r.pg) : "";
+        tr.appendChild(tdPg);
+
+        const tdPart = document.createElement("td");
+        tdPart.textContent = r.part || "";
+        tr.appendChild(tdPart);
+
+        const tdNode = document.createElement("td");
+        tdNode.textContent = r.node || "";
+        tr.appendChild(tdNode);
+
+        const tdBefore = document.createElement("td");
+        tdBefore.style.whiteSpace = "pre-wrap";
+        tdBefore.textContent = r.before || "";
+        tr.appendChild(tdBefore);
+
+        const tdAfter = document.createElement("td");
+        tdAfter.style.whiteSpace = "pre-wrap";
+        tdAfter.textContent = r.after || "";
+        tr.appendChild(tdAfter);
+
+        dom.rxBody.appendChild(tr);
+      }
+    }
+
+    async function runRegexReplace() {
+      if (!zipObj) { alert("Load a DOCX first."); return; }
+
+      const pattern = String(dom.rxPattern.value || "");
+      const replacement = String(dom.rxReplace.value || "");
+
+      if (!pattern.trim()) { alert("Enter a regex pattern."); return; }
+
+      let flags = "g";
+      if (dom.rxI.checked) flags += "i";
+      if (dom.rxM.checked) flags += "m";
+      if (dom.rxS.checked) flags += "s";
+
+      let rx;
+      try { rx = new RegExp(pattern, flags); }
+      catch (e) { alert("Invalid regex: " + (e.message || e)); return; }
+
+      const scope = dom.rxScope.value;
+
+      // Determine target parts
+      let targets = [];
+      if (scope === "active") targets = [activePartPath];
+      else if (scope === "loaded") targets = Array.from(partsIndex.values()).filter(m => m.loaded).map(m => m.path);
+      else if (scope === "all") targets = Array.from(partsIndex.keys());
+      else targets = ["word/document.xml"]; // main
+
+      // Ensure unique + stable order (main first)
+      targets = Array.from(new Set(targets));
+      const idx = targets.indexOf("word/document.xml");
+      if (idx > 0) { targets.splice(idx,1); targets.unshift("word/document.xml"); }
+
+      regexChanges = [];
+      regexHeadBuilt = false;
+      dom.rxHead.textContent = "";
+      dom.rxBody.textContent = "";
+
+      setStatus("Running regex replace…", true);
+
+      for (let ti=0; ti<targets.length; ti++) {
+        const p = targets[ti];
+        if (!partsIndex.has(p)) continue;
+
+        await ensurePartLoaded(p);
+        const meta = partsIndex.get(p);
+        if (!meta || !meta.xmlDoc) continue;
+
+        const xml = meta.xmlDoc;
+        let page = (p === "word/document.xml") ? 1 : 0;
+
+        // Walk elements in document order (text-only replacement on w:t / w:delText).
+        const stack = [xml.documentElement];
+        let steps = 0;
+
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node || node.nodeType !== 1) continue;
+
+          const ln = node.localName;
+
+          if (p === "word/document.xml") {
+            if (ln === "lastRenderedPageBreak" || (ln === "br" && attrW(node, "type") === "page")) page++;
+          }
+
+          if (ln === "t" || ln === "delText") {
+            const old = node.textContent || "";
+            if (old) {
+              const neu = old.replace(rx, replacement);
+              if (neu !== old) {
+                node.textContent = neu;
+                setAttrXmlSpacePreserve(node, neu);
+                regexChanges.push({
+                  pg: page,
+                  part: partLabel(p),
+                  node: (ln === "delText") ? "delText" : "t",
+                  before: old,
+                  after: neu
+                });
+              }
+            }
+          }
+
+          // push children reversed so traversal stays close to doc order
+          if (node.childNodes && node.childNodes.length) {
+            for (let i=node.childNodes.length-1; i>=0; i--) {
+              const ch = node.childNodes[i];
+              if (ch && ch.nodeType === 1) stack.push(ch);
+            }
+          }
+
+          steps++;
+          if (steps % 4000 === 0) await yieldToUI();
+        }
+
+        // persist updated doc reference
+        meta.loaded = true;
+        meta.xmlDoc = xml;
+        partsIndex.set(p, meta);
+        if (p === "word/document.xml") mainDocXml = xml;
+      }
+
+      // Keep the rest of the app in sync (rebuild revision text + anchors)
+      rebuildRevisionsAndAnchorsFromLoadedParts();
+
+      // If you’re looking at Parts, rerender it; otherwise, tables will pick up changes when opened
+      if (currentTab === "parts") renderPart(activePartPath);
+
+      renderRegexBody();
+      setStatus("Regex replace complete. " + regexChanges.length + " change(s).", true);
+      refreshExportButtons();
+    }
+
+    function clearRegexLog() {
+      regexChanges = [];
+      regexHeadBuilt = false;
+      dom.rxHead.textContent = "";
+      dom.rxBody.textContent = "";
+      renderRegexBody();
+      refreshExportButtons();
+    }
+
+
     // ---------------------------
     // Export / Copy (per current tab)
     // ---------------------------
@@ -2174,7 +2483,7 @@
 
     function refreshExportButtons() {
       const enabled = (currentTab === "comments" || currentTab === "revisions" || currentTab === "all" ||
-                       currentTab === "parts" || currentTab === "relationships" || currentTab === "forensics");
+                       currentTab === "parts" || currentTab === "relationships" || currentTab === "forensics" || currentTab === "regex");
       dom.btnCopy.disabled = !enabled;
       dom.btnExport.disabled = !enabled;
     }
@@ -2468,7 +2777,7 @@
       await applyEditsToCommentsXmlAndWrite(zipObj);
       writeMetaBackToZip();
 
-      const blob = await zipObj.generateAsync({ type:"blob" });
+      const blob = await zipObj.generateAsync({ type:"blob", compression:"DEFLATE", compressionOptions:{ level:6 } });
       saveAs(blob, "Edited_" + (originalFileName || "document.docx"));
       setStatus("Saved!", true);
     }
@@ -2476,7 +2785,63 @@
     // ---------------------------
     // Batch Tools (same behavior, scopes)
     // ---------------------------
-    function openBatchTools(){ dom.btModal.style.display="block"; dom.btModal.setAttribute("aria-hidden","false"); refreshBatchUi(); }
+
+    function getUniqueAuthors() {
+      const set = new Set();
+      for (const it of items.values()) {
+        const a = (it && typeof it.auth === "string") ? it.auth.trim() : "";
+        if (a) set.add(a);
+      }
+      return Array.from(set).sort((a,b)=>a.localeCompare(b));
+    }
+
+    function populateBatchAuthorDropdowns() {
+      if (!dom.btFromAuthor || !dom.btToAuthor) return;
+
+      const authors = getUniqueAuthors();
+      // FROM
+      dom.btFromAuthor.textContent = "";
+      const optBlankFrom = document.createElement("option");
+      optBlankFrom.value = "__blank__";
+      optBlankFrom.textContent = "(blank)";
+      dom.btFromAuthor.appendChild(optBlankFrom);
+
+      for (const a of authors) {
+        const opt = document.createElement("option");
+        opt.value = a;
+        opt.textContent = a;
+        dom.btFromAuthor.appendChild(opt);
+      }
+
+      // TO
+      dom.btToAuthor.textContent = "";
+      const optBlankTo = document.createElement("option");
+      optBlankTo.value = "__blank__";
+      optBlankTo.textContent = "(blank)";
+      dom.btToAuthor.appendChild(optBlankTo);
+
+      for (const a of authors) {
+        const opt = document.createElement("option");
+        opt.value = a;
+        opt.textContent = a;
+        dom.btToAuthor.appendChild(opt);
+      }
+
+      const optCustom = document.createElement("option");
+      optCustom.value = "__custom__";
+      optCustom.textContent = "Custom…";
+      dom.btToAuthor.appendChild(optCustom);
+
+      // default "to" keeps current selection unless it vanished
+      if (![...dom.btToAuthor.options].some(o => o.value === dom.btToAuthor.value)) dom.btToAuthor.value = "__custom__";
+      if (dom.btToAuthor.value === "__custom__") {
+        if (dom.btToCustomRow) dom.btToCustomRow.style.display = "block";
+      } else {
+        if (dom.btToCustomRow) dom.btToCustomRow.style.display = "none";
+      }
+    }
+
+    function openBatchTools(){ populateBatchAuthorDropdowns(); dom.btModal.style.display="block"; dom.btModal.setAttribute("aria-hidden","false"); refreshBatchUi(); }
     function closeBatchTools(){ dom.btModal.style.display="none"; dom.btModal.setAttribute("aria-hidden","true"); }
 
     function refreshBatchUi() {
@@ -2545,10 +2910,29 @@
       }
 
       if (op === "replaceAuthor") {
-        const from = (dom.btFromAuthor.value || "").trim().toLowerCase();
-        const to = (dom.btToAuthor.value || "").trim();
-        if (!from || !to) { alert("Enter both From and To."); return; }
-        rows.forEach(x => { if (String(x.auth||"").toLowerCase() === from) x.auth = to; });
+        const fromRaw = dom.btFromAuthor.value;
+        const from = (fromRaw === "__blank__") ? "" : String(fromRaw || "").trim();
+
+        let toRaw = dom.btToAuthor.value;
+        let to = "";
+        if (toRaw === "__blank__") to = "";
+        else if (toRaw === "__custom__") to = String(dom.btToAuthorCustom?.value || "").trim();
+        else to = String(toRaw || "").trim();
+
+        // allow blank-to (that’s a legit choice), but require a real FROM selection
+        if (fromRaw == null || fromRaw === "") { alert("Pick a From author."); return; }
+        if (toRaw === "__custom__" && !to) { alert("Enter a custom ‘To’ author (or pick an existing one)."); return; }
+
+        const fromLC = from.toLowerCase();
+        rows.forEach(x => {
+          const cur = String(x.auth || "").trim();
+          const curLC = cur.toLowerCase();
+          if (fromRaw === "__blank__") {
+            if (!cur) x.auth = to;
+          } else {
+            if (curLC === fromLC) x.auth = to;
+          }
+        });
       }
 
       if (op === "setDate") {
@@ -2624,6 +3008,9 @@
           prepareGhost(mainDocXml);
           setStatus("Ready.", true);
         }
+      } else if (t === "regex") {
+        dom.viewRegex.style.display="block";
+        renderRegexBody();
       } else if (t === "meta") {
         dom.viewMeta.style.display="block";
       } else {
@@ -2766,6 +3153,7 @@
       document.getElementById("btn-bt-apply").addEventListener("click", applyBatchTools);
       dom.btModal.addEventListener("click", (e)=>{ if (e.target === dom.btModal) closeBatchTools(); });
       dom.btOp.addEventListener("change", refreshBatchUi);
+      if (dom.btToAuthor) dom.btToAuthor.addEventListener("change", refreshBatchUi);
 
       refreshExportButtons();
     }
