@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Forensics Master v5.4b</title>
+  <title>Word Forensics Master</title>
 
-  <script defer src="jszip.min.js"></script>
-  <script defer src="xlsx.full.min.js"></script>
-  <script defer src="FileSaver.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
   <style>
     :root{
@@ -531,7 +531,8 @@
       const d = document.getElementById("error-log");
       d.style.display = "block";
       const detail = err && err.stack ? err.stack : String(msg);
-      d.innerText += `ERR: ${detail} (Line ${line}${col ? ":" + col : ""})\\n`;
+      d.innerText += `ERR: ${detail} (Line ${line}${col ? ":" + col : ""})
+`;
       return false;
     };
 
@@ -681,7 +682,7 @@
 
     function setAttrXmlSpacePreserve(node, text) {
       if (!node) return;
-      if (typeof text === "string" && (/^\\s/.test(text) || /\\s$/.test(text) || /\\s{2,}/.test(text))) {
+      if (typeof text === "string" && (/^\s/.test(text) || /\s$/.test(text) || /\s{2,}/.test(text))) {
         try { node.setAttributeNS(XML_NS, "xml:space", "preserve"); }
         catch { node.setAttribute("xml:space", "preserve"); }
       }
@@ -717,9 +718,9 @@
 
     function partLabel(path) {
       if (path === "word/document.xml") return "Main Document";
-      const mH = (path || "").match(/^word\\/header(\\d+)\\.xml$/i);
+      const mH = (path || "").match(/^word\/header(\d+)\.xml$/i);
       if (mH) return "Header " + mH[1];
-      const mF = (path || "").match(/^word\\/footer(\\d+)\\.xml$/i);
+      const mF = (path || "").match(/^word\/footer(\d+)\.xml$/i);
       if (mF) return "Footer " + mF[1];
       if (path === "word/footnotes.xml") return "Footnotes";
       if (path === "word/endnotes.xml") return "Endnotes";
@@ -753,8 +754,8 @@
 
       zip.forEach((path) => {
         const p = path.toLowerCase();
-        if (p.match(/^word\\/header\\d+\\.xml$/) ||
-            p.match(/^word\\/footer\\d+\\.xml$/) ||
+        if (p.match(/^word\/header\d+\.xml$/) ||
+            p.match(/^word\/footer\d+\.xml$/) ||
             p === "word/footnotes.xml" ||
             p === "word/endnotes.xml") {
           partsIndex.set(path, { path, label: partLabel(path), loaded:false, xmlDoc:null });
@@ -1456,8 +1457,8 @@
 
     function relRisk(typeUri, targetMode, target) {
       const isExt = (String(targetMode||"").toLowerCase()==="external") ||
-                    /^https?:\\/\\//i.test(target||"") ||
-                    /^file:\\/\\//i.test(target||"");
+                    /^https?:\/\//i.test(target||"") ||
+                    /^file:\/\//i.test(target||"");
       if (isExt) return { label:"HIGH", rank:1, cls:"bg-hi" };
       const low = { label:"LOW", rank:3, cls:"bg-lo" };
       if (!typeUri) return low;
@@ -1470,7 +1471,7 @@
     function getSourcePartFromRelsPath(relsPath) {
       if (relsPath === "_rels/.rels") return "[root]";
       if (!relsPath.includes("/_rels/")) return "[unknown]";
-      return relsPath.replace("/_rels/","/").replace(/\\.rels$/i,"");
+      return relsPath.replace("/_rels/","/").replace(/\.rels$/i,"");
     }
 
     function countOccurrences(hay, needle) {
@@ -1914,7 +1915,7 @@
     function getExportSpecForCurrentTab() {
       // returns { filename, sheet, headers, rows (array of arrays) }
       const nowTag = new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
-      const base = (originalFileName || "document.docx").replace(/\\.docx$/i,"");
+      const base = (originalFileName || "document.docx").replace(/\.docx$/i,"");
 
       if (currentTab === "comments" || currentTab === "revisions" || currentTab === "all") {
         const data = getProcessedMainData();
@@ -1946,7 +1947,7 @@
           r.date || "",
           r.uid || ""
         ]);
-        const name = `Part-${partLabel(partPath).replace(/\\s+/g,"-")}`;
+        const name = `Part-${partLabel(partPath).replace(/\s+/g,"-")}`;
         return { filename: `${base}_${name}_${nowTag}.xlsx`, sheet: "Part", headers, rows };
       }
 
@@ -1981,11 +1982,11 @@
     function getCopyTextForCurrentTab() {
       const spec = getExportSpecForCurrentTab();
       if (!spec) return null;
-      const esc = (v) => String(v ?? "").replace(/\\r?\\n/g,"\\n");
+      const esc = (v) => String(v ?? "").replace(/\r?\n/g,"\\n");
       const lines = [];
-      lines.push(spec.headers.map(esc).join("\\t"));
-      for (const row of spec.rows) lines.push(row.map(esc).join("\\t"));
-      return lines.join("\\n");
+      lines.push(spec.headers.map(esc).join("\t"));
+      for (const row of spec.rows) lines.push(row.map(esc).join("\t"));
+      return lines.join("\n");
     }
 
     async function copyCurrentTab() {
@@ -2093,11 +2094,11 @@
         try {
           const s = new XMLSerializer().serializeToString(meta.xmlDoc);
           const cleaned = s
-            .replace(/\\s+w:rsidR="[^"]*"/g,"")
-            .replace(/\\s+w:rsidRDefault="[^"]*"/g,"")
-            .replace(/\\s+w:rsidP="[^"]*"/g,"")
-            .replace(/\\s+w:rsidDel="[^"]*"/g,"")
-            .replace(/\\s+w:rsidRPr="[^"]*"/g,"");
+            .replace(/\s+w:rsidR="[^"]*"/g,"")
+            .replace(/\s+w:rsidRDefault="[^"]*"/g,"")
+            .replace(/\s+w:rsidP="[^"]*"/g,"")
+            .replace(/\s+w:rsidDel="[^"]*"/g,"")
+            .replace(/\s+w:rsidRPr="[^"]*"/g,"");
           const re = new DOMParser().parseFromString(cleaned,"text/xml");
           meta.xmlDoc = re;
           partsIndex.set(meta.path, meta);
@@ -2506,10 +2507,10 @@
           if (zipObj.file("word/settings.xml")) {
             let s = await zipObj.file("word/settings.xml").async("string");
             s = s
-              .replace(/<w:documentProtection\\b[^>]*\\/>/g, "")
-              .replace(/<w:writeProtection\\b[^>]*\\/>/g, "")
-              .replace(/<w:documentProtection\\b[^>]*>[\\s\\S]*?<\\/w:documentProtection>/g, "")
-              .replace(/<w:writeProtection\\b[^>]*>[\\s\\S]*?<\\/w:writeProtection>/g, "");
+              .replace(/<w:documentProtection\b[^>]*\/>/g, "")
+              .replace(/<w:writeProtection\b[^>]*\/>/g, "")
+              .replace(/<w:documentProtection\b[^>]*>[\s\S]*?<\/w:documentProtection>/g, "")
+              .replace(/<w:writeProtection\b[^>]*>[\s\S]*?<\/w:writeProtection>/g, "");
             zipObj.file("word/settings.xml", s);
           }
         } catch {}
@@ -2627,4 +2628,3 @@
   </script>
 </body>
 </html>
-
