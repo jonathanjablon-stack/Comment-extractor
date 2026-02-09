@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Forensics Suite v5.2c</title>
+  <title>Word Forensics Suite v5.2f</title>
 
 <script defer src="./jszip.min.js"></script>
 <script defer src="./xlsx.bundle.js"></script>
@@ -349,7 +349,7 @@
 
 <body>
   <div class="container">
-    <h1>Word Forensics Suite v5.2c</h1>
+    <h1>Word Forensics Suite v5.2f</h1>
 
     <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Open DOCX">
       📄 Tap to Open .docx<br><span style="font-size:11px; opacity:0.8;">or drag & drop here</span>
@@ -766,6 +766,44 @@
       }
     }
 
+    function escapeRegExp(s) {
+      return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function escapeXmlAttr(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+    }
+
+    function upsertAttrInStartTag(startTag, attrName, value) {
+      const v = escapeXmlAttr(value == null ? "" : value);
+      const a = escapeRegExp(attrName);
+      const re = new RegExp("\\s" + a + "\\s*=\\s*([\"'])([^\"']*)\\1");
+      if (re.test(startTag)) {
+        return startTag.replace(re, " " + attrName + '="' + v + '"');
+      }
+      return startTag + " " + attrName + '="' + v + '"';
+    }
+
+    function patchRevisionAttrsInXml(xml, type, id, author, date) {
+      if (!xml) return xml;
+      const tag = (type === "ins") ? "w:ins" : "w:del";
+      const idEsc = escapeRegExp(String(id));
+      const re = new RegExp("<" + tag + "\\b[^>]*\\bw:id=([\"'])" + idEsc + "\\1[^>]*\\/?>", "g");
+
+      return xml.replace(re, (full) => {
+        const selfClosing = /\/>$/.test(full);
+        let start = full.slice(0, selfClosing ? -2 : -1); // drop > or />
+        start = upsertAttrInStartTag(start, "w:author", author || "");
+        if (date) start = upsertAttrInStartTag(start, "w:date", date);
+        return start + (selfClosing ? "/>" : ">");
+      });
+    }
+
     function toDatetimeLocal(iso) {
       if (!iso) return "";
       try {
@@ -1003,9 +1041,11 @@
           if (type === "ins") for (const t of qAll(n, "t")) txt += t.textContent || "";
           else for (const t of qAll(n, "delText")) txt += t.textContent || "";
 
-          // Skip non-text / formatting-only tracked changes (preserve in DOCX, but don’t list or touch on save)
-          if (!txt || !String(txt).replace(/\u00a0/g, " ").match(/\S/)) {
-            continue;
+          const isSubstantive = !!(txt && String(txt).replace(/\u00a0/g, " ").match(/\S/));
+
+          // Keep formatting-only tracked changes in the DOCX and batch ops (author/date), but hide them from the main table.
+          if (!isSubstantive) {
+            txt = describeBlankRevision(n, type);
           }
 
           const pgKey = type + ":" + id;
@@ -1016,6 +1056,8 @@
             pg: ctx.pg[pgKey] ?? ((partPath === "word/document.xml") ? 1 : 0),
             part: partPath,
             txt,
+            _hidden: !isSubstantive,
+            _nonText: !isSubstantive,
             auth: attrW(n, "author") || "",
             date: attrW(n, "date") || "",
           });
@@ -1134,7 +1176,7 @@
     }
 
     function getItemsForMode(mode) {
-      const all = Array.from(items.values());
+      const all = Array.from(items.values()).filter(x => !(x && x._hidden));
       if (mode === "comments") return all.filter(x => x.type === "com");
       if (mode === "revisions") return all.filter(x => x.type === "ins" || x.type === "del");
       return all;
@@ -1300,7 +1342,7 @@
         tdTxt.textContent = row.txt || "";
         tdTxt.addEventListener("blur", () => {
           const it = items.get(row.uid);
-          if (it) { it.txt = tdTxt.textContent.trim(); it._dirty = true; }
+          if (it) { it.txt = tdTxt.textContent.trim(); it._dirtyText = true; }
           if (currentTab === "parts") renderSidebarForPart(activePartPath);
         });
         tr.appendChild(tdTxt);
@@ -1312,7 +1354,7 @@
         tdAuth.textContent = row.auth || "";
         tdAuth.addEventListener("blur", () => {
           const it = items.get(row.uid);
-          if (it) { it.auth = tdAuth.textContent.trim(); it._dirty = true; }
+          if (it) { it.auth = tdAuth.textContent.trim(); it._dirtyMeta = true; }
           if (currentTab === "parts") renderSidebarForPart(activePartPath);
         });
         tr.appendChild(tdAuth);
@@ -1324,7 +1366,7 @@
         inp.value = toDatetimeLocal(row.date);
         inp.addEventListener("change", () => {
           const it = items.get(row.uid);
-          if (it) { it.date = fromDatetimeLocal(inp.value); it._dirty = true; }
+          if (it) { it.date = fromDatetimeLocal(inp.value); it._dirtyMeta = true; }
           if (currentTab === "parts") renderSidebarForPart(activePartPath);
         });
         tdDate.appendChild(inp);
@@ -2656,7 +2698,7 @@
 
       const dirty = [];
       for (const it of items.values()) {
-        if (it && it.type === "com" && it._dirty) dirty.push(it);
+        if (it && it.type === "com" && (it._dirtyMeta || it._dirtyText)) dirty.push(it);
       }
       if (dirty.length === 0) return false;
 
@@ -2671,20 +2713,26 @@
         const n = map.get(it.id);
         if (!n) continue;
 
-        setAttrW(n, "author", it.auth || "");
-        if (it.date) setAttrW(n, "date", it.date);
+        // Only update metadata if the user actually changed it.
+        if (it._dirtyMeta) {
+          setAttrW(n, "author", it.auth || "");
+          if (it.date) setAttrW(n, "date", it.date);
+        }
 
-        const ps = Array.from(n.childNodes).filter(ch => ch && ch.nodeType === 1 && ch.localName === "p");
-        for (const p of ps) n.removeChild(p);
+        // Only rewrite the comment body if the user edited the text.
+        if (it._dirtyText) {
+          const ps = Array.from(n.childNodes).filter(ch => ch && ch.nodeType === 1 && ch.localName === "p");
+          for (const p of ps) n.removeChild(p);
 
-        const p = cDoc.createElementNS(W_NS, "w:p");
-        const r = cDoc.createElementNS(W_NS, "w:r");
-        const t = cDoc.createElementNS(W_NS, "w:t");
-        setAttrXmlSpacePreserve(t, it.txt || "");
-        t.textContent = it.txt || "";
-        r.appendChild(t);
-        p.appendChild(r);
-        n.appendChild(p);
+          const p = cDoc.createElementNS(W_NS, "w:p");
+          const r = cDoc.createElementNS(W_NS, "w:r");
+          const t = cDoc.createElementNS(W_NS, "w:t");
+          setAttrXmlSpacePreserve(t, it.txt || "");
+          t.textContent = it.txt || "";
+          r.appendChild(t);
+          p.appendChild(r);
+          n.appendChild(p);
+        }
       }
 
       zip.file("word/comments.xml", new XMLSerializer().serializeToString(cDoc));
@@ -2698,10 +2746,11 @@
       await ensurePartLoaded("word/document.xml");
 
       const dirtyParts = new Set();
+      const patchedParts = new Set();
       const byPart = new Map();
 
       for (const it of items.values()) {
-        if (!it || !it._dirty) continue;
+        if (!it || !(it._dirtyMeta || it._dirtyText)) continue;
         if (it.type === "ins" || it.type === "del") {
           const p = it.part || "word/document.xml";
           if (!byPart.has(p)) byPart.set(p, []);
@@ -2720,16 +2769,47 @@
           const node = idx.get(it.type + ":" + it.id);
           if (!node) continue;
 
-          setAttrW(node, "author", it.auth || "");
-          if (it.date) setAttrW(node, "date", it.date);
+          // Author/date edits should never rewrite the underlying content structure.
+          if (it._dirtyMeta) {
+            setAttrW(node, "author", it.auth || "");
+            if (it.date) setAttrW(node, "date", it.date);
+          }
 
-          if (it.type === "ins") ensureSingleTextNode(node, "t", it.txt || "");
-          else ensureSingleTextNode(node, "delText", it.txt || "");
+          // Text edits: only update existing text nodes; never create new ones.
+          if (it._dirtyText) {
+            const kind = (it.type === "ins") ? "t" : "delText";
+            const nodes = qAll(node, kind);
+            if (nodes.length > 0) {
+              nodes[0].textContent = it.txt || "";
+              setAttrXmlSpacePreserve(nodes[0], it.txt || "");
+              for (let i = 1; i < nodes.length; i++) {
+                nodes[i].textContent = "";
+                setAttrXmlSpacePreserve(nodes[i], "");
+              }
+            }
+          }
         }
 
-        meta.dirty = true;
-        partsIndex.set(p, meta);
-        dirtyParts.add(p);
+        const hasTextEdits = list.some(x => x && x._dirtyText);
+
+        if (!hasTextEdits) {
+          // Avoid serializing whole XML for metadata-only changes; patch the original XML string in-place
+          // so we don’t accidentally perturb numbering / formatting structures.
+          let xmlStr = meta.original;
+          for (const it of list) {
+            if (!it || !it._dirtyMeta) continue;
+            xmlStr = patchRevisionAttrsInXml(xmlStr, it.type, it.id, it.auth || "", it.date || "");
+          }
+          meta.original = xmlStr;
+          zipObj.file(meta.path, xmlStr);
+          meta.dirty = false;
+          patchedParts.add(meta.path);
+          partsIndex.set(p, meta);
+        } else {
+          meta.dirty = true;
+          partsIndex.set(p, meta);
+          dirtyParts.add(p);
+        }
       }
 
       const commentsWrote = await applyEditsToCommentsXmlAndWrite(zipObj);
@@ -2738,6 +2818,7 @@
       const ser = new XMLSerializer();
       for (const meta of partsIndex.values()) {
         if (!meta || !meta.loaded || !meta.xmlDoc) continue;
+        if (patchedParts && patchedParts.has(meta.path)) continue;
         if (!meta.dirty) continue;
         zipObj.file(meta.path, ser.serializeToString(meta.xmlDoc));
       }
@@ -2842,7 +2923,7 @@
       if (op === "setAuthor") {
         const a = (dom.btAuthor.value || "").trim();
         if (!a) { alert("Enter an author."); return; }
-        rows.forEach(x => { x.auth = a; x._dirty = true; });
+        rows.forEach(x => { x.auth = a; x._dirtyMeta = true; });
       }
 
       if (op === "replaceAuthor") {
@@ -2859,9 +2940,9 @@
           const cur = String(x.auth || "").trim();
           const curLC = cur.toLowerCase();
           if (fromRaw === "__blank__") {
-            if (!cur) { x.auth = to; x._dirty = true; }
+            if (!cur) { x.auth = to; x._dirtyMeta = true; }
           } else {
-            if (curLC === fromLC) { x.auth = to; x._dirty = true; }
+            if (curLC === fromLC) { x.auth = to; x._dirtyMeta = true; }
           }
         });
       }
@@ -2869,7 +2950,7 @@
 if (op === "setDate") {
         const iso = fromDatetimeLocal(dom.btDt.value);
         if (!iso) { alert("Pick a date/time."); return; }
-        rows.forEach(x => { x.date = iso; x._dirty = true; });
+        rows.forEach(x => { x.date = iso; x._dirtyMeta = true; });
       }
 
       if (op === "sequentialDate") {
@@ -2877,7 +2958,7 @@ if (op === "setDate") {
         const step = Number(dom.btSeqStep.value);
         if (!startIso || isNaN(step) || step < 0) { alert("Pick a start date/time and valid step."); return; }
         let d = new Date(startIso);
-        rows.forEach(x => { x.date = d.toISOString(); x._dirty = true; d.setMinutes(d.getMinutes() + step); });
+        rows.forEach(x => { x.date = d.toISOString(); x._dirtyMeta = true; d.setMinutes(d.getMinutes() + step); });
       }
 
       if (op === "shiftDate") {
@@ -2893,7 +2974,7 @@ if (op === "setDate") {
           const d = new Date(x.date);
           if (isNaN(d.getTime())) return;
           d.setTime(d.getTime() + ms);
-          x.date = d.toISOString(); x._dirty = true;
+          x.date = d.toISOString(); x._dirtyMeta = true;
         });
       }
 
