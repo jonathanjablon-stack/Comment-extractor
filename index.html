@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Forensics Suite v5.2f</title>
+  <title>Word Forensics Suite v5.2g</title>
 
 <script defer src="./jszip.min.js"></script>
 <script defer src="./xlsx.bundle.js"></script>
@@ -349,7 +349,7 @@
 
 <body>
   <div class="container">
-    <h1>Word Forensics Suite v5.2f</h1>
+    <h1>Word Forensics Suite v5.2g</h1>
 
     <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Open DOCX">
       📄 Tap to Open .docx<br><span style="font-size:11px; opacity:0.8;">or drag & drop here</span>
@@ -629,6 +629,7 @@
     let forensicsData = [];
 
     let regexChanges = [];
+    let pendingGlobalMetaOps = [];
     let regexHeadBuilt = false;
 
     let ghostReady = false;
@@ -777,6 +778,33 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&apos;");
+    }
+
+
+    function unescapeXmlAttr(s) {
+      return String(s || "")
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'")
+        .replace(/&gt;/g, ">")
+        .replace(/&lt;/g, "<")
+        .replace(/&amp;/g, "&");
+    }
+
+    // Applies a safe author patch directly to the raw XML string. This intentionally avoids
+    // DOM re-serialization so we don't trigger Word's "formatting changed" churn (e.g., list numbering).
+    function patchAuthorAttrsInXml(xml, fromRaw, to) {
+      if (!xml) return xml;
+      const toVal = escapeXmlAttr(String(to == null ? "" : to).trim());
+      const from = (fromRaw === "__blank__") ? "" : String(fromRaw || "").trim();
+      const fromLC = from.toLowerCase();
+
+      return xml.replace(/\bw:author\s*=\s*(["'])(.*?)(\1)/g, (m, q, val) => {
+        const cur = unescapeXmlAttr(val);
+        const curLC = String(cur || "").trim().toLowerCase();
+        const match = (fromRaw === "__blank__") ? (curLC === "") : (curLC === fromLC);
+        if (!match) return m;
+        return m.replace(val, toVal);
+      });
     }
 
     function upsertAttrInStartTag(startTag, attrName, value) {
@@ -1152,6 +1180,7 @@
     function buildInitialActivityFast() {
       items.clear();
       selectedUids.clear();
+      pendingGlobalMetaOps = [];
 
       const anchorMap = new Map();
 
@@ -2739,7 +2768,46 @@
       return true;
     }
 
-    async function downloadWord() {
+    
+    async function applyPendingGlobalMetaOpsToZip(zip) {
+      if (!zip || !pendingGlobalMetaOps || pendingGlobalMetaOps.length === 0) return;
+
+      const paths = Object.keys(zip.files || {}).filter(p => p.startsWith("word/") && p.endsWith(".xml"));
+      if (paths.length === 0) return;
+
+      // Precompute setAuthor target (if any) — last one wins.
+      let lastSetAuthor = null;
+      for (const op of pendingGlobalMetaOps) {
+        if (op && op.op === "setAuthor") lastSetAuthor = String(op.to || "").trim();
+      }
+      const setAuthorEsc = (lastSetAuthor != null) ? escapeXmlAttr(lastSetAuthor) : null;
+
+      for (const path of paths) {
+        const f = zip.file(path);
+        if (!f) continue;
+
+        let s;
+        try { s = await f.async("string"); }
+        catch { continue; }
+
+        let out = s;
+
+        // Apply ops in the order they were added
+        for (const op of pendingGlobalMetaOps) {
+          if (!op) continue;
+          if (op.op === "replaceAuthor") {
+            out = patchAuthorAttrsInXml(out, op.fromRaw, op.to);
+          } else if (op.op === "setAuthor") {
+            if (setAuthorEsc == null) continue;
+            out = out.replace(/\bw:author\s*=\s*(["'])(.*?)(\1)/g, (m, q, val) => m.replace(val, setAuthorEsc));
+          }
+        }
+
+        if (out !== s) zip.file(path, out);
+      }
+    }
+
+async function downloadWord() {
       if (!zipObj) return;
       setStatus("Saving…", true);
 
@@ -2823,6 +2891,8 @@
         zipObj.file(meta.path, ser.serializeToString(meta.xmlDoc));
       }
       if (commentsWrote) {  }
+
+      await applyPendingGlobalMetaOpsToZip(zipObj);
 
       const blob = await zipObj.generateAsync({ type:"blob", compression:"DEFLATE", compressionOptions:{ level:6 } });
       saveAs(blob, "Edited_" + (originalFileName || "document.docx"));
@@ -2924,6 +2994,7 @@
         const a = (dom.btAuthor.value || "").trim();
         if (!a) { alert("Enter an author."); return; }
         rows.forEach(x => { x.auth = a; x._dirtyMeta = true; });
+        pendingGlobalMetaOps.push({ op:"setAuthor", to:a });
       }
 
       if (op === "replaceAuthor") {
@@ -2945,6 +3016,7 @@
             if (curLC === fromLC) { x.auth = to; x._dirtyMeta = true; }
           }
         });
+        pendingGlobalMetaOps.push({ op:"replaceAuthor", fromRaw:fromRaw, from:from, to:to });
       }
 
 if (op === "setDate") {
@@ -3135,7 +3207,6 @@ if (op === "setDate") {
       dom.partSelect.addEventListener("change", async () => { await setActivePart(dom.partSelect.value); });
       dom.partFilter.addEventListener("input", () => { if (currentTab === "parts") renderSidebarForPart(activePartPath); });
       document.getElementById("btn-clear-selection").addEventListener("click", () => { selectedUids.clear(); if (currentTab!=="relationships") renderMainTableBody(); alert("Selection cleared."); });
-
       document.getElementById("btn-scan").addEventListener("click", scanForensics);
 
       document.getElementById("btn-wipe").addEventListener("click", wipeMetadata);
@@ -3156,4 +3227,4 @@ if (op === "setDate") {
     window.addEventListener("DOMContentLoaded", wireUi);
   </script>
 </body>
-</html>
+</html>r
