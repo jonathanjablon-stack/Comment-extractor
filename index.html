@@ -322,6 +322,27 @@
       font-size:12px;
       background:#fff;
     }
+  
+    /* Parts view: tables */
+    .doc-table{
+      width:100%;
+      border-collapse:collapse;
+      margin:10px 0;
+      table-layout:fixed;
+    }
+    .doc-table td{
+      border:1px solid #d9dde3;
+      padding:8px 10px;
+      vertical-align:top;
+      word-break:break-word;
+    }
+    .doc-table p{
+      margin:0 0 8px 0;
+    }
+    .doc-table p:last-child{
+      margin-bottom:0;
+    }
+
   </style>
 </head>
 
@@ -1445,6 +1466,38 @@
         }
         if (ln === "commentRangeEnd") { const id = attrW(node,"id"); if (id !== "") removeActiveComment(id); return; }
         if (ln === "commentReference") return;
+
+        
+        if (ln === "tbl") {
+          const table = document.createElement("table");
+          table.className = "doc-table";
+          parent.appendChild(table);
+
+          // Preserve basic Word table structure (rows/cells) so Parts view doesn't flatten to plaintext.
+          node.childNodes.forEach(trNode => {
+            if (!trNode || !trNode.localName) return;
+            if (trNode.localName !== "tr") return;
+
+            const tr = document.createElement("tr");
+            table.appendChild(tr);
+
+            trNode.childNodes.forEach(tcNode => {
+              if (!tcNode || !tcNode.localName) return;
+              if (tcNode.localName !== "tc") return;
+
+              const td = document.createElement("td");
+              tr.appendChild(td);
+
+              tcNode.childNodes.forEach(ch => {
+                if (!ch) return;
+                // Skip cell properties
+                if (ch.localName === "tcPr") return;
+                walk(td, ch);
+              });
+            });
+          });
+          return;
+        }
 
         if (ln === "p") {
           const p = document.createElement("p");
