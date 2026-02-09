@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Word Forensics Master</title>
 
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script defer src="jszip.min.js"></script>
+  <script defer src="xlsx.full.min.js"></script>
+  <script defer src="FileSaver.min.js"></script>
 
   <style>
     :root{
@@ -843,12 +843,105 @@
 
     function extractRevisions(partXml, partPath, ctx) {
       const arr = [];
+
+      // Many tracked revisions are "non-text" (formatting changes, breaks, objects, etc.).
+      // If a revision has no w:t / w:delText, we generate a descriptive label so the record isn't just blank.
+      function describeBlankRevision(n, type) {
+        const kind = (type === "ins") ? "Insertion" : "Deletion";
+        const props = new Set();
+        const add = (s) => { if (s) props.add(s); };
+
+        const rPrMap = {
+          b: "Bold",
+          i: "Italic",
+          u: "Underline",
+          color: "Color",
+          highlight: "Highlight",
+          strike: "Strikethrough",
+          dstrike: "Double-strike",
+          caps: "All Caps",
+          smallCaps: "Small Caps",
+          vertAlign: "Sup/Sub",
+          rStyle: "Run Style",
+          rFonts: "Font",
+          sz: "Font Size",
+          szCs: "Font Size (CS)",
+          spacing: "Char Spacing",
+          position: "Position",
+          lang: "Language",
+          shd: "Shading",
+          emboss: "Emboss",
+          imprint: "Imprint",
+          outline: "Outline",
+          shadow: "Shadow"
+        };
+
+        const pPrMap = {
+          pStyle: "Paragraph Style",
+          jc: "Alignment",
+          ind: "Indent",
+          spacing: "Paragraph Spacing",
+          tabs: "Tabs",
+          numPr: "Numbering",
+          outlineLvl: "Outline Level",
+          keepNext: "Keep Next",
+          keepLines: "Keep Lines",
+          pageBreakBefore: "Page Break Before",
+          widowControl: "Widow Control",
+          shd: "Shading",
+          sectPr: "Section Props"
+        };
+
+        // Run/paragraph properties
+        for (const rPr of qAll(n, "rPr")) {
+          for (const ch of Array.from(rPr.childNodes)) {
+            if (ch.nodeType !== 1) continue;
+            add(rPrMap[ch.localName] || ("Run: " + ch.localName));
+          }
+        }
+        for (const pPr of qAll(n, "pPr")) {
+          for (const ch of Array.from(pPr.childNodes)) {
+            if (ch.nodeType !== 1) continue;
+            add(pPrMap[ch.localName] || ("Para: " + ch.localName));
+          }
+        }
+
+        // Common non-text payloads
+        if (qAll(n, "drawing").length || qAll(n, "pict").length) add("Drawing/Picture");
+        if (qAll(n, "hyperlink").length) add("Hyperlink");
+        if (qAll(n, "tab").length) add("Tab");
+        if (qAll(n, "br").length) {
+          const brs = qAll(n, "br");
+          const hasPage = brs.some(b => (attrW(b, "type") || "") === "page");
+          add(hasPage ? "Page Break" : "Line Break");
+        }
+        if (qAll(n, "sym").length) add("Symbol");
+
+        // Fields (PAGE, REF, etc.)
+        if (qAll(n, "fldChar").length || qAll(n, "instrText").length) {
+          const instr = qAll(n, "instrText").map(x => x.textContent || "").join("").trim();
+          add(instr ? ("Field: " + safeSnippet(instr, 60)) : "Field");
+        }
+
+        const rCount = qAll(n, "r").length;
+        if (rCount) add("Runs: " + rCount);
+
+        const list = Array.from(props);
+        if (list.length === 0) return `[${kind} – non-text change]`;
+        return `[${kind} – non-text] ` + list.slice(0, 8).join(", ") + (list.length > 8 ? "…" : "");
+      }
       const push = (nodeList, type) => {
         for (const n of nodeList) {
           const id = attrW(n, "id");
           let txt = "";
           if (type === "ins") for (const t of qAll(n, "t")) txt += t.textContent || "";
           else for (const t of qAll(n, "delText")) txt += t.textContent || "";
+
+          // If the revision has no textual payload, provide a meaningful description.
+          if (!txt || txt.trim() === "") {
+            txt = describeBlankRevision(n, type);
+          }
+
           const pgKey = type + ":" + id;
           arr.push({
             uid: "r" + id,
