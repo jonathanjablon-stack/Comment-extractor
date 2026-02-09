@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Forensics Master</title>
+  <title>Word Forensics Suite</title>
 
   <script defer src="jszip.min.js"></script>
   <script defer src="xlsx.full.min.js"></script>
@@ -201,7 +201,7 @@
     .bg-med{ background:#ffc107; color:#000; }
     .bg-lo{ background:#198754; }
 
-    /* Parts view */
+    
     .doc-topbar{
       display:flex;
       gap:8px;
@@ -273,7 +273,7 @@
     }
     .active-card{ border-left:4px solid var(--primary); background:#eef7ff; }
 
-    /* Ghost */
+    
     .ghost-render{
       height:35vh;
       overflow-y:auto;
@@ -293,7 +293,7 @@
     .flash-target{ animation:flash 2s linear 1; background:yellow!important; }
     @keyframes flash{ 0%{background:yellow} 50%{background:orange} 100%{background:yellow} }
 
-    /* Modal */
+    
     .modal{
       display:none;
       position:fixed;
@@ -323,7 +323,7 @@
       background:#fff;
     }
   
-    /* Parts view: tables */
+    
     .doc-table{
       width:100%;
       border-collapse:collapse;
@@ -348,7 +348,7 @@
 
 <body>
   <div class="container">
-    <h1>Word Forensics Master</h1>
+    <h1>Word Forensics Suite 3.5b2</h1>
 
     <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Open DOCX">
       📄 Tap to Open .docx<br><span style="font-size:11px; opacity:0.8;">or drag & drop here</span>
@@ -378,7 +378,7 @@
       <button class="btn btn-danger" id="btn-reset">Reset</button>
     </div>
 
-    <!-- Activity table -->
+    
     <div id="view-table" class="view-section table-wrap">
       <table id="data-table">
         <thead id="data-head"></thead>
@@ -386,7 +386,7 @@
       </table>
     </div>
 
-    <!-- Parts -->
+    
     <div id="view-parts" class="view-section">
       <div class="doc-topbar">
         <select id="part-select" aria-label="Part selector"></select>
@@ -402,7 +402,7 @@
       </div>
     </div>
 
-    <!-- Relationships -->
+    
     <div id="view-rel" class="view-section table-wrap">
       <table id="rel-table">
         <thead id="rel-head"></thead>
@@ -410,7 +410,7 @@
       </table>
     </div>
 
-    <!-- Forensics -->
+    
     <div id="view-forensics" class="view-section table-wrap">
       <div style="padding:15px; text-align:center; background:#f1f3f5;">
         <button class="btn btn-primary" style="width:auto; padding:10px 20px; flex:0 0 auto;" id="btn-scan">
@@ -423,7 +423,7 @@
       </table>
     </div>
 
-    <!-- Ghost Writer -->
+    
     <div id="view-ghost" class="view-section">
       <div class="ghost-render" id="ghost-render"></div>
       <div class="ghost-toolbar" id="ghost-tools">
@@ -444,7 +444,7 @@
     </div>
 
 
-    <!-- Regex Replace -->
+    
     <div id="view-regex" class="view-section">
       <div class="doc-topbar" style="border-radius:6px; border-bottom:1px solid #ccc;">
         <input id="rx-pattern" type="text" placeholder="Regex pattern (no / /)" aria-label="Regex pattern" />
@@ -481,7 +481,7 @@
       </div>
     </div>
 
-    <!-- Metadata -->
+    
     <div id="view-meta" class="view-section">
       <div style="padding:15px;">
         <h3 style="margin:0 0 10px 0;">Core Properties</h3>
@@ -496,7 +496,7 @@
     </div>
   </div>
 
-  <!-- Batch Tools Modal -->
+  
   <div id="batchToolsModal" class="modal" aria-hidden="true">
     <div class="modal-content">
       <h3 style="margin:0 0 12px 0;">Global Batch Tools</h3>
@@ -543,16 +543,15 @@
         <input type="text" id="batch-author" placeholder="e.g., Author">
       </div>
 
+      
       <div class="form-row" id="row-replace">
         <label>Replace Author</label>
         <div class="row-inline">
           <select id="batch-from-author" aria-label="From author"></select>
-          <select id="batch-to-author" aria-label="To author"></select>
-</div>
-        <div id="batch-to-custom-row" style="display:none; margin-top:8px;">
-          <input type="text" id="batch-to-author-custom" placeholder="Custom ‘To’ author">
+          <input type="text" id="batch-to-author" placeholder="To (new author name)" aria-label="To author">
         </div>
       </div>
+
 
       <div class="form-row" id="row-date">
         <label>Date/Time</label>
@@ -589,7 +588,6 @@
   </div>
 
   <script>
-    // ------- Error logging -------
     window.onerror = function (msg, url, line, col, err) {
       const d = document.getElementById("error-log");
       d.style.display = "block";
@@ -605,32 +603,33 @@
     let zipObj = null;
     let originalFileName = "";
 
-    // Core docs
     let mainDocXml = null;
     let coreXmlDoc = null;
     let appXmlDoc = null;
     let commentsXmlDoc = null;
+    let metaDirty = false;
 
-    // parts index: path -> { path, label, loaded, xmlDoc }
     const partsIndex = new Map();
     let activePartPath = "word/document.xml";
 
-    // Activity items: uid -> { uid,id,type,pg,part,txt,auth,date }
+    function markPartDirty(path) {
+      const m = partsIndex.get(path);
+      if (!m) return;
+      m.dirty = true;
+      partsIndex.set(path, m);
+    }
+
     const items = new Map();
     const selectedUids = new Set();
 
-    // relationships
     let relationshipsBuilt = false;
     let relationshipsData = [];
 
-    // forensics
     let forensicsData = [];
 
-    // regex
     let regexChanges = [];
     let regexHeadBuilt = false;
 
-    // ghost
     let ghostReady = false;
     let ghostParagraphs = [];
     let ghostSelIdx = -1;
@@ -711,8 +710,6 @@
       btAuthor: document.getElementById("batch-author"),
       btFromAuthor: document.getElementById("batch-from-author"),
       btToAuthor: document.getElementById("batch-to-author"),
-      btToAuthorCustom: document.getElementById("batch-to-author-custom"),
-      btToCustomRow: document.getElementById("batch-to-custom-row"),
       btDt: document.getElementById("batch-dt"),
       btSeqStart: document.getElementById("batch-seq-start"),
       btSeqStep: document.getElementById("batch-seq-step"),
@@ -825,9 +822,6 @@
       return new Promise(res => setTimeout(res, 0));
     }
 
-    // ---------------------------
-    // Build parts INDEX (no parsing, fast)
-    // ---------------------------
     function buildPartsIndex(zip) {
       partsIndex.clear();
       partsIndex.set("word/document.xml", { path:"word/document.xml", label:"Main Document", loaded:false, xmlDoc:null });
@@ -852,7 +846,6 @@
     }
 
     function populatePartSelects() {
-      // Parts dropdown
       dom.partSelect.textContent = "";
       const opts = getPartOptions();
       for (const p of opts) {
@@ -863,7 +856,6 @@
       }
       dom.partSelect.value = activePartPath;
 
-      // Batch part dropdown
       dom.btPart.textContent = "";
       const optAll = document.createElement("option");
       optAll.value = "*";
@@ -889,19 +881,17 @@
 
       meta.loaded = true;
       meta.xmlDoc = doc;
+      meta.original = s;
+      meta.dirty = false;
       partsIndex.set(path, meta);
       if (path === "word/document.xml") mainDocXml = doc;
 
-      // Rebuild revision items and refresh anchors now that a new part exists
       rebuildRevisionsAndAnchorsFromLoadedParts();
 
       setStatus("Ready.", true);
       return meta;
     }
 
-    // ---------------------------
-    // Activity extraction
-    // ---------------------------
     function mapContext(xml, partPath) {
       let pg = (partPath === "word/document.xml") ? 1 : 0;
       const pgMap = {};
@@ -924,8 +914,6 @@
     function extractRevisions(partXml, partPath, ctx) {
       const arr = [];
 
-      // Many tracked revisions are "non-text" (formatting changes, breaks, objects, etc.).
-      // If a revision has no w:t / w:delText, we generate a descriptive label so the record isn't just blank.
       function describeBlankRevision(n, type) {
         const kind = (type === "ins") ? "Insertion" : "Deletion";
         const props = new Set();
@@ -972,7 +960,6 @@
           sectPr: "Section Props"
         };
 
-        // Run/paragraph properties
         for (const rPr of qAll(n, "rPr")) {
           for (const ch of Array.from(rPr.childNodes)) {
             if (ch.nodeType !== 1) continue;
@@ -986,7 +973,6 @@
           }
         }
 
-        // Common non-text payloads
         if (qAll(n, "drawing").length || qAll(n, "pict").length) add("Drawing/Picture");
         if (qAll(n, "hyperlink").length) add("Hyperlink");
         if (qAll(n, "tab").length) add("Tab");
@@ -997,7 +983,6 @@
         }
         if (qAll(n, "sym").length) add("Symbol");
 
-        // Fields (PAGE, REF, etc.)
         if (qAll(n, "fldChar").length || qAll(n, "instrText").length) {
           const instr = qAll(n, "instrText").map(x => x.textContent || "").join("").trim();
           add(instr ? ("Field: " + safeSnippet(instr, 60)) : "Field");
@@ -1017,7 +1002,6 @@
           if (type === "ins") for (const t of qAll(n, "t")) txt += t.textContent || "";
           else for (const t of qAll(n, "delText")) txt += t.textContent || "";
 
-          // If the revision has no textual payload, provide a meaningful description.
           if (!txt || txt.trim() === "") {
             txt = describeBlankRevision(n, type);
           }
@@ -1084,7 +1068,6 @@
     }
 
     function rebuildRevisionsAndAnchorsFromLoadedParts() {
-      // remove old revisions
       for (const [uid, it] of items.entries()) {
         if (it.type === "ins" || it.type === "del") items.delete(uid);
       }
@@ -1096,7 +1079,6 @@
         if (!meta.loaded || !meta.xmlDoc) continue;
         const ctx = mapContext(meta.xmlDoc, meta.path);
 
-        // anchors
         for (const key of Object.keys(ctx.pg)) {
           if (key.startsWith("c:")) {
             const id = key.slice(2);
@@ -1104,7 +1086,6 @@
           }
         }
 
-        // revisions
         const revs = extractRevisions(meta.xmlDoc, meta.path, ctx);
         for (const r of revs) {
           const n = parseInt(r.id, 10);
@@ -1113,7 +1094,6 @@
         mergeItems(revs);
       }
 
-      // update comment anchors (do not overwrite user edits to txt/auth/date)
       for (const it of items.values()) {
         if (it.type !== "com") continue;
         const a = anchorMap.get(it.id);
@@ -1127,7 +1107,6 @@
       items.clear();
       selectedUids.clear();
 
-      // Build anchors + revisions ONLY from main doc (fast)
       const anchorMap = new Map();
 
       if (mainDocXml) {
@@ -1139,7 +1118,6 @@
         }
         mergeItems(extractRevisions(mainDocXml, "word/document.xml", ctx));
 
-        // compute nextChangeId from main doc only
         let max = 0;
         for (const el of [...qAll(mainDocXml, "ins"), ...qAll(mainDocXml, "del")]) {
           const id = parseInt(attrW(el, "id"), 10);
@@ -1158,9 +1136,6 @@
       return all;
     }
 
-    // ---------------------------
-    // Activity table UI
-    // ---------------------------
     const MAIN_COLS = [
       { k: "_sel", label: "Sel", width: "60px" },
       { k: "pg", label: "Pg", width: "55px" },
@@ -1177,7 +1152,6 @@
       const state = tableState.main;
       let src = getItemsForMode(activityMode).map(x => ({...x, partLabel: partLabel(x.part || "")}));
 
-      // filters
       const filters = state.filters;
       src = src.filter(row => {
         for (const k of Object.keys(filters)) {
@@ -1189,7 +1163,6 @@
         return true;
       });
 
-      // sort
       const col = state.sortCol;
       const dir = state.dir;
       src = stableSort(src, (a,b) => {
@@ -1289,7 +1262,6 @@
       for (const row of data) {
         const tr = document.createElement("tr");
 
-        // Sel
         const tdSel = document.createElement("td");
         const cb = document.createElement("input");
         cb.type = "checkbox";
@@ -1301,17 +1273,14 @@
         tdSel.appendChild(cb);
         tr.appendChild(tdSel);
 
-        // Pg
         const tdPg = document.createElement("td");
         tdPg.textContent = (row.pg && row.pg !== 0) ? String(row.pg) : "";
         tr.appendChild(tdPg);
 
-        // Part
         const tdPart = document.createElement("td");
         tdPart.textContent = row.partLabel || "";
         tr.appendChild(tdPart);
 
-        // Type
         const tdType = document.createElement("td");
         tdType.style.textAlign = "center";
         const b = document.createElement("span");
@@ -1320,7 +1289,6 @@
         tdType.appendChild(b);
         tr.appendChild(tdType);
 
-        // Text (editable)
         const tdTxt = document.createElement("td");
         tdTxt.className = "editable";
         tdTxt.contentEditable = "true";
@@ -1328,12 +1296,11 @@
         tdTxt.textContent = row.txt || "";
         tdTxt.addEventListener("blur", () => {
           const it = items.get(row.uid);
-          if (it) it.txt = tdTxt.textContent.trim();
+          if (it) { it.txt = tdTxt.textContent.trim(); it._dirty = true; }
           if (currentTab === "parts") renderSidebarForPart(activePartPath);
         });
         tr.appendChild(tdTxt);
 
-        // Author (editable)
         const tdAuth = document.createElement("td");
         tdAuth.className = "editable";
         tdAuth.contentEditable = "true";
@@ -1341,12 +1308,11 @@
         tdAuth.textContent = row.auth || "";
         tdAuth.addEventListener("blur", () => {
           const it = items.get(row.uid);
-          if (it) it.auth = tdAuth.textContent.trim();
+          if (it) { it.auth = tdAuth.textContent.trim(); it._dirty = true; }
           if (currentTab === "parts") renderSidebarForPart(activePartPath);
         });
         tr.appendChild(tdAuth);
 
-        // Date (editable)
         const tdDate = document.createElement("td");
         const inp = document.createElement("input");
         inp.type = "datetime-local";
@@ -1354,13 +1320,12 @@
         inp.value = toDatetimeLocal(row.date);
         inp.addEventListener("change", () => {
           const it = items.get(row.uid);
-          if (it) it.date = fromDatetimeLocal(inp.value);
+          if (it) { it.date = fromDatetimeLocal(inp.value); it._dirty = true; }
           if (currentTab === "parts") renderSidebarForPart(activePartPath);
         });
         tdDate.appendChild(inp);
         tr.appendChild(tdDate);
 
-        // Act
         const tdAct = document.createElement("td");
         const btn = document.createElement("button");
         btn.className = "btn btn-secondary";
@@ -1378,9 +1343,6 @@
       }
     }
 
-    // ---------------------------
-    // Parts renderer + sidebar
-    // ---------------------------
     function getRenderRoot(xmlDoc, partPath) {
       if (!xmlDoc) return null;
       if (partPath === "word/document.xml") {
@@ -1532,7 +1494,6 @@
           table.className = "doc-table";
           parent.appendChild(table);
 
-          // Preserve basic Word table structure (rows/cells) so Parts view doesn't flatten to plaintext.
           node.childNodes.forEach(trNode => {
             if (!trNode || !trNode.localName) return;
             if (trNode.localName !== "tr") return;
@@ -1549,7 +1510,6 @@
 
               tcNode.childNodes.forEach(ch => {
                 if (!ch) return;
-                // Skip cell properties
                 if (ch.localName === "tcPr") return;
                 walk(td, ch);
               });
@@ -1624,9 +1584,6 @@
       focusUidInCurrentPart(uid);
     }
 
-    // ---------------------------
-    // Relationships (build on demand)
-    // ---------------------------
     const REL_COLS = [
       { k:"risk", label:"Risk", width:"70px" },
       { k:"sourceLabel", label:"From", width:"180px" },
@@ -1701,7 +1658,6 @@
       const relPaths = [];
       zipObj.forEach((path) => { if (path.toLowerCase().endsWith(".rels")) relPaths.push(path); });
 
-      // cache source xml strings so we don't parse DOM just to count refs
       const srcXmlCache = new Map();
 
       let processed = 0;
@@ -1769,7 +1725,6 @@
       const state = tableState.rel;
       let src = relationshipsData.slice();
 
-      // filters
       const filters = state.filters;
       src = src.filter(row => {
         for (const k of Object.keys(filters)) {
@@ -1781,7 +1736,6 @@
         return true;
       });
 
-      // sort
       const col = state.sortCol;
       const dir = state.dir;
       src = stableSort(src, (a,b) => {
@@ -1946,9 +1900,6 @@
       renderRelBody();
     }
 
-    // ---------------------------
-    // Forensics (on demand)
-    // ---------------------------
     const FORENSICS_COLS = [
       { k:"path", label:"File" },
       { k:"type", label:"Type" },
@@ -2115,9 +2066,6 @@
     }
 
 
-    // ---------------------------
-    // Regex Replace (text-only) + log table
-    // ---------------------------
     const RX_COLS = [
       { k:"pg", label:"Pg", width:"60px" },
       { k:"part", label:"Part", width:"180px" },
@@ -2130,7 +2078,6 @@
       const state = tableState.regex;
       let src = regexChanges.slice();
 
-      // filters
       const filters = state.filters;
       src = src.filter(row => {
         for (const k of Object.keys(filters)) {
@@ -2142,7 +2089,6 @@
         return true;
       });
 
-      // sort
       const col = state.sortCol;
       const dir = state.dir;
       src = stableSort(src, (a,b) => {
@@ -2262,14 +2208,12 @@
 
       const scope = dom.rxScope.value;
 
-      // Determine target parts
       let targets = [];
       if (scope === "active") targets = [activePartPath];
       else if (scope === "loaded") targets = Array.from(partsIndex.values()).filter(m => m.loaded).map(m => m.path);
       else if (scope === "all") targets = Array.from(partsIndex.keys());
       else targets = ["word/document.xml"]; // main
 
-      // Ensure unique + stable order (main first)
       targets = Array.from(new Set(targets));
       const idx = targets.indexOf("word/document.xml");
       if (idx > 0) { targets.splice(idx,1); targets.unshift("word/document.xml"); }
@@ -2292,7 +2236,6 @@
         const xml = meta.xmlDoc;
         let page = (p === "word/document.xml") ? 1 : 0;
 
-        // Walk elements in document order (text-only replacement on w:t / w:delText).
         const stack = [xml.documentElement];
         let steps = 0;
 
@@ -2324,7 +2267,6 @@
             }
           }
 
-          // push children reversed so traversal stays close to doc order
           if (node.childNodes && node.childNodes.length) {
             for (let i=node.childNodes.length-1; i>=0; i--) {
               const ch = node.childNodes[i];
@@ -2336,17 +2278,14 @@
           if (steps % 4000 === 0) await yieldToUI();
         }
 
-        // persist updated doc reference
         meta.loaded = true;
         meta.xmlDoc = xml;
         partsIndex.set(p, meta);
         if (p === "word/document.xml") mainDocXml = xml;
       }
 
-      // Keep the rest of the app in sync (rebuild revision text + anchors)
       rebuildRevisionsAndAnchorsFromLoadedParts();
 
-      // If you’re looking at Parts, rerender it; otherwise, tables will pick up changes when opened
       if (currentTab === "parts") renderPart(activePartPath);
 
       renderRegexBody();
@@ -2364,11 +2303,7 @@
     }
 
 
-    // ---------------------------
-    // Export / Copy (per current tab)
-    // ---------------------------
     function getExportSpecForCurrentTab() {
-      // returns { filename, sheet, headers, rows (array of arrays) }
       const nowTag = new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
       const base = (originalFileName || "document.docx").replace(/\.docx$/i,"");
 
@@ -2451,7 +2386,6 @@
         await navigator.clipboard.writeText(txt);
         alert("Copied (TSV).");
       } catch {
-        // fallback
         const ta = document.createElement("textarea");
         ta.value = txt;
         ta.style.position="fixed";
@@ -2488,9 +2422,6 @@
       dom.btnExport.disabled = !enabled;
     }
 
-    // ---------------------------
-    // Metadata
-    // ---------------------------
     function populateMeta() {
       if (coreXmlDoc) {
         const creator = qAll(coreXmlDoc,"creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
@@ -2507,6 +2438,7 @@
     }
 
     function writeMetaBackToZip() {
+      if (!metaDirty) return;
       if (!zipObj) return;
       const ser = new XMLSerializer();
 
@@ -2543,7 +2475,6 @@
         dom.metaTime.value = "0";
       }
 
-      // strip rsid on loaded Word parts only (fast + avoids rewriting entire zip)
       for (const meta of partsIndex.values()) {
         if (!meta.loaded || !meta.xmlDoc) continue;
         try {
@@ -2565,9 +2496,6 @@
       if (currentTab === "parts") renderPart(activePartPath);
     }
 
-    // ---------------------------
-    // Ghost Writer (lazy init)
-    // ---------------------------
     function prepareGhost(docXml) {
       ghostParagraphs = [];
       ghostSelIdx = -1;
@@ -2659,9 +2587,8 @@
       if (insWrap) pNode.appendChild(insWrap);
       appendNormal(post);
 
-      // mark main doc part as loaded and updated
       const meta = partsIndex.get("word/document.xml");
-      if (meta) { meta.loaded = true; meta.xmlDoc = mainDocXml; partsIndex.set("word/document.xml", meta); }
+      if (meta) { meta.loaded = true; meta.xmlDoc = mainDocXml; meta.dirty = true; partsIndex.set("word/document.xml", meta); }
 
       rebuildRevisionsAndAnchorsFromLoadedParts();
       renderMainTableBody();
@@ -2671,9 +2598,6 @@
       alert("Injected.");
     }
 
-    // ---------------------------
-    // Save / write-back
-    // ---------------------------
     function buildRevisionNodeIndex(doc) {
       const idx = new Map();
       for (const n of qAll(doc,"ins")) idx.set("ins:" + attrW(n,"id"), n);
@@ -2724,7 +2648,13 @@
     }
 
     async function applyEditsToCommentsXmlAndWrite(zip) {
-      if (!zip.file("word/comments.xml")) return;
+      if (!zip.file("word/comments.xml")) return false;
+
+      const dirty = [];
+      for (const it of items.values()) {
+        if (it && it.type === "com" && it._dirty) dirty.push(it);
+      }
+      if (dirty.length === 0) return false;
 
       const s = await zip.file("word/comments.xml").async("string");
       const cDoc = new DOMParser().parseFromString(s, "text/xml");
@@ -2733,15 +2663,14 @@
       const map = new Map();
       for (const c of qAll(cDoc, "comment")) map.set(attrW(c, "id"), c);
 
-      for (const it of items.values()) {
-        if (it.type !== "com") continue;
+      for (const it of dirty) {
         const n = map.get(it.id);
         if (!n) continue;
 
         setAttrW(n, "author", it.auth || "");
         if (it.date) setAttrW(n, "date", it.date);
 
-        const ps = qAll(n, "p");
+        const ps = Array.from(n.childNodes).filter(ch => ch && ch.nodeType === 1 && ch.localName === "p");
         for (const p of ps) n.removeChild(p);
 
         const p = cDoc.createElementNS(W_NS, "w:p");
@@ -2755,36 +2684,66 @@
       }
 
       zip.file("word/comments.xml", new XMLSerializer().serializeToString(cDoc));
+      return true;
     }
 
     async function downloadWord() {
       if (!zipObj) return;
       setStatus("Saving…", true);
 
-      // Ensure main doc is loaded at minimum
       await ensurePartLoaded("word/document.xml");
 
-      applyEditsToLoadedPartsRevisions();
+      const dirtyParts = new Set();
+      const byPart = new Map();
 
-      const ser = new XMLSerializer();
-
-      // Write only LOADED Word parts back (unloaded parts remain untouched in zip)
-      for (const meta of partsIndex.values()) {
-        if (!meta.loaded || !meta.xmlDoc) continue;
-        zipObj.file(meta.path, ser.serializeToString(meta.xmlDoc));
+      for (const it of items.values()) {
+        if (!it || !it._dirty) continue;
+        if (it.type === "ins" || it.type === "del") {
+          const p = it.part || "word/document.xml";
+          if (!byPart.has(p)) byPart.set(p, []);
+          byPart.get(p).push(it);
+        }
       }
 
-      await applyEditsToCommentsXmlAndWrite(zipObj);
+      for (const [p, list] of byPart.entries()) {
+        if (!partsIndex.has(p)) continue;
+        await ensurePartLoaded(p);
+        const meta = partsIndex.get(p);
+        if (!meta || !meta.loaded || !meta.xmlDoc) continue;
+
+        const idx = buildRevisionNodeIndex(meta.xmlDoc);
+        for (const it of list) {
+          const node = idx.get(it.type + ":" + it.id);
+          if (!node) continue;
+
+          setAttrW(node, "author", it.auth || "");
+          if (it.date) setAttrW(node, "date", it.date);
+
+          if (it.type === "ins") ensureSingleTextNode(node, "t", it.txt || "");
+          else ensureSingleTextNode(node, "delText", it.txt || "");
+        }
+
+        meta.dirty = true;
+        partsIndex.set(p, meta);
+        dirtyParts.add(p);
+      }
+
+      const commentsWrote = await applyEditsToCommentsXmlAndWrite(zipObj);
       writeMetaBackToZip();
+
+      const ser = new XMLSerializer();
+      for (const meta of partsIndex.values()) {
+        if (!meta || !meta.loaded || !meta.xmlDoc) continue;
+        if (!meta.dirty) continue;
+        zipObj.file(meta.path, ser.serializeToString(meta.xmlDoc));
+      }
+      if (commentsWrote) {  }
 
       const blob = await zipObj.generateAsync({ type:"blob", compression:"DEFLATE", compressionOptions:{ level:6 } });
       saveAs(blob, "Edited_" + (originalFileName || "document.docx"));
       setStatus("Saved!", true);
     }
 
-    // ---------------------------
-    // Batch Tools (same behavior, scopes)
-    // ---------------------------
 
     function getUniqueAuthors() {
       const set = new Set();
@@ -2796,48 +2755,21 @@
     }
 
     function populateBatchAuthorDropdowns() {
-      if (!dom.btFromAuthor || !dom.btToAuthor) return;
+      if (!dom.btFromAuthor) return;
 
       const authors = getUniqueAuthors();
-      // FROM
+
       dom.btFromAuthor.textContent = "";
-      const optBlankFrom = document.createElement("option");
-      optBlankFrom.value = "__blank__";
-      optBlankFrom.textContent = "(blank)";
-      dom.btFromAuthor.appendChild(optBlankFrom);
+      const optBlank = document.createElement("option");
+      optBlank.value = "__blank__";
+      optBlank.textContent = "(blank)";
+      dom.btFromAuthor.appendChild(optBlank);
 
       for (const a of authors) {
         const opt = document.createElement("option");
         opt.value = a;
         opt.textContent = a;
         dom.btFromAuthor.appendChild(opt);
-      }
-
-      // TO
-      dom.btToAuthor.textContent = "";
-      const optBlankTo = document.createElement("option");
-      optBlankTo.value = "__blank__";
-      optBlankTo.textContent = "(blank)";
-      dom.btToAuthor.appendChild(optBlankTo);
-
-      for (const a of authors) {
-        const opt = document.createElement("option");
-        opt.value = a;
-        opt.textContent = a;
-        dom.btToAuthor.appendChild(opt);
-      }
-
-      const optCustom = document.createElement("option");
-      optCustom.value = "__custom__";
-      optCustom.textContent = "Custom…";
-      dom.btToAuthor.appendChild(optCustom);
-
-      // default "to" keeps current selection unless it vanished
-      if (![...dom.btToAuthor.options].some(o => o.value === dom.btToAuthor.value)) dom.btToAuthor.value = "__custom__";
-      if (dom.btToAuthor.value === "__custom__") {
-        if (dom.btToCustomRow) dom.btToCustomRow.style.display = "block";
-      } else {
-        if (dom.btToCustomRow) dom.btToCustomRow.style.display = "none";
       }
     }
 
@@ -2906,39 +2838,34 @@
       if (op === "setAuthor") {
         const a = (dom.btAuthor.value || "").trim();
         if (!a) { alert("Enter an author."); return; }
-        rows.forEach(x => x.auth = a);
+        rows.forEach(x => { x.auth = a; x._dirty = true; });
       }
 
       if (op === "replaceAuthor") {
         const fromRaw = dom.btFromAuthor.value;
         const from = (fromRaw === "__blank__") ? "" : String(fromRaw || "").trim();
 
-        let toRaw = dom.btToAuthor.value;
-        let to = "";
-        if (toRaw === "__blank__") to = "";
-        else if (toRaw === "__custom__") to = String(dom.btToAuthorCustom?.value || "").trim();
-        else to = String(toRaw || "").trim();
+        const to = String(dom.btToAuthor?.value || "").trim();
+        if (!to) { alert("Enter a ‘To’ author."); return; }
 
-        // allow blank-to (that’s a legit choice), but require a real FROM selection
         if (fromRaw == null || fromRaw === "") { alert("Pick a From author."); return; }
-        if (toRaw === "__custom__" && !to) { alert("Enter a custom ‘To’ author (or pick an existing one)."); return; }
 
         const fromLC = from.toLowerCase();
         rows.forEach(x => {
           const cur = String(x.auth || "").trim();
           const curLC = cur.toLowerCase();
           if (fromRaw === "__blank__") {
-            if (!cur) x.auth = to;
+            if (!cur) { x.auth = to; x._dirty = true; }
           } else {
-            if (curLC === fromLC) x.auth = to;
+            if (curLC === fromLC) { x.auth = to; x._dirty = true; }
           }
         });
       }
 
-      if (op === "setDate") {
+if (op === "setDate") {
         const iso = fromDatetimeLocal(dom.btDt.value);
         if (!iso) { alert("Pick a date/time."); return; }
-        rows.forEach(x => x.date = iso);
+        rows.forEach(x => { x.date = iso; x._dirty = true; });
       }
 
       if (op === "sequentialDate") {
@@ -2946,7 +2873,7 @@
         const step = Number(dom.btSeqStep.value);
         if (!startIso || isNaN(step) || step < 0) { alert("Pick a start date/time and valid step."); return; }
         let d = new Date(startIso);
-        rows.forEach(x => { x.date = d.toISOString(); d.setMinutes(d.getMinutes() + step); });
+        rows.forEach(x => { x.date = d.toISOString(); x._dirty = true; d.setMinutes(d.getMinutes() + step); });
       }
 
       if (op === "shiftDate") {
@@ -2962,7 +2889,7 @@
           const d = new Date(x.date);
           if (isNaN(d.getTime())) return;
           d.setTime(d.getTime() + ms);
-          x.date = d.toISOString();
+          x.date = d.toISOString(); x._dirty = true;
         });
       }
 
@@ -2972,9 +2899,6 @@
       alert("Batch applied to " + rows.length + " item(s).");
     }
 
-    // ---------------------------
-    // Tab switching
-    // ---------------------------
     async function switchTab(t) {
       currentTab = t;
       if (t === "comments" || t === "revisions" || t === "all") activityMode = t;
@@ -3021,9 +2945,6 @@
       refreshExportButtons();
     }
 
-    // ---------------------------
-    // Load file (optimized: no relationships, no ghost, no extra parts parsing)
-    // ---------------------------
     async function loadFile(file) {
       if (!file) return;
       clearErrorLog();
@@ -3035,7 +2956,6 @@
         const buf = await file.arrayBuffer();
         zipObj = await JSZip.loadAsync(buf);
 
-        // best effort: remove protection
         try {
           if (zipObj.file("word/settings.xml")) {
             let s = await zipObj.file("word/settings.xml").async("string");
@@ -3048,14 +2968,11 @@
           }
         } catch {}
 
-        // Build parts index (fast)
         buildPartsIndex(zipObj);
         populatePartSelects();
 
-        // Parse ONLY document.xml now
         await ensurePartLoaded("word/document.xml");
 
-        // comments.xml
         commentsXmlDoc = null;
         if (zipObj.file("word/comments.xml")) {
           const cStr = await zipObj.file("word/comments.xml").async("string");
@@ -3063,7 +2980,6 @@
           if (isParserError(commentsXmlDoc)) throw new Error("Failed to parse word/comments.xml");
         }
 
-        // core/app (optional)
         coreXmlDoc = null; appXmlDoc = null;
         if (zipObj.file("docProps/core.xml")) {
           const s = await zipObj.file("docProps/core.xml").async("string");
@@ -3077,7 +2993,6 @@
         }
         populateMeta();
 
-        // Build activity fast (main doc + comments only)
         buildInitialActivityFast();
 
         relationshipsBuilt = false;
@@ -3092,7 +3007,6 @@
         dom.ghostTools.style.display = "none";
         dom.ghostHint.style.display = "block";
 
-        // show UI
         dom.drop.style.display="none";
         dom.toolbar.style.display="flex";
         dom.tabs.style.display="flex";
@@ -3106,10 +3020,12 @@
       }
     }
 
-    // ---------------------------
-    // Wiring
-    // ---------------------------
     function wireUi() {
+      if (typeof JSZip === "undefined" || typeof XLSX === "undefined" || typeof saveAs === "undefined") {
+        setStatus("Missing required libraries (jszip.min.js / xlsx.full.min.js / FileSaver.min.js).", false);
+        alert("Missing required libraries. Make sure jszip.min.js, xlsx.full.min.js, and FileSaver.min.js are in the same folder as this HTML file.");
+        return;
+      }
       dom.drop.addEventListener("click", () => dom.file.click());
       dom.drop.addEventListener("keydown", (e) => { if (e.key==="Enter" || e.key===" ") dom.file.click(); });
       dom.file.addEventListener("change", (e) => loadFile(e.target.files[0]));
@@ -3131,29 +3047,23 @@
       dom.btnCopy.addEventListener("click", copyCurrentTab);
       dom.btnExport.addEventListener("click", exportCurrentTabXlsx);
 
-      // Parts
       dom.partSelect.addEventListener("change", async () => { await setActivePart(dom.partSelect.value); });
       dom.partFilter.addEventListener("input", () => { if (currentTab === "parts") renderSidebarForPart(activePartPath); });
       document.getElementById("btn-clear-selection").addEventListener("click", () => { selectedUids.clear(); if (currentTab!=="relationships") renderMainTableBody(); alert("Selection cleared."); });
 
-      // Forensics
       document.getElementById("btn-scan").addEventListener("click", scanForensics);
 
-      // Metadata
       document.getElementById("btn-wipe").addEventListener("click", wipeMetadata);
 
-      // Ghost
       dom.ghostRender.addEventListener("mouseup", handleGhostSelection);
       dom.ghostRender.addEventListener("touchend", () => setTimeout(handleGhostSelection, 0));
       document.addEventListener("selectionchange", () => { if (dom.viewGhost.style.display === "block") handleGhostSelection(); });
       document.getElementById("btn-inject").addEventListener("click", executeGhostEdit);
 
-      // Batch modal
       document.getElementById("btn-bt-cancel").addEventListener("click", closeBatchTools);
       document.getElementById("btn-bt-apply").addEventListener("click", applyBatchTools);
       dom.btModal.addEventListener("click", (e)=>{ if (e.target === dom.btModal) closeBatchTools(); });
       dom.btOp.addEventListener("change", refreshBatchUi);
-      if (dom.btToAuthor) dom.btToAuthor.addEventListener("change", refreshBatchUi);
 
       refreshExportButtons();
     }
