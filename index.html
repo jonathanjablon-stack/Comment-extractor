@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Forensics Suite</title>
+  <title>Word Forensics Suite v5.2c</title>
 
 <script defer src="./jszip.min.js"></script>
 <script defer src="./xlsx.bundle.js"></script>
 <script defer src="./FileSaver.min.js"></script>
+
 
   <style>
     :root{
@@ -348,7 +349,7 @@
 
 <body>
   <div class="container">
-    <h1>Word Forensics Suite 3.5b2</h1>
+    <h1>Word Forensics Suite v5.2c</h1>
 
     <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Open DOCX">
       📄 Tap to Open .docx<br><span style="font-size:11px; opacity:0.8;">or drag & drop here</span>
@@ -1002,8 +1003,9 @@
           if (type === "ins") for (const t of qAll(n, "t")) txt += t.textContent || "";
           else for (const t of qAll(n, "delText")) txt += t.textContent || "";
 
-          if (!txt || txt.trim() === "") {
-            txt = describeBlankRevision(n, type);
+          // Skip non-text / formatting-only tracked changes (preserve in DOCX, but don’t list or touch on save)
+          if (!txt || !String(txt).replace(/\u00a0/g, " ").match(/\S/)) {
+            continue;
           }
 
           const pgKey = type + ":" + id;
@@ -1086,11 +1088,13 @@
           }
         }
 
-        const revs = extractRevisions(meta.xmlDoc, meta.path, ctx);
-        for (const r of revs) {
-          const n = parseInt(r.id, 10);
+        // Track max change id across ALL revisions (including non-text) so injected changes don’t reuse ids
+        for (const el of [...qAll(meta.xmlDoc, "ins"), ...qAll(meta.xmlDoc, "del")]) {
+          const n = parseInt(attrW(el, "id"), 10);
           if (!isNaN(n)) maxChange = Math.max(maxChange, n);
         }
+
+        const revs = extractRevisions(meta.xmlDoc, meta.path, ctx); // substantive text-only
         mergeItems(revs);
       }
 
@@ -3072,4 +3076,3 @@ if (op === "setDate") {
   </script>
 </body>
 </html>
-
