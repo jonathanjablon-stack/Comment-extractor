@@ -3207,6 +3207,7 @@ if (op === "setDate") {
       dom.partSelect.addEventListener("change", async () => { await setActivePart(dom.partSelect.value); });
       dom.partFilter.addEventListener("input", () => { if (currentTab === "parts") renderSidebarForPart(activePartPath); });
       document.getElementById("btn-clear-selection").addEventListener("click", () => { selectedUids.clear(); if (currentTab!=="relationships") renderMainTableBody(); alert("Selection cleared."); });
+
       document.getElementById("btn-scan").addEventListener("click", scanForensics);
 
       document.getElementById("btn-wipe").addEventListener("click", wipeMetadata);
@@ -3227,4 +3228,4 @@ if (op === "setDate") {
     window.addEventListener("DOMContentLoaded", wireUi);
   </script>
 </body>
-</html>r
+</html>
