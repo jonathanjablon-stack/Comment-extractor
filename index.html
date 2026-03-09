@@ -790,6 +790,8 @@
         .replace(/&amp;/g, "&");
     }
 
+    // Applies a safe author patch directly to the raw XML string. This intentionally avoids
+    // DOM re-serialization so we don't trigger Word's "formatting changed" churn (e.g., list numbering).
     function patchAuthorAttrsInXml(xml, fromRaw, to) {
       if (!xml) return xml;
       const toVal = escapeXmlAttr(String(to == null ? "" : to).trim());
@@ -1069,6 +1071,7 @@
 
           const isSubstantive = !!(txt && String(txt).replace(/\u00a0/g, " ").match(/\S/));
 
+          // Keep formatting-only tracked changes in the DOCX and batch ops (author/date), but hide them from the main table.
           if (!isSubstantive) {
             txt = describeBlankRevision(n, type);
           }
@@ -1226,6 +1229,7 @@
           }
         }
 
+        // Track max change id across ALL revisions (including non-text) so injected changes don’t reuse ids
         for (const el of [...qAll(meta.xmlDoc, "ins"), ...qAll(meta.xmlDoc, "del")]) {
           const n = parseInt(attrW(el, "id"), 10);
           if (!isNaN(n)) maxChange = Math.max(maxChange, n);
@@ -1252,9 +1256,11 @@
 
       const anchorMap = new Map();
 
+      let subjectMap = new Map();
+
       if (mainDocXml) {
         const ctx = mapContext(mainDocXml, "word/document.xml");
-        const subjectMap = extractCommentSubjectsFromPart(mainDocXml, "word/document.xml");
+        subjectMap = extractCommentSubjectsFromPart(mainDocXml, "word/document.xml");
         for (const key of Object.keys(ctx.pg)) {
           if (key.startsWith("c:")) {
             anchorMap.set(key.slice(2), { part:"word/document.xml", pg: ctx.pg[key] ?? 1 });
@@ -2853,13 +2859,13 @@
         const n = map.get(it.id);
         if (!n) continue;
 
-
+        // Only update metadata if the user actually changed it.
         if (it._dirtyMeta) {
           setAttrW(n, "author", it.auth || "");
           if (it.date) setAttrW(n, "date", it.date);
         }
 
-
+        // Only rewrite the comment body if the user edited the text.
         if (it._dirtyText) {
           const ps = Array.from(n.childNodes).filter(ch => ch && ch.nodeType === 1 && ch.localName === "p");
           for (const p of ps) n.removeChild(p);
@@ -2886,7 +2892,7 @@
       const paths = Object.keys(zip.files || {}).filter(p => p.startsWith("word/") && p.endsWith(".xml"));
       if (paths.length === 0) return;
 
-
+      // Precompute setAuthor target (if any) — last one wins.
       let lastSetAuthor = null;
       for (const op of pendingGlobalMetaOps) {
         if (op && op.op === "setAuthor") lastSetAuthor = String(op.to || "").trim();
@@ -2903,7 +2909,7 @@
 
         let out = s;
 
-
+        // Apply ops in the order they were added
         for (const op of pendingGlobalMetaOps) {
           if (!op) continue;
           if (op.op === "replaceAuthor") {
@@ -2948,13 +2954,13 @@ async function downloadWord() {
           const node = idx.get(it.type + ":" + it.id);
           if (!node) continue;
 
-
+          // Author/date edits should never rewrite the underlying content structure.
           if (it._dirtyMeta) {
             setAttrW(node, "author", it.auth || "");
             if (it.date) setAttrW(node, "date", it.date);
           }
 
-
+          // Text edits: only update existing text nodes; never create new ones.
           if (it._dirtyText) {
             const kind = (it.type === "ins") ? "t" : "delText";
             const nodes = qAll(node, kind);
@@ -2972,7 +2978,8 @@ async function downloadWord() {
         const hasTextEdits = list.some(x => x && x._dirtyText);
 
         if (!hasTextEdits) {
-
+          // Avoid serializing whole XML for metadata-only changes; patch the original XML string in-place
+          // so we don’t accidentally perturb numbering / formatting structures.
           let xmlStr = meta.original;
           for (const it of list) {
             if (!it || !it._dirtyMeta) continue;
