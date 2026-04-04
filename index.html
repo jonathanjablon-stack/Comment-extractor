@@ -9,6 +9,7 @@
 <script defer src="./xlsx.bundle.js"></script>
 <script defer src="./FileSaver.min.js"></script>
 
+
   <style>
     :root{
       --primary:#0d6efd;
@@ -201,6 +202,7 @@
     .bg-med{ background:#ffc107; color:#000; }
     .bg-lo{ background:#198754; }
 
+    
     .doc-topbar{
       display:flex;
       gap:8px;
@@ -272,6 +274,7 @@
     }
     .active-card{ border-left:4px solid var(--primary); background:#eef7ff; }
 
+    
     .ghost-render{
       height:35vh;
       overflow-y:auto;
@@ -291,6 +294,7 @@
     .flash-target{ animation:flash 2s linear 1; background:yellow!important; }
     @keyframes flash{ 0%{background:yellow} 50%{background:orange} 100%{background:yellow} }
 
+    
     .modal{
       display:none;
       position:fixed;
@@ -319,7 +323,8 @@
       font-size:12px;
       background:#fff;
     }
-
+  
+    
     .doc-table{
       width:100%;
       border-collapse:collapse;
@@ -389,6 +394,7 @@
       color:#212529;
     }
 
+
   </style>
 </head>
 
@@ -426,12 +432,14 @@
       <button class="btn btn-danger" id="btn-reset">Reset</button>
     </div>
 
+    
     <div id="view-table" class="view-section table-wrap">
       <table id="data-table">
         <thead id="data-head"></thead>
         <tbody id="data-body"></tbody>
       </table>
     </div>
+
 
     <div id="view-quick" class="view-section">
       <div class="quick-grid">
@@ -480,6 +488,7 @@
       </div>
     </div>
 
+    
     <div id="view-rel" class="view-section table-wrap">
       <table id="rel-table">
         <thead id="rel-head"></thead>
@@ -487,6 +496,7 @@
       </table>
     </div>
 
+    
     <div id="view-forensics" class="view-section table-wrap">
       <div style="padding:15px; text-align:center; background:#f1f3f5;">
         <button class="btn btn-primary" style="width:auto; padding:10px 20px; flex:0 0 auto;" id="btn-scan">
@@ -499,6 +509,7 @@
       </table>
     </div>
 
+    
     <div id="view-ghost" class="view-section">
       <div class="ghost-render" id="ghost-render"></div>
       <div class="ghost-toolbar" id="ghost-tools">
@@ -518,6 +529,8 @@
       <div class="tiny" style="margin-top:8px;">Export/Copy is disabled on this tab (there’s no table).</div>
     </div>
 
+
+    
     <div id="view-regex" class="view-section">
       <div class="doc-topbar" style="border-radius:6px; border-bottom:1px solid #ccc;">
         <input id="rx-pattern" type="text" placeholder="Regex pattern (no / /)" aria-label="Regex pattern" />
@@ -554,6 +567,7 @@
       </div>
     </div>
 
+    
     <div id="view-meta" class="view-section">
       <div style="padding:15px;">
         <h3 style="margin:0 0 10px 0;">Core Properties</h3>
@@ -568,6 +582,7 @@
     </div>
   </div>
 
+  
   <div id="batchToolsModal" class="modal" aria-hidden="true">
     <div class="modal-content">
       <h3 style="margin:0 0 12px 0;">Global Batch Tools</h3>
@@ -614,6 +629,7 @@
         <input type="text" id="batch-author" placeholder="e.g., Author">
       </div>
 
+      
       <div class="form-row" id="row-replace">
         <label>Replace Author</label>
         <div class="row-inline">
@@ -621,6 +637,7 @@
           <input type="text" id="batch-to-author" placeholder="To (new author name)" aria-label="To author">
         </div>
       </div>
+
 
       <div class="form-row" id="row-date">
         <label>Date/Time</label>
@@ -843,6 +860,8 @@
       }
     }
 
+
+
     function commitPendingUiEdits() {
       const ae = document.activeElement;
       if (!ae) return;
@@ -908,6 +927,7 @@
         .replace(/'/g, "&apos;");
     }
 
+
     function unescapeXmlAttr(s) {
       return String(s || "")
         .replace(/&quot;/g, '"')
@@ -950,7 +970,7 @@
 
       return xml.replace(re, (full) => {
         const selfClosing = /\/>$/.test(full);
-        let start = full.slice(0, selfClosing ? -2 : -1);
+        let start = full.slice(0, selfClosing ? -2 : -1); // drop > or />
         start = upsertAttrInStartTag(start, "w:author", author || "");
         if (date) start = upsertAttrInStartTag(start, "w:date", date);
         return start + (selfClosing ? "/>" : ">");
@@ -1220,7 +1240,7 @@
       return arr;
     }
     function extractCommentSubjectsFromPart(partXml, partPath) {
-      const map = new Map();
+      const map = new Map(); // id -> text
       if (!partXml) return map;
 
       const root = getRenderRoot(partXml, partPath) || partXml.documentElement;
@@ -1283,6 +1303,8 @@
       }
       return map;
     }
+
+
 
     function extractComments(commentsXml, anchorMap) {
       if (!commentsXml) return [];
@@ -1356,7 +1378,7 @@
           if (!isNaN(n)) maxChange = Math.max(maxChange, n);
         }
 
-        const revs = extractRevisions(meta.xmlDoc, meta.path, ctx);
+        const revs = extractRevisions(meta.xmlDoc, meta.path, ctx); // substantive text-only
         mergeItems(revs);
       }
 
@@ -1804,6 +1826,7 @@
         if (ln === "commentRangeEnd") { const id = attrW(node,"id"); if (id !== "") removeActiveComment(id); return; }
         if (ln === "commentReference") return;
 
+        
         if (ln === "tbl") {
           const table = document.createElement("table");
           table.className = "doc-table";
@@ -2161,8 +2184,8 @@
 
     function relRisk(typeUri, targetMode, target) {
       const isExt = (String(targetMode||"").toLowerCase()==="external") ||
-                    /^https?:\/\
-                    /^file:\/\
+                    /^https?:\/\//i.test(target||"") ||
+                    /^file:\/\//i.test(target||"");
       if (isExt) return { label:"HIGH", rank:1, cls:"bg-hi" };
       const low = { label:"LOW", rank:3, cls:"bg-lo" };
       if (!typeUri) return low;
@@ -2607,6 +2630,7 @@
       setStatus("Scan complete.", true);
     }
 
+
     const RX_COLS = [
       { k:"pg", label:"Pg", width:"60px" },
       { k:"part", label:"Part", width:"180px" },
@@ -2753,7 +2777,7 @@
       if (scope === "active") targets = [activePartPath];
       else if (scope === "loaded") targets = Array.from(partsIndex.values()).filter(m => m.loaded).map(m => m.path);
       else if (scope === "all") targets = Array.from(partsIndex.keys());
-      else targets = ["word/document.xml"];
+      else targets = ["word/document.xml"]; // main
 
       targets = Array.from(new Set(targets));
       const idx = targets.indexOf("word/document.xml");
@@ -2842,6 +2866,7 @@
       renderRegexBody();
       refreshExportButtons();
     }
+
 
     function getExportSpecForCurrentTab() {
       const nowTag = new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
@@ -3233,6 +3258,7 @@
       return true;
     }
 
+    
     async function applyPendingGlobalMetaOpsToZip(zip) {
       if (!zip || !pendingGlobalMetaOps || pendingGlobalMetaOps.length === 0) return;
 
@@ -3322,7 +3348,6 @@ async function downloadWord() {
         const hasTextEdits = list.some(x => x && x._dirtyText);
 
         if (!hasTextEdits) {
-
           let xmlStr = meta.original;
           for (const it of list) {
             if (!it || !it._dirtyMeta) continue;
@@ -3358,6 +3383,7 @@ async function downloadWord() {
       saveAs(blob, "Edited_" + (originalFileName || "document.docx"));
       setStatus("Saved!", true);
     }
+
 
     function getUniqueAuthors() {
       const set = new Set();
