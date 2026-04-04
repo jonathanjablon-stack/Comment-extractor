@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Forensics Suite v5.2h</title>
+  <title>Word Forensics Suite v5.3</title>
 
 <script defer src="./jszip.min.js"></script>
 <script defer src="./xlsx.bundle.js"></script>
 <script defer src="./FileSaver.min.js"></script>
-
 
   <style>
     :root{
@@ -202,7 +201,6 @@
     .bg-med{ background:#ffc107; color:#000; }
     .bg-lo{ background:#198754; }
 
-    
     .doc-topbar{
       display:flex;
       gap:8px;
@@ -274,7 +272,6 @@
     }
     .active-card{ border-left:4px solid var(--primary); background:#eef7ff; }
 
-    
     .ghost-render{
       height:35vh;
       overflow-y:auto;
@@ -294,7 +291,6 @@
     .flash-target{ animation:flash 2s linear 1; background:yellow!important; }
     @keyframes flash{ 0%{background:yellow} 50%{background:orange} 100%{background:yellow} }
 
-    
     .modal{
       display:none;
       position:fixed;
@@ -323,8 +319,7 @@
       font-size:12px;
       background:#fff;
     }
-  
-    
+
     .doc-table{
       width:100%;
       border-collapse:collapse;
@@ -344,12 +339,62 @@
       margin-bottom:0;
     }
 
+    .quick-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+      gap:14px;
+      padding:15px;
+    }
+    .quick-card{
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+      padding:14px;
+      box-shadow:0 2px 8px rgba(0,0,0,.04);
+    }
+    .quick-card h3{
+      margin:0 0 8px 0;
+      font-size:15px;
+    }
+    .quick-card p{
+      margin:0 0 12px 0;
+      font-size:12px;
+      color:#666;
+      line-height:1.45;
+    }
+    .quick-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top:8px;
+    }
+    .quick-row input,.quick-row select{
+      flex:1 1 180px;
+      min-width:160px;
+      padding:9px 10px;
+      border:1px solid #ced4da;
+      border-radius:8px;
+      font-size:12px;
+      box-sizing:border-box;
+      background:#fff;
+    }
+    .quick-note{
+      margin-top:10px;
+      font-size:11px;
+      color:#6c757d;
+    }
+    .toolbar .btn-secondary-lite{
+      background:#e9ecef;
+      color:#212529;
+    }
+
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h1>Word Forensics Suite v5.2h</h1>
+    <h1>Word Forensics Suite v5.3</h1>
 
     <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Open DOCX">
       📄 Tap to Open .docx<br><span style="font-size:11px; opacity:0.8;">or drag & drop here</span>
@@ -363,6 +408,7 @@
       <button class="tab-btn active" data-tab="comments">Comments</button>
       <button class="tab-btn" data-tab="revisions">Changes</button>
       <button class="tab-btn" data-tab="all">All Activity</button>
+      <button class="tab-btn" data-tab="quick">Quick Actions</button>
       <button class="tab-btn" data-tab="parts">Parts</button>
       <button class="tab-btn" data-tab="relationships">Relationships</button>
       <button class="tab-btn" data-tab="forensics">Forensics</button>
@@ -372,14 +418,14 @@
     </div>
 
     <div class="toolbar" id="toolbar">
-      <button class="btn btn-warning" id="btn-batch-tools">Batch Tools</button>
+      <button class="btn btn-warning" id="btn-batch-tools">More Tools</button>
       <button class="btn btn-primary" id="btn-save">Save Docx</button>
+      <button class="btn btn-success" id="btn-export-redline">Export Redline HTML</button>
       <button class="btn btn-secondary" id="btn-copy">Copy Table</button>
       <button class="btn btn-success" id="btn-export">Export XLSX</button>
       <button class="btn btn-danger" id="btn-reset">Reset</button>
     </div>
 
-    
     <div id="view-table" class="view-section table-wrap">
       <table id="data-table">
         <thead id="data-head"></thead>
@@ -387,7 +433,38 @@
       </table>
     </div>
 
-    
+    <div id="view-quick" class="view-section">
+      <div class="quick-grid">
+        <div class="quick-card">
+          <h3>Author shortcuts</h3>
+          <p>Use this for the common “just make the comments/redlines say this author” workflow.</p>
+          <div class="quick-row">
+            <input type="text" id="quick-author" placeholder="Author name">
+            <select id="quick-scope" aria-label="Quick action scope">
+              <option value="all">All items</option>
+              <option value="filtered">Filtered list</option>
+              <option value="selected">Selected items</option>
+              <option value="currentPart">Current part</option>
+            </select>
+          </div>
+          <div class="quick-row">
+            <button class="btn btn-warning" id="btn-quick-set-author">Set author</button>
+          </div>
+          <div class="quick-note">This updates comments, insertions, and deletions immediately. No separate apply step is needed.</div>
+        </div>
+
+        <div class="quick-card">
+          <h3>Common exports</h3>
+          <p>The main things you’re likely to use most often are grouped here.</p>
+          <div class="quick-row">
+            <button class="btn btn-primary" id="btn-quick-save">Save DOCX</button>
+            <button class="btn btn-success" id="btn-quick-redline">Export Redline HTML</button>
+          </div>
+          <div class="quick-note">Edits are committed automatically right before export, even if your cursor is still in a field.</div>
+        </div>
+      </div>
+    </div>
+
     <div id="view-parts" class="view-section">
       <div class="doc-topbar">
         <select id="part-select" aria-label="Part selector"></select>
@@ -403,7 +480,6 @@
       </div>
     </div>
 
-    
     <div id="view-rel" class="view-section table-wrap">
       <table id="rel-table">
         <thead id="rel-head"></thead>
@@ -411,7 +487,6 @@
       </table>
     </div>
 
-    
     <div id="view-forensics" class="view-section table-wrap">
       <div style="padding:15px; text-align:center; background:#f1f3f5;">
         <button class="btn btn-primary" style="width:auto; padding:10px 20px; flex:0 0 auto;" id="btn-scan">
@@ -424,7 +499,6 @@
       </table>
     </div>
 
-    
     <div id="view-ghost" class="view-section">
       <div class="ghost-render" id="ghost-render"></div>
       <div class="ghost-toolbar" id="ghost-tools">
@@ -444,8 +518,6 @@
       <div class="tiny" style="margin-top:8px;">Export/Copy is disabled on this tab (there’s no table).</div>
     </div>
 
-
-    
     <div id="view-regex" class="view-section">
       <div class="doc-topbar" style="border-radius:6px; border-bottom:1px solid #ccc;">
         <input id="rx-pattern" type="text" placeholder="Regex pattern (no / /)" aria-label="Regex pattern" />
@@ -482,7 +554,6 @@
       </div>
     </div>
 
-    
     <div id="view-meta" class="view-section">
       <div style="padding:15px;">
         <h3 style="margin:0 0 10px 0;">Core Properties</h3>
@@ -497,7 +568,6 @@
     </div>
   </div>
 
-  
   <div id="batchToolsModal" class="modal" aria-hidden="true">
     <div class="modal-content">
       <h3 style="margin:0 0 12px 0;">Global Batch Tools</h3>
@@ -544,7 +614,6 @@
         <input type="text" id="batch-author" placeholder="e.g., Author">
       </div>
 
-      
       <div class="form-row" id="row-replace">
         <label>Replace Author</label>
         <div class="row-inline">
@@ -552,7 +621,6 @@
           <input type="text" id="batch-to-author" placeholder="To (new author name)" aria-label="To author">
         </div>
       </div>
-
 
       <div class="form-row" id="row-date">
         <label>Date/Time</label>
@@ -658,10 +726,18 @@
 
       btnCopy: document.getElementById("btn-copy"),
       btnExport: document.getElementById("btn-export"),
+      btnExportRedline: document.getElementById("btn-export-redline"),
 
       viewTable: document.getElementById("view-table"),
       tableHead: document.getElementById("data-head"),
       tableBody: document.getElementById("data-body"),
+
+      viewQuick: document.getElementById("view-quick"),
+      quickAuthor: document.getElementById("quick-author"),
+      quickScope: document.getElementById("quick-scope"),
+      btnQuickSetAuthor: document.getElementById("btn-quick-set-author"),
+      btnQuickSave: document.getElementById("btn-quick-save"),
+      btnQuickRedline: document.getElementById("btn-quick-redline"),
 
       viewParts: document.getElementById("view-parts"),
       partSelect: document.getElementById("part-select"),
@@ -767,6 +843,58 @@
       }
     }
 
+    function commitPendingUiEdits() {
+      const ae = document.activeElement;
+      if (!ae) return;
+      const isEditable = ae.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/i.test(ae.tagName || "");
+      if (!isEditable) return;
+      try { ae.dispatchEvent(new Event("input", { bubbles:true })); } catch {}
+      try { ae.dispatchEvent(new Event("change", { bubbles:true })); } catch {}
+      try { ae.blur(); } catch {}
+    }
+
+    function touchItemMeta(uid, patch) {
+      const it = items.get(uid);
+      if (!it) return;
+      if (Object.prototype.hasOwnProperty.call(patch, "auth")) it.auth = patch.auth;
+      if (Object.prototype.hasOwnProperty.call(patch, "date")) it.date = patch.date;
+      it._dirtyMeta = true;
+    }
+
+    function touchItemText(uid, txt) {
+      const it = items.get(uid);
+      if (!it) return;
+      it.txt = txt;
+      it._dirtyText = true;
+    }
+
+    function getQuickScopeRows(scope) {
+      if (scope === "currentPart") {
+        return Array.from(items.values()).filter(x => x && (x.type === "com" || x.type === "ins" || x.type === "del") && (x.part || "") === activePartPath);
+      }
+      return getBatchCandidateRows(scope);
+    }
+
+    function applyQuickAuthorAction() {
+      commitPendingUiEdits();
+      const author = String(dom.quickAuthor?.value || "").trim();
+      if (!author) { alert("Enter an author."); return; }
+
+      const scope = String(dom.quickScope?.value || "all");
+      let rows = batchOrder(getQuickScopeRows(scope), scope === "currentPart" ? "all" : scope);
+      if (scope === "currentPart") {
+        rows = rows.filter(x => (x.part || "") === activePartPath);
+      }
+      if (!rows.length) { alert("No matching items for that scope."); return; }
+
+      rows.forEach(x => { x.auth = author; x._dirtyMeta = true; });
+      if (scope === "all") pendingGlobalMetaOps.push({ op:"setAuthor", to:author });
+
+      renderMainTableBody();
+      if (currentTab === "parts") renderSidebarForPart(activePartPath);
+      setStatus(`Author updated for ${rows.length} item(s).`, true);
+    }
+
     function escapeRegExp(s) {
       return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }
@@ -780,7 +908,6 @@
         .replace(/'/g, "&apos;");
     }
 
-
     function unescapeXmlAttr(s) {
       return String(s || "")
         .replace(/&quot;/g, '"')
@@ -790,8 +917,6 @@
         .replace(/&amp;/g, "&");
     }
 
-    // Applies a safe author patch directly to the raw XML string. This intentionally avoids
-    // DOM re-serialization so we don't trigger Word's "formatting changed" churn (e.g., list numbering).
     function patchAuthorAttrsInXml(xml, fromRaw, to) {
       if (!xml) return xml;
       const toVal = escapeXmlAttr(String(to == null ? "" : to).trim());
@@ -825,7 +950,7 @@
 
       return xml.replace(re, (full) => {
         const selfClosing = /\/>$/.test(full);
-        let start = full.slice(0, selfClosing ? -2 : -1); // drop > or />
+        let start = full.slice(0, selfClosing ? -2 : -1);
         start = upsertAttrInStartTag(start, "w:author", author || "");
         if (date) start = upsertAttrInStartTag(start, "w:date", date);
         return start + (selfClosing ? "/>" : ">");
@@ -1071,7 +1196,6 @@
 
           const isSubstantive = !!(txt && String(txt).replace(/\u00a0/g, " ").match(/\S/));
 
-          // Keep formatting-only tracked changes in the DOCX and batch ops (author/date), but hide them from the main table.
           if (!isSubstantive) {
             txt = describeBlankRevision(n, type);
           }
@@ -1096,7 +1220,7 @@
       return arr;
     }
     function extractCommentSubjectsFromPart(partXml, partPath) {
-      const map = new Map(); // id -> text
+      const map = new Map();
       if (!partXml) return map;
 
       const root = getRenderRoot(partXml, partPath) || partXml.documentElement;
@@ -1159,8 +1283,6 @@
       }
       return map;
     }
-
-
 
     function extractComments(commentsXml, anchorMap) {
       if (!commentsXml) return [];
@@ -1229,13 +1351,12 @@
           }
         }
 
-        // Track max change id across ALL revisions (including non-text) so injected changes don’t reuse ids
         for (const el of [...qAll(meta.xmlDoc, "ins"), ...qAll(meta.xmlDoc, "del")]) {
           const n = parseInt(attrW(el, "id"), 10);
           if (!isNaN(n)) maxChange = Math.max(maxChange, n);
         }
 
-        const revs = extractRevisions(meta.xmlDoc, meta.path, ctx); // substantive text-only
+        const revs = extractRevisions(meta.xmlDoc, meta.path, ctx);
         mergeItems(revs);
       }
 
@@ -1465,22 +1586,24 @@
           com.style.padding = "6px 8px";
           com.style.borderRadius = "6px";
           com.textContent = row.txt || "";
-          com.addEventListener("blur", () => {
-            const it = items.get(row.uid);
-            if (it) { it.txt = com.textContent.trim(); it._dirtyText = true; }
+          const syncCommentText = () => {
+            touchItemText(row.uid, com.textContent.trim());
             if (currentTab === "parts") renderSidebarForPart(activePartPath);
-          });
+          };
+          com.addEventListener("input", syncCommentText);
+          com.addEventListener("blur", syncCommentText);
           tdTxt.appendChild(com);
         } else {
           tdTxt.className = "editable";
           tdTxt.contentEditable = "true";
           tdTxt.spellcheck = false;
           tdTxt.textContent = row.txt || "";
-          tdTxt.addEventListener("blur", () => {
-            const it = items.get(row.uid);
-            if (it) { it.txt = tdTxt.textContent.trim(); it._dirtyText = true; }
+          const syncRowText = () => {
+            touchItemText(row.uid, tdTxt.textContent.trim());
             if (currentTab === "parts") renderSidebarForPart(activePartPath);
-          });
+          };
+          tdTxt.addEventListener("input", syncRowText);
+          tdTxt.addEventListener("blur", syncRowText);
         }
 
         tr.appendChild(tdTxt);
@@ -1490,11 +1613,12 @@
         tdAuth.contentEditable = "true";
         tdAuth.spellcheck = false;
         tdAuth.textContent = row.auth || "";
-        tdAuth.addEventListener("blur", () => {
-          const it = items.get(row.uid);
-          if (it) { it.auth = tdAuth.textContent.trim(); it._dirtyMeta = true; }
+        const syncRowAuthor = () => {
+          touchItemMeta(row.uid, { auth: tdAuth.textContent.trim() });
           if (currentTab === "parts") renderSidebarForPart(activePartPath);
-        });
+        };
+        tdAuth.addEventListener("input", syncRowAuthor);
+        tdAuth.addEventListener("blur", syncRowAuthor);
         tr.appendChild(tdAuth);
 
         const tdDate = document.createElement("td");
@@ -1502,11 +1626,13 @@
         inp.type = "datetime-local";
         inp.className = "cell-input editish";
         inp.value = toDatetimeLocal(row.date);
-        inp.addEventListener("change", () => {
-          const it = items.get(row.uid);
-          if (it) { it.date = fromDatetimeLocal(inp.value); it._dirtyMeta = true; }
+        const syncRowDate = () => {
+          touchItemMeta(row.uid, { date: fromDatetimeLocal(inp.value) });
           if (currentTab === "parts") renderSidebarForPart(activePartPath);
-        });
+        };
+        inp.addEventListener("input", syncRowDate);
+        inp.addEventListener("change", syncRowDate);
+        inp.addEventListener("blur", syncRowDate);
         tdDate.appendChild(inp);
         tr.appendChild(tdDate);
 
@@ -1678,7 +1804,6 @@
         if (ln === "commentRangeEnd") { const id = attrW(node,"id"); if (id !== "") removeActiveComment(id); return; }
         if (ln === "commentReference") return;
 
-        
         if (ln === "tbl") {
           const table = document.createElement("table");
           table.className = "doc-table";
@@ -1741,6 +1866,233 @@
       if (!meta || !meta.loaded || !meta.xmlDoc) return;
       renderDocView(meta.xmlDoc, path);
       renderSidebarForPart(path);
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function buildExportViewForPart(xmlDoc, partPath) {
+      const host = document.createElement("div");
+      host.className = "export-doc";
+      const root = getRenderRoot(xmlDoc, partPath);
+      if (!root) return host;
+
+      const activeComments = [];
+
+      function removeActiveComment(id) {
+        for (let i = activeComments.length - 1; i >= 0; i--) {
+          if (activeComments[i] === id) {
+            activeComments.splice(i, 1);
+            return;
+          }
+        }
+      }
+
+      function appendWithCommentContext(parent, node) {
+        let container = parent;
+        for (const cid of activeComments) {
+          const span = document.createElement("span");
+          span.className = "export-com";
+          span.dataset.commentId = cid;
+          container.appendChild(span);
+          container = span;
+        }
+        container.appendChild(node);
+      }
+
+      function appendText(parent, text) {
+        if (!text) return;
+        appendWithCommentContext(parent, document.createTextNode(text));
+      }
+
+      function appendBr(parent) {
+        appendWithCommentContext(parent, document.createElement("br"));
+      }
+
+      function appendPageBreak(parent) {
+        const marker = document.createElement("div");
+        marker.className = "export-pagebreak";
+        marker.textContent = "Page Break";
+        parent.appendChild(marker);
+      }
+
+      function walk(parent, node) {
+        if (!node || node.nodeType !== 1) return;
+        const ln = node.localName;
+
+        if (ln === "commentRangeStart") {
+          const id = attrW(node, "id");
+          if (id !== "") activeComments.push(id);
+          return;
+        }
+        if (ln === "commentRangeEnd") {
+          const id = attrW(node, "id");
+          if (id !== "") removeActiveComment(id);
+          return;
+        }
+        if (ln === "commentReference") return;
+
+        if (ln === "lastRenderedPageBreak") {
+          appendPageBreak(parent);
+          return;
+        }
+
+        if (ln === "tbl") {
+          const table = document.createElement("table");
+          table.className = "export-table";
+          parent.appendChild(table);
+
+          node.childNodes.forEach(trNode => {
+            if (!trNode || trNode.localName !== "tr") return;
+            const tr = document.createElement("tr");
+            table.appendChild(tr);
+
+            trNode.childNodes.forEach(tcNode => {
+              if (!tcNode || tcNode.localName !== "tc") return;
+              const td = document.createElement("td");
+              tr.appendChild(td);
+              tcNode.childNodes.forEach(ch => {
+                if (!ch || ch.localName === "tcPr") return;
+                walk(td, ch);
+              });
+            });
+          });
+          return;
+        }
+
+        if (ln === "p") {
+          const p = document.createElement("p");
+          parent.appendChild(p);
+          node.childNodes.forEach(ch => walk(p, ch));
+          return;
+        }
+
+        if (ln === "t" || ln === "delText") {
+          appendText(parent, node.textContent || "");
+          return;
+        }
+
+        if (ln === "br") {
+          if ((attrW(node, "type") || "") === "page") appendPageBreak(parent);
+          else appendBr(parent);
+          return;
+        }
+
+        if (ln === "ins" || ln === "del") {
+          const span = document.createElement("span");
+          span.className = (ln === "ins") ? "export-ins" : "export-del";
+          span.dataset.change = (ln === "ins") ? "insertion" : "deletion";
+          appendWithCommentContext(parent, span);
+          node.childNodes.forEach(ch => walk(span, ch));
+          return;
+        }
+
+        if (node.childNodes && node.childNodes.length) {
+          node.childNodes.forEach(ch => walk(parent, ch));
+        }
+      }
+
+      walk(host, root);
+      return host;
+    }
+
+    async function ensureAllPartsLoadedForExport() {
+      const parts = getPartOptions();
+      let count = 0;
+      for (const partPath of parts) {
+        await ensurePartLoaded(partPath);
+        count++;
+        if (count % 3 === 0) await yieldToUI();
+      }
+      return parts;
+    }
+
+    async function exportRedlineHtml() {
+      if (!zipObj) { alert("Load a DOCX first."); return; }
+      const nowTag = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const base = (originalFileName || "document.docx").replace(/\.docx$/i, "");
+
+      try {
+        setStatus("Preparing inline redline HTML…", true);
+        const parts = await ensureAllPartsLoadedForExport();
+
+        const sections = [];
+        for (const partPath of parts) {
+          const meta = partsIndex.get(partPath);
+          if (!meta || !meta.loaded || !meta.xmlDoc) continue;
+
+          const section = document.createElement("section");
+          section.className = "export-part";
+
+          const h2 = document.createElement("h2");
+          h2.textContent = partLabel(partPath);
+          section.appendChild(h2);
+
+          if (partPath !== "word/document.xml") {
+            const sub = document.createElement("div");
+            sub.className = "export-partpath";
+            sub.textContent = partPath;
+            section.appendChild(sub);
+          }
+
+          section.appendChild(buildExportViewForPart(meta.xmlDoc, partPath));
+          sections.push(section.outerHTML);
+        }
+
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${escapeHtml(base)} – Inline Redline Export</title>
+<style>
+  body{font-family:Georgia,"Times New Roman",serif;margin:24px;line-height:1.6;color:#222;background:#fff;}
+  h1{margin:0 0 8px 0;font-size:28px;}
+  .meta{margin:0 0 18px 0;color:#555;font-size:14px;}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 22px 0;font-family:Arial,sans-serif;font-size:13px;}
+  .legend span{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid #d0d7de;}
+  .legend .ins{background:#dcfce7;color:#166534;font-weight:700;}
+  .legend .del{background:#fee2e2;color:#991b1b;font-weight:700;text-decoration:line-through;}
+  .legend .com{background:#fff3cd;color:#7a5d00;}
+  .export-part{margin:0 0 34px 0;padding-top:8px;border-top:1px solid #e5e7eb;}
+  .export-part:first-of-type{border-top:none;padding-top:0;}
+  .export-part h2{margin:0 0 4px 0;font-size:22px;font-family:Arial,sans-serif;}
+  .export-partpath{margin:0 0 14px 0;color:#666;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;}
+  .export-doc{font-size:16px;}
+  .export-doc p{margin:0 0 12px 0;}
+  .export-ins{color:#166534;background:#dcfce7;font-weight:700;}
+  .export-del{color:#991b1b;background:#fee2e2;text-decoration:line-through;}
+  .export-com{background:#fff3cd;}
+  .export-pagebreak{margin:16px 0;padding:4px 10px;border-top:1px dashed #bbb;border-bottom:1px dashed #bbb;text-align:center;font:12px/1.4 Arial,sans-serif;color:#666;letter-spacing:.08em;text-transform:uppercase;}
+  .export-table{width:100%;border-collapse:collapse;margin:12px 0;table-layout:fixed;}
+  .export-table td{border:1px solid #d9dde3;padding:8px 10px;vertical-align:top;word-break:break-word;}
+</style>
+</head>
+<body>
+  <h1>${escapeHtml(base)} – Inline Redline Export</h1>
+  <div class="meta">Generated ${escapeHtml(new Date().toLocaleString())}. Additions are shown as normal green text. Deletions are shown as normal red strikethrough text.</div>
+  <div class="legend">
+    <span class="ins">Addition</span>
+    <span class="del">Deletion</span>
+    <span class="com">Comment range</span>
+  </div>
+  ${sections.join("\n")}
+</body>
+</html>`;
+
+        const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+        saveAs(blob, `${base}_Inline-Redline_${nowTag}.html`);
+        setStatus("Inline redline HTML exported.", true);
+      } catch (e) {
+        console.error(e);
+        setStatus("Failed to export inline redline HTML.", false);
+        alert("Error exporting inline redline HTML: " + (e.message || e));
+      }
     }
 
     function focusUidInCurrentPart(uid) {
@@ -1809,8 +2161,8 @@
 
     function relRisk(typeUri, targetMode, target) {
       const isExt = (String(targetMode||"").toLowerCase()==="external") ||
-                    /^https?:\/\//i.test(target||"") ||
-                    /^file:\/\//i.test(target||"");
+                    /^https?:\/\
+                    /^file:\/\
       if (isExt) return { label:"HIGH", rank:1, cls:"bg-hi" };
       const low = { label:"LOW", rank:3, cls:"bg-lo" };
       if (!typeUri) return low;
@@ -2255,7 +2607,6 @@
       setStatus("Scan complete.", true);
     }
 
-
     const RX_COLS = [
       { k:"pg", label:"Pg", width:"60px" },
       { k:"part", label:"Part", width:"180px" },
@@ -2402,7 +2753,7 @@
       if (scope === "active") targets = [activePartPath];
       else if (scope === "loaded") targets = Array.from(partsIndex.values()).filter(m => m.loaded).map(m => m.path);
       else if (scope === "all") targets = Array.from(partsIndex.keys());
-      else targets = ["word/document.xml"]; // main
+      else targets = ["word/document.xml"];
 
       targets = Array.from(new Set(targets));
       const idx = targets.indexOf("word/document.xml");
@@ -2491,7 +2842,6 @@
       renderRegexBody();
       refreshExportButtons();
     }
-
 
     function getExportSpecForCurrentTab() {
       const nowTag = new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
@@ -2859,13 +3209,11 @@
         const n = map.get(it.id);
         if (!n) continue;
 
-        // Only update metadata if the user actually changed it.
         if (it._dirtyMeta) {
           setAttrW(n, "author", it.auth || "");
           if (it.date) setAttrW(n, "date", it.date);
         }
 
-        // Only rewrite the comment body if the user edited the text.
         if (it._dirtyText) {
           const ps = Array.from(n.childNodes).filter(ch => ch && ch.nodeType === 1 && ch.localName === "p");
           for (const p of ps) n.removeChild(p);
@@ -2885,14 +3233,12 @@
       return true;
     }
 
-    
     async function applyPendingGlobalMetaOpsToZip(zip) {
       if (!zip || !pendingGlobalMetaOps || pendingGlobalMetaOps.length === 0) return;
 
       const paths = Object.keys(zip.files || {}).filter(p => p.startsWith("word/") && p.endsWith(".xml"));
       if (paths.length === 0) return;
 
-      // Precompute setAuthor target (if any) — last one wins.
       let lastSetAuthor = null;
       for (const op of pendingGlobalMetaOps) {
         if (op && op.op === "setAuthor") lastSetAuthor = String(op.to || "").trim();
@@ -2909,7 +3255,6 @@
 
         let out = s;
 
-        // Apply ops in the order they were added
         for (const op of pendingGlobalMetaOps) {
           if (!op) continue;
           if (op.op === "replaceAuthor") {
@@ -2925,6 +3270,7 @@
     }
 
 async function downloadWord() {
+      commitPendingUiEdits();
       if (!zipObj) return;
       setStatus("Saving…", true);
 
@@ -2954,13 +3300,11 @@ async function downloadWord() {
           const node = idx.get(it.type + ":" + it.id);
           if (!node) continue;
 
-          // Author/date edits should never rewrite the underlying content structure.
           if (it._dirtyMeta) {
             setAttrW(node, "author", it.auth || "");
             if (it.date) setAttrW(node, "date", it.date);
           }
 
-          // Text edits: only update existing text nodes; never create new ones.
           if (it._dirtyText) {
             const kind = (it.type === "ins") ? "t" : "delText";
             const nodes = qAll(node, kind);
@@ -2978,8 +3322,7 @@ async function downloadWord() {
         const hasTextEdits = list.some(x => x && x._dirtyText);
 
         if (!hasTextEdits) {
-          // Avoid serializing whole XML for metadata-only changes; patch the original XML string in-place
-          // so we don’t accidentally perturb numbering / formatting structures.
+
           let xmlStr = meta.original;
           for (const it of list) {
             if (!it || !it._dirtyMeta) continue;
@@ -3015,7 +3358,6 @@ async function downloadWord() {
       saveAs(blob, "Edited_" + (originalFileName || "document.docx"));
       setStatus("Saved!", true);
     }
-
 
     function getUniqueAuthors() {
       const set = new Set();
@@ -3174,6 +3516,7 @@ if (op === "setDate") {
     }
 
     async function switchTab(t) {
+      commitPendingUiEdits();
       currentTab = t;
       if (t === "comments" || t === "revisions" || t === "all") activityMode = t;
 
@@ -3192,6 +3535,8 @@ if (op === "setDate") {
       } else if (t === "forensics") {
         dom.viewForensics.style.display="block";
         renderForensicsBody();
+      } else if (t === "quick") {
+        dom.viewQuick.style.display="block";
       } else if (t === "parts") {
         dom.viewParts.style.display="block";
         if (!partsIndex.has(activePartPath)) activePartPath = "word/document.xml";
@@ -3315,11 +3660,16 @@ if (op === "setDate") {
       });
 
       document.getElementById("btn-save").addEventListener("click", downloadWord);
+      if (dom.btnQuickSave) dom.btnQuickSave.addEventListener("click", downloadWord);
+      if (dom.btnQuickRedline) dom.btnQuickRedline.addEventListener("click", exportRedlineHtml);
+      if (dom.btnQuickSetAuthor) dom.btnQuickSetAuthor.addEventListener("click", applyQuickAuthorAction);
+      if (dom.quickAuthor) dom.quickAuthor.addEventListener("keydown", (e) => { if (e.key === "Enter") applyQuickAuthorAction(); });
       document.getElementById("btn-reset").addEventListener("click", () => location.reload());
       document.getElementById("btn-batch-tools").addEventListener("click", openBatchTools);
 
       dom.btnCopy.addEventListener("click", copyCurrentTab);
       dom.btnExport.addEventListener("click", exportCurrentTabXlsx);
+      dom.btnExportRedline.addEventListener("click", exportRedlineHtml);
 
       dom.partSelect.addEventListener("change", async () => { await setActivePart(dom.partSelect.value); });
       dom.partFilter.addEventListener("input", () => { if (currentTab === "parts") renderSidebarForPart(activePartPath); });
