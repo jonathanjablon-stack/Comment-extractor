@@ -9,6 +9,7 @@
 <script defer src="./xlsx.bundle.js"></script>
 <script defer src="./FileSaver.min.js"></script>
 
+
   <style>
     :root{
       --primary:#0d6efd;
@@ -417,6 +418,8 @@
     .link-warn{color:#b45309;font-weight:900;}
     .link-checking{color:#6c757d;font-weight:900;}
 
+
+
   </style>
 </head>
 
@@ -459,6 +462,7 @@
         <tbody id="data-body"></tbody>
       </table>
     </div>
+
 
     <div id="view-quick" class="view-section">
       <div class="quick-grid">
@@ -546,6 +550,7 @@
       </div>
       <div class="tiny" style="margin-top:8px;">Export/Copy is disabled on this tab (there’s no table).</div>
     </div>
+
 
     
     <div id="view-regex" class="view-section">
@@ -653,6 +658,7 @@
           <input type="text" id="batch-to-author" placeholder="To (new author name)" aria-label="To author">
         </div>
       </div>
+
 
       <div class="form-row" id="row-date">
         <label>Date/Time</label>
@@ -875,6 +881,8 @@
       }
     }
 
+
+
     function commitPendingUiEdits() {
       const ae = document.activeElement;
       if (!ae) return;
@@ -939,6 +947,7 @@
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&apos;");
     }
+
 
     function unescapeXmlAttr(s) {
       return String(s || "")
@@ -1316,6 +1325,8 @@
       return map;
     }
 
+
+
     function extractComments(commentsXml, anchorMap) {
       if (!commentsXml) return [];
       const arr = [];
@@ -1548,7 +1559,7 @@
         getMainFilterOptions(col.k).forEach(v => {
           const o = document.createElement("option");
           o.value = v;
-          o.textContent = col.k === "txt" ? safeSnippet(v.replace(/\s+/g, " "), 60) : v;
+          o.textContent = col.k === "txt" ? safeSnippet(String(v || "").replace(/\s+/g, " "), 60) : v;
           sel.appendChild(o);
         });
         sel.value = tableState.main.filters[col.k + "__pick"] || "";
@@ -2175,7 +2186,7 @@
 
     function relTypeLabel(typeUri) {
       const m = {
-        "http:
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink":"Hyperlink",
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image":"Image",
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles":"Styles",
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering":"Numbering",
@@ -2197,13 +2208,13 @@
 
     function relSource(targetMode, target) {
       const isExt = (String(targetMode||"").toLowerCase()==="external") ||
-                    /^https?:\/\
-                    /^file:\/\
+                    /^https?:\/\//i.test(target||"") ||
+                    /^file:\/\//i.test(target||"") ||
                     /^mailto:/i.test(target||"");
       return isExt ? { label:"External", rank:1, cls:"bg-ext" } : { label:"Internal", rank:2, cls:"bg-int" };
     }
 
-    function isCheckableWebLink(url) { return /^https?:\/\
+    function isCheckableWebLink(url) { return /^https?:\/\//i.test(String(url || "")); }
 
     function getSourcePartFromRelsPath(relsPath) {
       if (relsPath === "_rels/.rels") return "[root]";
@@ -2578,6 +2589,7 @@
       setStatus("Scan complete.", true);
     }
 
+
     const RX_COLS = [
       { k:"pg", label:"Pg", width:"60px" },
       { k:"part", label:"Part", width:"180px" },
@@ -2813,6 +2825,7 @@
       renderRegexBody();
       refreshExportButtons();
     }
+
 
     function getExportSpecForCurrentTab() {
       const nowTag = new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
@@ -3327,6 +3340,7 @@ async function downloadWord() {
       saveAs(blob, "Edited_" + (originalFileName || "document.docx"));
       setStatus("Saved!", true);
     }
+
 
     function getUniqueAuthors() {
       const set = new Set();
