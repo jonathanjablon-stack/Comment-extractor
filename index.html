@@ -1484,8 +1484,8 @@
 
       const filters = state.filters;
       src = src.filter(row => {
-        for (const k of Object.keys(filters)) {
-          if (k.endsWith("__pick")) continue;
+        for (const col of MAIN_COLS) {
+          const k = col.k;
           const needle = String(filters[k] || "").toLowerCase();
           if (needle) {
             const hay = String(mainDisplayValue(row, k) || "").toLowerCase();
