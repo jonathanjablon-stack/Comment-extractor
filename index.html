@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Forensics Suite v5.3</title>
+  <title>Word Forensics Suite v5.4</title>
 
 <script defer src="./jszip.min.js"></script>
 <script defer src="./xlsx.bundle.js"></script>
@@ -394,13 +394,38 @@
       color:#212529;
     }
 
+    .container{max-width:1320px;margin:0 auto;}
+    .drop-zone{background:linear-gradient(180deg,#fff,#f7f9fc);}
+    .toolbar{background:#f6f7f9;border:1px solid var(--border);}
+    .tab-btn{border-radius:8px 8px 0 0;}
+    .tab-btn:hover{background:#f1f5f9;color:#0b5ed7;}
+    .table-wrap{box-shadow:inset 0 1px 0 rgba(0,0,0,.03);}
+    th{font-size:11px;letter-spacing:.02em;text-transform:uppercase;}
+    td{line-height:1.35;}
+    tr:hover td{background:#fbfdff;}
+    .filter-combo{display:flex;gap:4px;align-items:center;}
+    .filter-select{width:42%;min-width:70px;padding:5px;border:1px solid #ced4da;border-radius:4px;font-size:11px;background:#fff;box-sizing:border-box;}
+    .filter-combo .filter-input{width:58%;}
+    .change-box{display:grid;gap:6px;}
+    .change-line{display:block;border:1px solid #e5e7eb;border-radius:8px;padding:7px 8px;background:#fafafa;white-space:pre-wrap;}
+    .change-line .label{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;margin-bottom:3px;display:block;}
+    .change-line.deleted{background:#fff5f5;border-color:#fecaca;color:#991b1b;text-decoration:line-through;}
+    .change-line.added{background:#f0fdf4;border-color:#bbf7d0;color:#166534;font-weight:700;}
+    .badge.bg-int{background:#495057;}
+    .badge.bg-ext{background:#0d6efd;}
+    .link-ok{color:#198754;font-weight:900;}
+    .link-bad{color:#dc3545;font-weight:900;}
+    .link-warn{color:#b45309;font-weight:900;}
+    .link-checking{color:#6c757d;font-weight:900;}
+
+
 
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h1>Word Forensics Suite v5.3</h1>
+    <h1>Word Forensics Suite v5.4</h1>
 
     <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Open DOCX">
       📄 Tap to Open .docx<br><span style="font-size:11px; opacity:0.8;">or drag & drop here</span>
@@ -411,9 +436,7 @@
     <div id="error-log"></div>
 
     <div class="tabs" id="tabs">
-      <button class="tab-btn active" data-tab="comments">Comments</button>
-      <button class="tab-btn" data-tab="revisions">Changes</button>
-      <button class="tab-btn" data-tab="all">All Activity</button>
+      <button class="tab-btn active" data-tab="all">All Activity</button>
       <button class="tab-btn" data-tab="quick">Quick Actions</button>
       <button class="tab-btn" data-tab="parts">Parts</button>
       <button class="tab-btn" data-tab="relationships">Relationships</button>
@@ -451,7 +474,6 @@
             <select id="quick-scope" aria-label="Quick action scope">
               <option value="all">All items</option>
               <option value="filtered">Filtered list</option>
-              <option value="selected">Selected items</option>
               <option value="currentPart">Current part</option>
             </select>
           </div>
@@ -477,7 +499,7 @@
       <div class="doc-topbar">
         <select id="part-select" aria-label="Part selector"></select>
         <input id="part-filter" type="text" placeholder="Filter sidebar (quick)" aria-label="Sidebar filter" />
-        <button class="mini" id="btn-clear-selection" title="Clear selections">Clear Sel</button>
+        
       </div>
       <div class="doc-view-wrapper">
         <div class="doc-content" id="doc-content"></div>
@@ -592,7 +614,6 @@
         <select id="batch-scope">
           <option value="all">All items</option>
           <option value="filtered">Filtered (current table)</option>
-          <option value="selected">Selected (checkboxes)</option>
         </select>
         <div class="tiny">“Filtered” respects your current Comments/Changes/All mode + filters.</div>
       </div>
@@ -727,7 +748,7 @@
 
     const tableState = {
       main: { sortCol: "pg", dir: 1, filters: {} },
-      rel: { sortCol: "riskRank", dir: 1, filters: {} },
+      rel: { sortCol: "sourceRank", dir: 1, filters: {} },
       forensics: { sortCol: "path", dir: 1, filters: {} },
       regex: { sortCol: "pg", dir: 1, filters: {} },
     };
@@ -970,7 +991,7 @@
 
       return xml.replace(re, (full) => {
         const selfClosing = /\/>$/.test(full);
-        let start = full.slice(0, selfClosing ? -2 : -1); // drop > or />
+        let start = full.slice(0, selfClosing ? -2 : -1);
         start = upsertAttrInStartTag(start, "w:author", author || "");
         if (date) start = upsertAttrInStartTag(start, "w:date", date);
         return start + (selfClosing ? "/>" : ">");
@@ -1240,7 +1261,7 @@
       return arr;
     }
     function extractCommentSubjectsFromPart(partXml, partPath) {
-      const map = new Map(); // id -> text
+      const map = new Map();
       if (!partXml) return map;
 
       const root = getRenderRoot(partXml, partPath) || partXml.documentElement;
@@ -1378,7 +1399,7 @@
           if (!isNaN(n)) maxChange = Math.max(maxChange, n);
         }
 
-        const revs = extractRevisions(meta.xmlDoc, meta.path, ctx); // substantive text-only
+        const revs = extractRevisions(meta.xmlDoc, meta.path, ctx);
         mergeItems(revs);
       }
 
@@ -1433,16 +1454,30 @@
     }
 
     const MAIN_COLS = [
-      { k: "_sel", label: "Sel", width: "60px" },
-      { k: "pg", label: "Pg", width: "55px" },
-      { k: "partLabel", label: "Part", width: "160px" },
-      { k: "type", label: "Type", width: "75px" },
-      { k: "txt", label: "Text", width: "" },
-      { k: "auth", label: "Author", width: "18%" },
-      { k: "date", label: "Date", width: "190px" },
+      { k: "pg", label: "Pg", width: "52px" },
+      { k: "type", label: "Activity", width: "88px" },
+      { k: "txt", label: "Content", width: "" },
+      { k: "auth", label: "Author", width: "120px" },
+      { k: "date", label: "Date", width: "155px" },
     ];
 
     let mainHeadBuilt = false;
+
+    function mainDisplayValue(row, k) {
+      if (k === "type") return row.type === "com" ? "Comment" : row.type === "ins" ? "Insertion" : "Deletion";
+      if (k === "date") return row.date ? toDatetimeLocal(row.date).slice(0,10) : "";
+      return row[k] ?? "";
+    }
+
+    function getMainFilterOptions(k) {
+      let vals = getItemsForMode(activityMode)
+        .map(x => ({...x, partLabel: partLabel(x.part || "")}))
+        .map(r => String(mainDisplayValue(r, k) || "").trim())
+        .filter(Boolean);
+      if (k === "txt") vals = vals.map(v => safeSnippet(v.replace(/\s+/g," "), 60));
+      vals = Array.from(new Set(vals)).sort((a,b)=>a.localeCompare(b));
+      return vals.slice(0, 60);
+    }
 
     function getProcessedMainData() {
       const state = tableState.main;
@@ -1451,10 +1486,17 @@
       const filters = state.filters;
       src = src.filter(row => {
         for (const k of Object.keys(filters)) {
+          if (k.endsWith("__pick")) continue;
           const needle = String(filters[k] || "").toLowerCase();
-          if (!needle) continue;
-          const hay = String(row[k] || "").toLowerCase();
-          if (!hay.includes(needle)) return false;
+          if (needle) {
+            const hay = String(mainDisplayValue(row, k) || "").toLowerCase();
+            if (!hay.includes(needle)) return false;
+          }
+          const picked = String(filters[k + "__pick"] || "").toLowerCase();
+          if (picked) {
+            const hay = String(mainDisplayValue(row, k) || "").toLowerCase();
+            if (!hay.includes(picked)) return false;
+          }
         }
         return true;
       });
@@ -1462,7 +1504,7 @@
       const col = state.sortCol;
       const dir = state.dir;
       src = stableSort(src, (a,b) => {
-        let va = a[col], vb = b[col];
+        let va = mainDisplayValue(a, col), vb = mainDisplayValue(b, col);
         if (col === "pg") { va = Number(va)||0; vb = Number(vb)||0; }
         else { va = String(va ?? "").toLowerCase(); vb = String(vb ?? "").toLowerCase(); }
         if (va < vb) return -1*dir;
@@ -1497,53 +1539,51 @@
         const th = document.createElement("th");
         th.textContent = col.label;
         if (col.width) th.style.width = col.width;
-
-        if (col.k === "_sel") {
-          th.style.cursor = "default";
-          const master = document.createElement("input");
-          master.type = "checkbox";
-          master.style.transform = "scale(1.1)";
-          master.style.marginLeft = "8px";
-          master.addEventListener("change", () => {
-            const rows = getProcessedMainData();
-            if (master.checked) rows.forEach(r => selectedUids.add(r.uid));
-            else rows.forEach(r => selectedUids.delete(r.uid));
-            renderMainTableBody();
-          });
-          th.appendChild(master);
-        } else {
-          th.addEventListener("click", () => {
-            const state = tableState.main;
-            if (state.sortCol === col.k) state.dir *= -1;
-            else { state.sortCol = col.k; state.dir = 1; }
-            syncMainSortIndicators();
-            renderMainTableBody();
-          });
-        }
+        th.addEventListener("click", () => {
+          const state = tableState.main;
+          if (state.sortCol === col.k) state.dir *= -1;
+          else { state.sortCol = col.k; state.dir = 1; }
+          syncMainSortIndicators();
+          renderMainTableBody();
+        });
         trH.appendChild(th);
 
         const thF = document.createElement("th");
-        if (col.k !== "_sel") {
-          const inp = document.createElement("input");
-          inp.type = "text";
-          inp.className = "filter-input";
-          inp.value = tableState.main.filters[col.k] || "";
-          inp.addEventListener("input", () => {
-            if (inp.value && inp.value.trim()) tableState.main.filters[col.k] = inp.value;
-            else delete tableState.main.filters[col.k];
-            renderMainTableBody();
-          });
-          thF.appendChild(inp);
-        }
+        const combo = document.createElement("div");
+        combo.className = "filter-combo";
+        const sel = document.createElement("select");
+        sel.className = "filter-select";
+        const any = document.createElement("option");
+        any.value = "";
+        any.textContent = "All";
+        sel.appendChild(any);
+        getMainFilterOptions(col.k).forEach(v => { const o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o); });
+        sel.value = tableState.main.filters[col.k + "__pick"] || "";
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.className = "filter-input";
+        inp.placeholder = "type…";
+        inp.value = tableState.main.filters[col.k] || "";
+        const sync = () => {
+          if (inp.value && inp.value.trim()) tableState.main.filters[col.k] = inp.value;
+          else delete tableState.main.filters[col.k];
+          if (sel.value) tableState.main.filters[col.k + "__pick"] = sel.value;
+          else delete tableState.main.filters[col.k + "__pick"];
+          renderMainTableBody();
+        };
+        inp.addEventListener("input", sync);
+        sel.addEventListener("change", sync);
+        combo.appendChild(sel);
+        combo.appendChild(inp);
+        thF.appendChild(combo);
         trF.appendChild(thF);
       }
 
       const thAct = document.createElement("th");
       thAct.textContent = "Act";
-      thAct.style.width = "70px";
+      thAct.style.width = "58px";
       trH.appendChild(thAct);
-      const thActF = document.createElement("th");
-      trF.appendChild(thActF);
+      trF.appendChild(document.createElement("th"));
 
       dom.tableHead.appendChild(trH);
       dom.tableHead.appendChild(trF);
@@ -1558,38 +1598,21 @@
       for (const row of data) {
         const tr = document.createElement("tr");
 
-        const tdSel = document.createElement("td");
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.checked = selectedUids.has(row.uid);
-        cb.addEventListener("change", () => {
-          if (cb.checked) selectedUids.add(row.uid);
-          else selectedUids.delete(row.uid);
-        });
-        tdSel.appendChild(cb);
-        tr.appendChild(tdSel);
-
         const tdPg = document.createElement("td");
         tdPg.textContent = (row.pg && row.pg !== 0) ? String(row.pg) : "";
         tr.appendChild(tdPg);
-
-        const tdPart = document.createElement("td");
-        tdPart.textContent = row.partLabel || "";
-        tr.appendChild(tdPart);
 
         const tdType = document.createElement("td");
         tdType.style.textAlign = "center";
         const b = document.createElement("span");
         b.className = "badge " + (row.type==="com" ? "bg-com" : row.type==="ins" ? "bg-ins" : "bg-del");
-        b.textContent = row.type==="com" ? "COM" : row.type==="ins" ? "INS" : "DEL";
+        b.textContent = row.type==="com" ? "Comment" : row.type==="ins" ? "Added" : "Deleted";
         tdType.appendChild(b);
         tr.appendChild(tdType);
 
         const tdTxt = document.createElement("td");
-
         if (row.type === "com") {
           tdTxt.style.whiteSpace = "pre-wrap";
-
           const subj = document.createElement("div");
           subj.style.fontSize = "11px";
           subj.style.opacity = "0.9";
@@ -1598,7 +1621,7 @@
           subj.style.border = "1px solid #ffe8a1";
           subj.style.borderRadius = "6px";
           subj.style.background = "#fff8e1";
-          subj.textContent = row.on ? ("ON: " + row.on) : "ON: (could not extract commented text)";
+          subj.textContent = row.on ? ("Commented text: " + row.on) : "Commented text: (could not extract)";
           tdTxt.appendChild(subj);
 
           const com = document.createElement("div");
@@ -1608,26 +1631,30 @@
           com.style.padding = "6px 8px";
           com.style.borderRadius = "6px";
           com.textContent = row.txt || "";
-          const syncCommentText = () => {
-            touchItemText(row.uid, com.textContent.trim());
-            if (currentTab === "parts") renderSidebarForPart(activePartPath);
-          };
+          const syncCommentText = () => { touchItemText(row.uid, com.textContent.trim()); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
           com.addEventListener("input", syncCommentText);
           com.addEventListener("blur", syncCommentText);
           tdTxt.appendChild(com);
         } else {
-          tdTxt.className = "editable";
-          tdTxt.contentEditable = "true";
-          tdTxt.spellcheck = false;
-          tdTxt.textContent = row.txt || "";
-          const syncRowText = () => {
-            touchItemText(row.uid, tdTxt.textContent.trim());
-            if (currentTab === "parts") renderSidebarForPart(activePartPath);
-          };
-          tdTxt.addEventListener("input", syncRowText);
-          tdTxt.addEventListener("blur", syncRowText);
+          const box = document.createElement("div");
+          box.className = "change-box";
+          const line = document.createElement("div");
+          line.className = "change-line " + (row.type === "del" ? "deleted" : "added") + " editable";
+          line.contentEditable = "true";
+          line.spellcheck = false;
+          const label = document.createElement("span");
+          label.className = "label";
+          label.textContent = row.type === "del" ? "Deleted text" : "Inserted text";
+          const textNode = document.createElement("div");
+          textNode.textContent = row.txt || "";
+          line.appendChild(label);
+          line.appendChild(textNode);
+          const syncRowText = () => { touchItemText(row.uid, textNode.textContent.trim()); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
+          line.addEventListener("input", syncRowText);
+          line.addEventListener("blur", syncRowText);
+          box.appendChild(line);
+          tdTxt.appendChild(box);
         }
-
         tr.appendChild(tdTxt);
 
         const tdAuth = document.createElement("td");
@@ -1635,10 +1662,7 @@
         tdAuth.contentEditable = "true";
         tdAuth.spellcheck = false;
         tdAuth.textContent = row.auth || "";
-        const syncRowAuthor = () => {
-          touchItemMeta(row.uid, { auth: tdAuth.textContent.trim() });
-          if (currentTab === "parts") renderSidebarForPart(activePartPath);
-        };
+        const syncRowAuthor = () => { touchItemMeta(row.uid, { auth: tdAuth.textContent.trim() }); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
         tdAuth.addEventListener("input", syncRowAuthor);
         tdAuth.addEventListener("blur", syncRowAuthor);
         tr.appendChild(tdAuth);
@@ -1648,10 +1672,7 @@
         inp.type = "datetime-local";
         inp.className = "cell-input editish";
         inp.value = toDatetimeLocal(row.date);
-        const syncRowDate = () => {
-          touchItemMeta(row.uid, { date: fromDatetimeLocal(inp.value) });
-          if (currentTab === "parts") renderSidebarForPart(activePartPath);
-        };
+        const syncRowDate = () => { touchItemMeta(row.uid, { date: fromDatetimeLocal(inp.value) }); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
         inp.addEventListener("input", syncRowDate);
         inp.addEventListener("change", syncRowDate);
         inp.addEventListener("blur", syncRowDate);
@@ -2150,13 +2171,12 @@
     }
 
     const REL_COLS = [
-      { k:"risk", label:"Risk", width:"70px" },
-      { k:"sourceLabel", label:"From", width:"180px" },
-      { k:"typeLabel", label:"Type", width:"200px" },
+      { k:"source", label:"Source", width:"95px" },
+      { k:"sourceLabel", label:"From", width:"170px" },
+      { k:"typeLabel", label:"Type", width:"190px" },
       { k:"targetShown", label:"Target", width:"" },
-      { k:"mode", label:"Mode", width:"90px" },
-      { k:"existsLabel", label:"Exists", width:"90px" },
-      { k:"refs", label:"Refs", width:"70px" },
+      { k:"statusLabel", label:"Status", width:"130px" },
+      { k:"refs", label:"Refs", width:"60px" },
     ];
     let relHeadBuilt = false;
 
@@ -2182,18 +2202,15 @@
       return m[typeUri] || (typeUri ? typeUri.split("/").pop() : "(unknown)");
     }
 
-    function relRisk(typeUri, targetMode, target) {
+    function relSource(targetMode, target) {
       const isExt = (String(targetMode||"").toLowerCase()==="external") ||
                     /^https?:\/\//i.test(target||"") ||
-                    /^file:\/\//i.test(target||"");
-      if (isExt) return { label:"HIGH", rank:1, cls:"bg-hi" };
-      const low = { label:"LOW", rank:3, cls:"bg-lo" };
-      if (!typeUri) return low;
-      if (typeUri.includes("attachedTemplate") || typeUri.includes("webextension") || typeUri.includes("oleObject")) {
-        return { label:"MED", rank:2, cls:"bg-med" };
-      }
-      return low;
+                    /^file:\/\//i.test(target||"") ||
+                    /^mailto:/i.test(target||"");
+      return isExt ? { label:"External", rank:1, cls:"bg-ext" } : { label:"Internal", rank:2, cls:"bg-int" };
     }
+
+    function isCheckableWebLink(url) { return /^https?:\/\//i.test(String(url || "")); }
 
     function getSourcePartFromRelsPath(relsPath) {
       if (relsPath === "_rels/.rels") return "[root]";
@@ -2204,92 +2221,92 @@
     function countOccurrences(hay, needle) {
       if (!hay || !needle) return 0;
       let count = 0, idx = 0;
-      while (true) {
-        idx = hay.indexOf(needle, idx);
-        if (idx === -1) break;
-        count++;
-        idx += needle.length;
-      }
+      while (true) { idx = hay.indexOf(needle, idx); if (idx === -1) break; count++; idx += needle.length; }
       return count;
+    }
+
+    async function checkExternalLinks() {
+      const targets = relationshipsData.filter(r => r && r.source === "External" && isCheckableWebLink(r.targetShown));
+      if (!targets.length) { renderRelBody(); return; }
+      setStatus("Checking external web links…", true);
+      let i = 0;
+      for (const r of targets) {
+        r.statusLabel = "Checking…";
+        r.statusClass = "link-checking";
+        renderRelBody();
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 6500);
+          let resp;
+          try { resp = await fetch(r.targetShown, { method:"HEAD", mode:"cors", cache:"no-store", signal:controller.signal }); }
+          catch (e1) { resp = await fetch(r.targetShown, { method:"GET", mode:"cors", cache:"no-store", signal:controller.signal }); }
+          clearTimeout(timer);
+          if (resp && resp.ok) { r.statusLabel = "Live (" + resp.status + ")"; r.statusClass = "link-ok"; }
+          else if (resp) { r.statusLabel = "Problem (" + resp.status + ")"; r.statusClass = "link-bad"; }
+          else { r.statusLabel = "Could not verify"; r.statusClass = "link-warn"; }
+        } catch (e) {
+          r.statusLabel = "Could not verify";
+          r.statusClass = "link-warn";
+        }
+        i++;
+        if (i % 3 === 0) await yieldToUI();
+      }
+      renderRelBody();
+      setStatus("Relationships ready. Checked " + targets.length + " external web link(s).", true);
     }
 
     async function buildRelationshipsOnDemand() {
       if (!zipObj) return;
       relationshipsData = [];
       relationshipsBuilt = true;
-
       setStatus("Building relationship index…", true);
-
       const relPaths = [];
       zipObj.forEach((path) => { if (path.toLowerCase().endsWith(".rels")) relPaths.push(path); });
-
       const srcXmlCache = new Map();
-
       let processed = 0;
       for (const relsPath of relPaths) {
         const relStr = await zipObj.file(relsPath).async("string");
         const relDoc = new DOMParser().parseFromString(relStr, "text/xml");
         if (isParserError(relDoc)) continue;
-
-        const relNodes = relDoc.getElementsByTagNameNS ? Array.from(relDoc.getElementsByTagNameNS("*","Relationship"))
-                                                      : Array.from(relDoc.getElementsByTagName("Relationship"));
-
+        const relNodes = relDoc.getElementsByTagNameNS ? Array.from(relDoc.getElementsByTagNameNS("*","Relationship")) : Array.from(relDoc.getElementsByTagName("Relationship"));
         const sourcePart = getSourcePartFromRelsPath(relsPath);
         const baseDir = (sourcePart === "[root]" || sourcePart === "[unknown]") ? "" : (sourcePart.substring(0, sourcePart.lastIndexOf("/") + 1));
-
         let srcXml = "";
         if ((sourcePart.startsWith("word/") || sourcePart.startsWith("docProps/")) && zipObj.file(sourcePart)) {
           if (!srcXmlCache.has(sourcePart)) srcXmlCache.set(sourcePart, await zipObj.file(sourcePart).async("string"));
           srcXml = srcXmlCache.get(sourcePart) || "";
         }
-
         for (const r of relNodes) {
           const rId = r.getAttribute("Id") || "";
           const typeUri = r.getAttribute("Type") || "";
           const target = r.getAttribute("Target") || "";
           const targetMode = r.getAttribute("TargetMode") || "";
-
-          const resolved = (String(targetMode).toLowerCase()==="external") ? target : normalizePath(baseDir, target);
-          const exists = (String(targetMode).toLowerCase()==="external") ? false : !!zipObj.file(resolved);
-
-          const risk = relRisk(typeUri, targetMode, target);
+          const source = relSource(targetMode, target);
+          const resolved = (source.label === "External") ? target : normalizePath(baseDir, target);
+          const exists = (source.label === "External") ? false : !!zipObj.file(resolved);
           const refs = srcXml ? countOccurrences(srcXml, rId) : 0;
-
           relationshipsData.push({
-            relsPath,
-            sourcePart,
-            sourceLabel: partLabel(sourcePart),
-            rId,
-            typeUri,
-            typeLabel: relTypeLabel(typeUri),
-            target,
-            mode: targetMode || "Internal",
-            resolvedTarget: resolved,
-            targetShown: (String(targetMode).toLowerCase()==="external") ? target : resolved,
-            exists,
-            existsLabel: (String(targetMode).toLowerCase()==="external") ? "—" : (exists ? "Yes" : "No"),
-            risk: risk.label,
-            riskRank: risk.rank,
-            riskCls: risk.cls,
+            relsPath, sourcePart, sourceLabel: partLabel(sourcePart), rId, typeUri,
+            typeLabel: relTypeLabel(typeUri), target, mode: targetMode || (source.label === "External" ? "External" : "Internal"),
+            resolvedTarget: resolved, targetShown: resolved, exists,
+            existsLabel: (source.label === "External") ? "—" : (exists ? "Yes" : "Missing"),
+            source: source.label, sourceRank: source.rank, sourceCls: source.cls,
+            statusLabel: (source.label === "External" && isCheckableWebLink(resolved)) ? "Not checked" : ((source.label === "External" || exists) ? "—" : "Missing"),
+            statusClass: (source.label !== "External" && !exists) ? "link-bad" : "",
             refs,
           });
-
           processed++;
-          if (processed % 600 === 0) {
-            setStatus("Building relationship index… (" + processed + ")", true);
-            await yieldToUI();
-          }
+          if (processed % 600 === 0) { setStatus("Building relationship index… (" + processed + ")", true); await yieldToUI(); }
         }
       }
-
       setStatus("Relationships ready.", true);
       renderRelTable();
+      await checkExternalLinks();
     }
 
     function getProcessedRelData() {
       const state = tableState.rel;
       let src = relationshipsData.slice();
-
       const filters = state.filters;
       src = src.filter(row => {
         for (const k of Object.keys(filters)) {
@@ -2300,18 +2317,16 @@
         }
         return true;
       });
-
       const col = state.sortCol;
       const dir = state.dir;
       src = stableSort(src, (a,b) => {
         let va = a[col], vb = b[col];
-        if (col === "riskRank" || col === "refs") { va = Number(va)||0; vb = Number(vb)||0; }
+        if (col === "sourceRank" || col === "refs") { va = Number(va)||0; vb = Number(vb)||0; }
         else { va = String(va ?? "").toLowerCase(); vb = String(vb ?? "").toLowerCase(); }
         if (va < vb) return -1*dir;
         if (va > vb) return 1*dir;
         return 0;
       });
-
       return src;
     }
 
@@ -2320,8 +2335,7 @@
       if (!trH) return;
       const ths = Array.from(trH.children);
       for (const th of ths) th.classList.remove("sort-asc","sort-desc");
-
-      const keys = REL_COLS.map(c => (c.k==="risk" ? "riskRank" : c.k)).concat(["_act"]);
+      const keys = REL_COLS.map(c => (c.k==="source" ? "sourceRank" : c.k)).concat(["_act"]);
       const state = tableState.rel;
       const idx = keys.indexOf(state.sortCol);
       if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir===1 ? "sort-asc" : "sort-desc");
@@ -2330,18 +2344,16 @@
     function buildRelHead() {
       if (relHeadBuilt) return;
       relHeadBuilt = true;
-
       dom.relHead.textContent = "";
       const trH = document.createElement("tr");
       const trF = document.createElement("tr");
       trF.className = "filter-row";
-
       for (const col of REL_COLS) {
         const th = document.createElement("th");
         th.textContent = col.label;
         if (col.width) th.style.width = col.width;
         th.addEventListener("click", () => {
-          const key = (col.k==="risk") ? "riskRank" : col.k;
+          const key = (col.k==="source") ? "sourceRank" : col.k;
           const state = tableState.rel;
           if (state.sortCol === key) state.dir *= -1;
           else { state.sortCol = key; state.dir = 1; }
@@ -2349,29 +2361,20 @@
           renderRelBody();
         });
         trH.appendChild(th);
-
         const thF = document.createElement("th");
         const inp = document.createElement("input");
         inp.type = "text";
         inp.className = "filter-input";
         inp.value = tableState.rel.filters[col.k] || "";
-        inp.addEventListener("input", () => {
-          if (inp.value && inp.value.trim()) tableState.rel.filters[col.k] = inp.value;
-          else delete tableState.rel.filters[col.k];
-          renderRelBody();
-        });
+        inp.addEventListener("input", () => { if (inp.value && inp.value.trim()) tableState.rel.filters[col.k] = inp.value; else delete tableState.rel.filters[col.k]; renderRelBody(); });
         thF.appendChild(inp);
         trF.appendChild(thF);
       }
-
       const thAct = document.createElement("th");
       thAct.textContent = "Act";
-      thAct.style.width = "140px";
+      thAct.style.width = "130px";
       trH.appendChild(thAct);
-
-      const thActF = document.createElement("th");
-      trF.appendChild(thActF);
-
+      trF.appendChild(document.createElement("th"));
       dom.relHead.appendChild(trH);
       dom.relHead.appendChild(trF);
       syncRelSortIndicators();
@@ -2387,83 +2390,35 @@
       buildRelHead();
       dom.relBody.textContent = "";
       const data = getProcessedRelData();
-
       for (const r of data) {
         const tr = document.createElement("tr");
-
-        const tdRisk = document.createElement("td");
+        const tdSource = document.createElement("td");
         const badge = document.createElement("span");
-        badge.className = "badge " + r.riskCls;
-        badge.textContent = r.risk;
-        tdRisk.appendChild(badge);
-        tr.appendChild(tdRisk);
-
-        const tdFrom = document.createElement("td");
-        tdFrom.textContent = r.sourceLabel || r.sourcePart;
-        tr.appendChild(tdFrom);
-
-        const tdType = document.createElement("td");
-        tdType.textContent = r.typeLabel || "";
-        tr.appendChild(tdType);
-
-        const tdTarget = document.createElement("td");
-        tdTarget.textContent = r.targetShown || r.target || "";
-        tr.appendChild(tdTarget);
-
-        const tdMode = document.createElement("td");
-        tdMode.textContent = r.mode;
-        tr.appendChild(tdMode);
-
-        const tdEx = document.createElement("td");
-        tdEx.textContent = r.existsLabel;
-        tdEx.style.fontWeight = (r.existsLabel==="No") ? "900" : "400";
-        tdEx.style.color = (r.existsLabel==="No") ? "crimson" : "#333";
-        tr.appendChild(tdEx);
-
-        const tdRefs = document.createElement("td");
-        tdRefs.textContent = String(r.refs || 0);
-        tr.appendChild(tdRefs);
-
-        const tdAct = document.createElement("td");
-        tdAct.style.display="flex";
-        tdAct.style.gap="6px";
-
+        badge.className = "badge " + r.sourceCls;
+        badge.textContent = r.source;
+        tdSource.appendChild(badge);
+        tr.appendChild(tdSource);
+        const tdFrom = document.createElement("td"); tdFrom.textContent = r.sourceLabel || r.sourcePart; tr.appendChild(tdFrom);
+        const tdType = document.createElement("td"); tdType.textContent = r.typeLabel || ""; tr.appendChild(tdType);
+        const tdTarget = document.createElement("td"); tdTarget.textContent = r.targetShown || r.target || ""; tr.appendChild(tdTarget);
+        const tdStatus = document.createElement("td"); tdStatus.textContent = r.statusLabel || r.existsLabel || ""; if (r.statusClass) tdStatus.className = r.statusClass; tr.appendChild(tdStatus);
+        const tdRefs = document.createElement("td"); tdRefs.textContent = String(r.refs || 0); tr.appendChild(tdRefs);
+        const tdAct = document.createElement("td"); tdAct.style.display="flex"; tdAct.style.gap="6px";
         const btnOpen = document.createElement("button");
-        btnOpen.className="btn btn-secondary";
-        btnOpen.type="button";
-        btnOpen.style.padding="6px 8px";
-        btnOpen.style.minWidth="0";
-        btnOpen.style.flex="0 0 auto";
-        btnOpen.textContent="Open";
-        btnOpen.addEventListener("click", async () => {
-          if (partsIndex.has(r.sourcePart)) {
-            switchTab("parts");
-            await setActivePart(r.sourcePart);
-          } else {
-            alert("Source part not in Word parts list.");
-          }
-        });
+        btnOpen.className="btn btn-secondary"; btnOpen.type="button"; btnOpen.style.padding="6px 8px"; btnOpen.style.minWidth="0"; btnOpen.style.flex="0 0 auto"; btnOpen.textContent="Open";
+        btnOpen.addEventListener("click", async () => { if (partsIndex.has(r.sourcePart)) { switchTab("parts"); await setActivePart(r.sourcePart); } else { alert("Source part not in Word parts list."); } });
         tdAct.appendChild(btnOpen);
-
         const btnDl = document.createElement("button");
-        btnDl.className="btn btn-secondary";
-        btnDl.type="button";
-        btnDl.style.padding="6px 8px";
-        btnDl.style.minWidth="0";
-        btnDl.style.flex="0 0 auto";
-        btnDl.textContent="DL";
-        btnDl.disabled = (String(r.mode).toLowerCase()==="external") || !r.exists;
+        btnDl.className="btn btn-secondary"; btnDl.type="button"; btnDl.style.padding="6px 8px"; btnDl.style.minWidth="0"; btnDl.style.flex="0 0 auto"; btnDl.textContent="DL";
+        btnDl.disabled = (String(r.source).toLowerCase()==="external") || !r.exists;
         btnDl.addEventListener("click", () => dlFile(r.resolvedTarget));
         tdAct.appendChild(btnDl);
-
         tr.appendChild(tdAct);
         dom.relBody.appendChild(tr);
       }
     }
 
-    function renderRelTable() {
-      renderRelBody();
-    }
+    function renderRelTable() { renderRelBody(); }
 
     const FORENSICS_COLS = [
       { k:"path", label:"File" },
@@ -2777,7 +2732,7 @@
       if (scope === "active") targets = [activePartPath];
       else if (scope === "loaded") targets = Array.from(partsIndex.values()).filter(m => m.loaded).map(m => m.path);
       else if (scope === "all") targets = Array.from(partsIndex.keys());
-      else targets = ["word/document.xml"]; // main
+      else targets = ["word/document.xml"];
 
       targets = Array.from(new Set(targets));
       const idx = targets.indexOf("word/document.xml");
@@ -2874,12 +2829,11 @@
 
       if (currentTab === "comments" || currentTab === "revisions" || currentTab === "all") {
         const data = getProcessedMainData();
-        const headers = ["Pg","Part","Type","On","Text","Author","Date"];
+        const headers = ["Pg","Type","Context","Text","Author","Date"];
         const rows = data.map(r => [
           r.pg || "",
-          r.partLabel || "",
-          (r.type==="com" ? "COM" : r.type==="ins" ? "INS" : "DEL"),
-          (r.type==="com" ? (r.on || "") : ""),
+          (r.type==="com" ? "Comment" : r.type==="ins" ? "Inserted" : "Deleted"),
+          (r.type==="com" ? (r.on || "") : (r.type==="del" ? "Deleted text" : "Inserted text")),
           r.txt || "",
           r.auth || "",
           r.date || ""
@@ -2910,14 +2864,13 @@
 
       if (currentTab === "relationships") {
         const data = getProcessedRelData();
-        const headers = ["Risk","From","Type","Target","Mode","Exists","Refs","rId","relsPath","typeUri"];
+        const headers = ["Source","From","Type","Target","Status","Refs","rId","relsPath","typeUri"];
         const rows = data.map(r => [
-          r.risk || "",
+          r.source || "",
           r.sourceLabel || r.sourcePart || "",
           r.typeLabel || "",
           r.targetShown || "",
-          r.mode || "",
-          r.existsLabel || "",
+          r.statusLabel || r.existsLabel || "",
           r.refs || 0,
           r.rId || "",
           r.relsPath || "",
@@ -3699,7 +3652,7 @@ if (op === "setDate") {
 
       dom.partSelect.addEventListener("change", async () => { await setActivePart(dom.partSelect.value); });
       dom.partFilter.addEventListener("input", () => { if (currentTab === "parts") renderSidebarForPart(activePartPath); });
-      document.getElementById("btn-clear-selection").addEventListener("click", () => { selectedUids.clear(); if (currentTab!=="relationships") renderMainTableBody(); alert("Selection cleared."); });
+      const clearSelBtn = document.getElementById("btn-clear-selection"); if (clearSelBtn) clearSelBtn.addEventListener("click", () => { selectedUids.clear(); if (currentTab!=="relationships") renderMainTableBody(); alert("Selection cleared."); });
 
       document.getElementById("btn-scan").addEventListener("click", scanForensics);
 
