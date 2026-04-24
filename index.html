@@ -9,7 +9,6 @@
 <script defer src="./xlsx.bundle.js"></script>
 <script defer src="./FileSaver.min.js"></script>
 
-
   <style>
     :root{
       --primary:#0d6efd;
@@ -418,8 +417,6 @@
     .link-warn{color:#b45309;font-weight:900;}
     .link-checking{color:#6c757d;font-weight:900;}
 
-
-
   </style>
 </head>
 
@@ -462,7 +459,6 @@
         <tbody id="data-body"></tbody>
       </table>
     </div>
-
 
     <div id="view-quick" class="view-section">
       <div class="quick-grid">
@@ -550,7 +546,6 @@
       </div>
       <div class="tiny" style="margin-top:8px;">Export/Copy is disabled on this tab (there’s no table).</div>
     </div>
-
 
     
     <div id="view-regex" class="view-section">
@@ -658,7 +653,6 @@
           <input type="text" id="batch-to-author" placeholder="To (new author name)" aria-label="To author">
         </div>
       </div>
-
 
       <div class="form-row" id="row-date">
         <label>Date/Time</label>
@@ -881,8 +875,6 @@
       }
     }
 
-
-
     function commitPendingUiEdits() {
       const ae = document.activeElement;
       if (!ae) return;
@@ -948,7 +940,6 @@
         .replace(/'/g, "&apos;");
     }
 
-
     function unescapeXmlAttr(s) {
       return String(s || "")
         .replace(/&quot;/g, '"')
@@ -991,7 +982,7 @@
 
       return xml.replace(re, (full) => {
         const selfClosing = /\/>$/.test(full);
-        let start = full.slice(0, selfClosing ? -2 : -1);
+        let start = full.slice(0, selfClosing ? -2 : -1); 
         start = upsertAttrInStartTag(start, "w:author", author || "");
         if (date) start = upsertAttrInStartTag(start, "w:date", date);
         return start + (selfClosing ? "/>" : ">");
@@ -1261,7 +1252,7 @@
       return arr;
     }
     function extractCommentSubjectsFromPart(partXml, partPath) {
-      const map = new Map();
+      const map = new Map(); 
       if (!partXml) return map;
 
       const root = getRenderRoot(partXml, partPath) || partXml.documentElement;
@@ -1324,8 +1315,6 @@
       }
       return map;
     }
-
-
 
     function extractComments(commentsXml, anchorMap) {
       if (!commentsXml) return [];
@@ -1399,7 +1388,7 @@
           if (!isNaN(n)) maxChange = Math.max(maxChange, n);
         }
 
-        const revs = extractRevisions(meta.xmlDoc, meta.path, ctx);
+        const revs = extractRevisions(meta.xmlDoc, meta.path, ctx); 
         mergeItems(revs);
       }
 
@@ -1474,7 +1463,6 @@
         .map(x => ({...x, partLabel: partLabel(x.part || "")}))
         .map(r => String(mainDisplayValue(r, k) || "").trim())
         .filter(Boolean);
-      if (k === "txt") vals = vals.map(v => safeSnippet(v.replace(/\s+/g," "), 60));
       vals = Array.from(new Set(vals)).sort((a,b)=>a.localeCompare(b));
       return vals.slice(0, 60);
     }
@@ -1495,7 +1483,7 @@
           const picked = String(filters[k + "__pick"] || "").toLowerCase();
           if (picked) {
             const hay = String(mainDisplayValue(row, k) || "").toLowerCase();
-            if (!hay.includes(picked)) return false;
+            if (hay !== picked) return false;
           }
         }
         return true;
@@ -1557,7 +1545,12 @@
         any.value = "";
         any.textContent = "All";
         sel.appendChild(any);
-        getMainFilterOptions(col.k).forEach(v => { const o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o); });
+        getMainFilterOptions(col.k).forEach(v => {
+          const o = document.createElement("option");
+          o.value = v;
+          o.textContent = col.k === "txt" ? safeSnippet(v.replace(/\s+/g, " "), 60) : v;
+          sel.appendChild(o);
+        });
         sel.value = tableState.main.filters[col.k + "__pick"] || "";
         const inp = document.createElement("input");
         inp.type = "text";
@@ -2182,7 +2175,7 @@
 
     function relTypeLabel(typeUri) {
       const m = {
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink":"Hyperlink",
+        "http:
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image":"Image",
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles":"Styles",
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering":"Numbering",
@@ -2204,13 +2197,13 @@
 
     function relSource(targetMode, target) {
       const isExt = (String(targetMode||"").toLowerCase()==="external") ||
-                    /^https?:\/\//i.test(target||"") ||
-                    /^file:\/\//i.test(target||"") ||
+                    /^https?:\/\
+                    /^file:\/\
                     /^mailto:/i.test(target||"");
       return isExt ? { label:"External", rank:1, cls:"bg-ext" } : { label:"Internal", rank:2, cls:"bg-int" };
     }
 
-    function isCheckableWebLink(url) { return /^https?:\/\//i.test(String(url || "")); }
+    function isCheckableWebLink(url) { return /^https?:\/\
 
     function getSourcePartFromRelsPath(relsPath) {
       if (relsPath === "_rels/.rels") return "[root]";
@@ -2585,7 +2578,6 @@
       setStatus("Scan complete.", true);
     }
 
-
     const RX_COLS = [
       { k:"pg", label:"Pg", width:"60px" },
       { k:"part", label:"Part", width:"180px" },
@@ -2732,7 +2724,7 @@
       if (scope === "active") targets = [activePartPath];
       else if (scope === "loaded") targets = Array.from(partsIndex.values()).filter(m => m.loaded).map(m => m.path);
       else if (scope === "all") targets = Array.from(partsIndex.keys());
-      else targets = ["word/document.xml"];
+      else targets = ["word/document.xml"]; 
 
       targets = Array.from(new Set(targets));
       const idx = targets.indexOf("word/document.xml");
@@ -2821,7 +2813,6 @@
       renderRegexBody();
       refreshExportButtons();
     }
-
 
     function getExportSpecForCurrentTab() {
       const nowTag = new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
@@ -3336,7 +3327,6 @@ async function downloadWord() {
       saveAs(blob, "Edited_" + (originalFileName || "document.docx"));
       setStatus("Saved!", true);
     }
-
 
     function getUniqueAuthors() {
       const set = new Set();
