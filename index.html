@@ -3,11 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Forensics Suite v5.4</title>
-
-<script defer src="./jszip.min.js"></script>
-<script defer src="./xlsx.bundle.js"></script>
-<script defer src="./FileSaver.min.js"></script>
+  <title>Word Comment and Redline Manager v5.6</title>
 
 
   <style>
@@ -419,13 +415,81 @@
     .link-checking{color:#6c757d;font-weight:900;}
 
 
+    .toolbar{display:none!important;}
+    .tabs{gap:4px;border-bottom:1px solid #d8dee7;margin:12px 0 14px 0;}
+    .tab-btn{padding:11px 14px;border-radius:10px 10px 0 0;}
+    .tab-btn.export-tab{background:#111827;color:#fff;border-bottom-color:#111827;letter-spacing:.06em;}
+    .tab-btn.export-tab.active{background:#198754;color:#fff;border-bottom-color:#198754;}
+    .quick-hero,.section-panel{border:1px solid var(--border);border-radius:14px;background:#fff;padding:16px;box-shadow:0 2px 10px rgba(15,23,42,.04);}
+    .quick-hero{margin-bottom:14px;background:linear-gradient(180deg,#ffffff,#f8fbff);}
+    .quick-hero h2,.section-head h2{font-size:18px;margin:0 0 4px 0;color:#111827;}
+    .quick-hero p,.section-head p,.action-card p{margin:0;color:#64748b;font-size:12px;line-height:1.45;}
+    .clean-grid,.export-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;padding:0;}
+    .action-card{box-shadow:none;border-color:#dbe3ee;}
+    .action-card h3{font-size:14px;margin-bottom:12px;color:#111827;}
+    .quick-row label{display:flex;flex-direction:column;gap:5px;flex:1 1 180px;margin:0;}
+    .quick-row label span{font-size:11px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.04em;}
+    .wide-label{flex:2 1 260px!important;}
+    .compact-btn{flex:0 0 auto!important;min-width:120px;width:auto;align-self:end;}
+    .align-end{justify-content:flex-end;}
+    .section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+    .section-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+    .section-actions select{width:auto;min-width:170px;}
+    .static-text{white-space:pre-wrap;line-height:1.45;}
+    .context-pill{font-size:11px;background:#fff8e1;border:1px solid #ffe8a1;border-radius:8px;padding:7px 8px;margin-bottom:7px;color:#4b5563;}
+    .edit-field{width:100%;min-height:40px;border:1px solid #cbd5e1;border-radius:8px;padding:8px;background:#fff;box-sizing:border-box;font:inherit;}
+    .edit-date{min-width:150px;}
+    .export-panel{border-color:#198754;}
+    .memory-flash{animation:memoryFlash 1.4s ease-out 1;}
+    @keyframes memoryFlash{0%{background:#ecfdf5}100%{background:transparent}}
+
+
+    body{padding:10px;padding-bottom:35px;}
+    .container{max-width:none;padding:12px;}
+    h1{margin:2px 0 8px 0;font-size:18px;}
+    #status{margin-bottom:6px;min-height:16px;}
+    .tabs{margin:8px 0 10px 0;}
+    .tab-btn{padding:8px 12px;}
+    .quick-hero{padding:12px;margin-bottom:10px;}
+    .quick-hero h2,.section-head h2{font-size:17px;}
+    .quick-card{padding:12px;}
+    .action-card h3{margin-bottom:8px;}
+    .clean-grid,.export-grid{grid-template-columns:repeat(4,minmax(220px,1fr));gap:10px;}
+    .quick-row{gap:8px;margin-top:6px;align-items:flex-end;}
+    .quick-row label{gap:4px;flex:1 1 0;min-width:120px;}
+    .quick-row label > input,.quick-row label > select{flex:0 0 auto;min-width:0;width:100%;height:36px;padding:7px 9px;}
+    .quick-row .compact-btn,.compact-btn{height:36px;padding:7px 10px;min-width:96px;align-self:flex-end;}
+    .quick-note{margin-top:6px;}
+    .section-panel{padding:12px;}
+    .section-head{margin-bottom:10px;}
+    .table-wrap{max-height:68vh;}
+    th,td{padding:8px;}
+    .metadata-grid,.forensics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:12px;margin-bottom:12px;}
+    .meta-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;}
+    .meta-fields .form-row{margin-bottom:0;}
+    .meta-fields input{height:34px;padding:7px 9px;}
+    .image-preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-height:390px;overflow:auto;}
+    .image-card{border:1px solid #dbe3ee;border-radius:10px;padding:8px;background:#fff;display:flex;flex-direction:column;gap:6px;}
+    .image-card img{max-width:100%;height:110px;object-fit:contain;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;}
+    .image-card .path{font-size:10px;font-weight:800;word-break:break-all;color:#334155;}
+    .image-card .size{font-size:10px;color:#64748b;}
+    .xml-tree-container{max-height:390px;overflow:auto;border:1px solid #e5e7eb;border-radius:10px;background:#fbfdff;padding:8px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;}
+    .xml-tree-container details{margin:0 0 7px 0;}
+    .xml-tree-container summary{cursor:pointer;font-weight:900;color:#111827;word-break:break-all;}
+    .xml-tree ul{list-style:none;margin:0 0 0 16px;padding:0;border-left:1px dotted #cbd5e1;}
+    .xml-tree li{margin:2px 0;padding-left:8px;}
+    .xml-node{color:#0f172a;word-break:break-all;}
+    .xml-text{color:#64748b;margin-left:6px;}
+    .go-btn{padding:6px 9px!important;min-width:54px!important;width:auto!important;}
+    @media(max-width:1200px){.clean-grid,.export-grid{grid-template-columns:repeat(2,minmax(260px,1fr));}}
+    @media(max-width:700px){body{padding:6px}.container{padding:8px}.clean-grid,.export-grid,.metadata-grid,.forensics-grid{grid-template-columns:1fr}.tabs{gap:2px}.tab-btn{padding:8px 9px}.quick-row label{min-width:100%}.quick-row .compact-btn{width:100%;}.section-head{align-items:stretch}.section-actions{width:100%}.section-actions select,.section-actions button{flex:1 1 140px;}}
 
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h1>Word Forensics Suite v5.4</h1>
+    <h1>Word Comment and Redline Manager</h1>
 
     <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Open DOCX">
       📄 Tap to Open .docx<br><span style="font-size:11px; opacity:0.8;">or drag & drop here</span>
@@ -436,14 +500,13 @@
     <div id="error-log"></div>
 
     <div class="tabs" id="tabs">
-      <button class="tab-btn active" data-tab="all">All Activity</button>
-      <button class="tab-btn" data-tab="quick">Quick Actions</button>
-      <button class="tab-btn" data-tab="parts">Parts</button>
-      <button class="tab-btn" data-tab="relationships">Relationships</button>
+      <button class="tab-btn active" data-tab="quick">Quick Actions</button>
+      <button class="tab-btn" data-tab="all">Activity</button>
+      <button class="tab-btn" data-tab="parts">Document View</button>
+      <button class="tab-btn" data-tab="relationships">Links</button>
       <button class="tab-btn" data-tab="forensics">Forensics</button>
-      <button class="tab-btn" data-tab="ghost">Ghost Writer</button>
-      <button class="tab-btn" data-tab="regex">Regex Replace</button>
       <button class="tab-btn" data-tab="meta">Metadata</button>
+      <button class="tab-btn export-tab" data-tab="export">EXPORT</button>
     </div>
 
     <div class="toolbar" id="toolbar">
@@ -456,41 +519,138 @@
     </div>
 
     
-    <div id="view-table" class="view-section table-wrap">
-      <table id="data-table">
-        <thead id="data-head"></thead>
-        <tbody id="data-body"></tbody>
-      </table>
+    <div id="view-table" class="view-section">
+      <div class="section-panel">
+        <div class="section-head">
+          <div>
+            <h2>Activity</h2>
+            <p>Review comments and redlines. The table is read-only until you turn on editing.</p>
+          </div>
+          <div class="section-actions">
+            <select id="activity-filter" aria-label="Activity filter">
+              <option value="all">All activity</option>
+              <option value="comments">Comments only</option>
+              <option value="revisions">Redlines only</option>
+            </select>
+            <button class="btn btn-warning compact-btn" id="btn-activity-edit" type="button">Edit</button>
+            <button class="btn btn-success compact-btn" id="btn-activity-save" type="button" style="display:none;">Save Changes</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="data-table">
+            <thead id="data-head"></thead>
+            <tbody id="data-body"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
 
     <div id="view-quick" class="view-section">
-      <div class="quick-grid">
-        <div class="quick-card">
-          <h3>Author shortcuts</h3>
-          <p>Use this for the common “just make the comments/redlines say this author” workflow.</p>
+      <div class="quick-hero">
+        <h2>Quick Actions</h2>
+        <p>Use these for the most common comment and redline edits. Changes are held in memory until you export the Word document.</p>
+      </div>
+      <div class="quick-grid clean-grid">
+        <div class="quick-card action-card">
+          <h3>Change Comment/Redline Author</h3>
           <div class="quick-row">
-            <input type="text" id="quick-author" placeholder="Author name">
-            <select id="quick-scope" aria-label="Quick action scope">
-              <option value="all">All items</option>
-              <option value="filtered">Filtered list</option>
-              <option value="currentPart">Current part</option>
-            </select>
+            <label>
+              <span>Replace author</span>
+              <select id="quick-author-from" aria-label="Existing author"></select>
+            </label>
+            <label>
+              <span>Apply to</span>
+              <select id="quick-author-kind" aria-label="Author item type">
+                <option value="both">Comments and redlines</option>
+                <option value="comments">Comments only</option>
+                <option value="revisions">Redlines only</option>
+              </select>
+            </label>
           </div>
           <div class="quick-row">
-            <button class="btn btn-warning" id="btn-quick-set-author">Set author</button>
+            <label class="wide-label">
+              <span>New author text</span>
+              <input type="text" id="quick-author-to" placeholder="Enter replacement author">
+            </label>
+            <button class="btn btn-success compact-btn" id="btn-quick-author-save" type="button">Save</button>
           </div>
-          <div class="quick-note">This updates comments, insertions, and deletions immediately. No separate apply step is needed.</div>
         </div>
-
-        <div class="quick-card">
-          <h3>Common exports</h3>
-          <p>The main things you’re likely to use most often are grouped here.</p>
+        <div class="quick-card action-card">
+          <h3>Change Comment/Redline Date</h3>
           <div class="quick-row">
-            <button class="btn btn-primary" id="btn-quick-save">Save DOCX</button>
-            <button class="btn btn-success" id="btn-quick-redline">Export Redline HTML</button>
+            <label>
+              <span>Method</span>
+              <select id="quick-date-mode" aria-label="Date change method">
+                <option value="offset">Offset</option>
+                <option value="specific">Specific date</option>
+                <option value="random">Random</option>
+              </select>
+            </label>
+            <label>
+              <span>Apply to</span>
+              <select id="quick-date-kind" aria-label="Date item type">
+                <option value="both">Comments and redlines</option>
+                <option value="comments">Comments only</option>
+                <option value="revisions">Redlines only</option>
+              </select>
+            </label>
           </div>
-          <div class="quick-note">Edits are committed automatically right before export, even if your cursor is still in a field.</div>
+          <div id="quick-date-offset" class="quick-row date-mode-row">
+            <label>
+              <span>Direction</span>
+              <select id="quick-date-sign"><option value="1">+</option><option value="-1">−</option></select>
+            </label>
+            <label>
+              <span>Amount</span>
+              <select id="quick-date-number"></select>
+            </label>
+            <label>
+              <span>Unit</span>
+              <select id="quick-date-unit"><option value="minutes">minute</option><option value="hours">hour</option><option value="days">day</option><option value="weeks">week</option></select>
+            </label>
+          </div>
+          <div id="quick-date-specific" class="quick-row date-mode-row" style="display:none;">
+            <label class="wide-label">
+              <span>Date</span>
+              <input type="date" id="quick-date-specific-value">
+            </label>
+          </div>
+          <div id="quick-date-random" class="quick-row date-mode-row" style="display:none;">
+            <label>
+              <span>Start date</span>
+              <input type="date" id="quick-date-random-start">
+            </label>
+            <label>
+              <span>End date</span>
+              <input type="date" id="quick-date-random-end">
+            </label>
+          </div>
+          <div class="quick-row align-end">
+            <button class="btn btn-success compact-btn" id="btn-quick-date-save" type="button">Save</button>
+          </div>
+          <div class="quick-note">Specific and random dates keep each item’s original time of day.</div>
+        </div>
+        <div class="quick-card action-card">
+          <h3>Export Summary of Changes</h3>
+          <div class="quick-row">
+            <label>
+              <span>Summary type</span>
+              <select id="quick-summary-type" aria-label="Summary type">
+                <option value="comments" selected>Comments</option>
+                <option value="revisions">Redlines</option>
+                <option value="all">All</option>
+              </select>
+            </label>
+            <button class="btn btn-primary compact-btn" id="btn-quick-summary-export" type="button">Download Excel</button>
+          </div>
+        </div>
+        <div class="quick-card action-card">
+          <h3>Wipe Metadata</h3>
+          <p>Clears document properties and loaded Word edit IDs. The wipe is held in memory until export.</p>
+          <div class="quick-row align-end">
+            <button class="btn btn-danger compact-btn" id="btn-quick-wipe-metadata" type="button">Wipe Metadata</button>
+          </div>
         </div>
       </div>
     </div>
@@ -519,16 +679,35 @@
     </div>
 
     
-    <div id="view-forensics" class="view-section table-wrap">
-      <div style="padding:15px; text-align:center; background:#f1f3f5;">
-        <button class="btn btn-primary" style="width:auto; padding:10px 20px; flex:0 0 auto;" id="btn-scan">
-          🔍 Click to Run Deep Scan
-        </button>
+    <div id="view-forensics" class="view-section">
+      <div class="section-panel">
+        <div class="section-head">
+          <div>
+            <h2>Forensics</h2>
+            <p>The deep scan runs automatically after a DOCX loads. Use this tab to inspect package files, embedded images, and the XML tree.</p>
+          </div>
+          <div class="section-actions">
+            <button class="btn btn-primary compact-btn" id="btn-scan" type="button">Refresh Scan</button>
+          </div>
+        </div>
+        <div class="forensics-grid">
+          <div class="quick-card action-card">
+            <h3>Embedded Images</h3>
+            <div id="image-preview-grid" class="image-preview-grid"></div>
+          </div>
+          <div class="quick-card action-card">
+            <h3>Document XML Tree</h3>
+            <div id="xml-tree-container" class="xml-tree-container"></div>
+          </div>
+        </div>
+        <h3 style="margin:10px 0 8px 0;">Package Files</h3>
+        <div class="table-wrap">
+          <table id="forensics-table">
+            <thead id="forensics-head"></thead>
+            <tbody id="forensics-body"></tbody>
+          </table>
+        </div>
       </div>
-      <table id="forensics-table">
-        <thead id="forensics-head"></thead>
-        <tbody id="forensics-body"></tbody>
-      </table>
     </div>
 
     
@@ -590,17 +769,70 @@
     </div>
 
     
-    <div id="view-meta" class="view-section">
-      <div style="padding:15px;">
-        <h3 style="margin:0 0 10px 0;">Core Properties</h3>
-        <div class="form-row"><label>Author</label><input type="text" id="meta-creator"></div>
-        <div class="form-row"><label>Modified By</label><input type="text" id="meta-lastMod"></div>
-        <h3 style="margin:14px 0 10px 0;">App Stats</h3>
-        <div class="form-row"><label>Total Minutes</label><input type="number" id="meta-time"></div>
-        <div class="form-row"><label>Revisions</label><input type="number" id="meta-revision"></div>
-        <button class="btn btn-danger" style="width:100%; margin-top:10px; flex:1;" id="btn-wipe">🧽 Wipe All Metadata</button>
+    <div id="view-export" class="view-section">
+      <div class="section-panel export-panel">
+        <div class="section-head">
+          <div>
+            <h2>Export</h2>
+            <p>Save the edited Word document or download review summaries. DOCX exports use DEFLATE compression.</p>
+          </div>
+        </div>
+        <div class="export-grid">
+          <div class="quick-card action-card">
+            <h3>Word Document</h3>
+            <p>Exports the DOCX with only the changes saved in this tool.</p>
+            <button class="btn btn-primary" id="btn-export-word-tab" type="button">Export Word Document</button>
+          </div>
+          <div class="quick-card action-card">
+            <h3>Summary Spreadsheet</h3>
+            <div class="quick-row">
+              <label>
+                <span>Summary type</span>
+                <select id="export-summary-type" aria-label="Export summary type">
+                  <option value="comments" selected>Comments</option>
+                  <option value="revisions">Redlines</option>
+                  <option value="all">All</option>
+                </select>
+              </label>
+              <button class="btn btn-success compact-btn" id="btn-export-summary-tab" type="button">Download Excel</button>
+            </div>
+          </div>
+          <div class="quick-card action-card">
+            <h3>Inline Redline HTML</h3>
+            <p>Creates an HTML view with insertions, deletions, and comment ranges highlighted.</p>
+            <button class="btn btn-success" id="btn-export-redline-tab" type="button">Export Redline HTML</button>
+          </div>
+        </div>
       </div>
-      <div class="tiny" style="margin-top:8px;">Export/Copy is disabled on this tab (there’s no table).</div>
+    </div>
+
+    <div id="view-meta" class="view-section">
+      <div class="section-panel">
+        <div class="section-head">
+          <div>
+            <h2>Metadata</h2>
+            <p>Review and edit common Word document properties. Changes are held in memory until export.</p>
+          </div>
+          <div class="section-actions">
+            <button class="btn btn-success compact-btn" id="btn-save-meta" type="button">Save Metadata</button>
+            <button class="btn btn-danger compact-btn" id="btn-wipe" type="button">Wipe Metadata</button>
+          </div>
+        </div>
+        <div class="metadata-grid">
+          <div class="quick-card action-card">
+            <h3>Core Properties</h3>
+            <div id="meta-core-fields" class="meta-fields"></div>
+          </div>
+          <div class="quick-card action-card">
+            <h3>App Properties</h3>
+            <div id="meta-app-fields" class="meta-fields"></div>
+          </div>
+          <div class="quick-card action-card">
+            <h3>Custom Properties</h3>
+            <div id="meta-custom-fields" class="meta-fields"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -714,6 +946,7 @@
     let coreXmlDoc = null;
     let appXmlDoc = null;
     let commentsXmlDoc = null;
+    let customXmlDoc = null;
     let metaDirty = false;
 
     const partsIndex = new Map();
@@ -733,6 +966,7 @@
     let relationshipsData = [];
 
     let forensicsData = [];
+    let imagePreviewData = [];
 
     let regexChanges = [];
     let pendingGlobalMetaOps = [];
@@ -743,7 +977,7 @@
     let ghostSelIdx = -1;
     let nextChangeId = 1;
 
-    let currentTab = "all";
+    let currentTab = "quick";
     let activityMode = "all";
 
     const tableState = {
@@ -769,13 +1003,30 @@
       viewTable: document.getElementById("view-table"),
       tableHead: document.getElementById("data-head"),
       tableBody: document.getElementById("data-body"),
+      activityFilter: document.getElementById("activity-filter"),
+      btnActivityEdit: document.getElementById("btn-activity-edit"),
+      btnActivitySave: document.getElementById("btn-activity-save"),
 
       viewQuick: document.getElementById("view-quick"),
-      quickAuthor: document.getElementById("quick-author"),
-      quickScope: document.getElementById("quick-scope"),
-      btnQuickSetAuthor: document.getElementById("btn-quick-set-author"),
-      btnQuickSave: document.getElementById("btn-quick-save"),
-      btnQuickRedline: document.getElementById("btn-quick-redline"),
+      quickAuthorFrom: document.getElementById("quick-author-from"),
+      quickAuthorKind: document.getElementById("quick-author-kind"),
+      quickAuthorTo: document.getElementById("quick-author-to"),
+      btnQuickAuthorSave: document.getElementById("btn-quick-author-save"),
+      quickDateMode: document.getElementById("quick-date-mode"),
+      quickDateKind: document.getElementById("quick-date-kind"),
+      quickDateOffset: document.getElementById("quick-date-offset"),
+      quickDateSpecific: document.getElementById("quick-date-specific"),
+      quickDateRandom: document.getElementById("quick-date-random"),
+      quickDateSign: document.getElementById("quick-date-sign"),
+      quickDateNumber: document.getElementById("quick-date-number"),
+      quickDateUnit: document.getElementById("quick-date-unit"),
+      quickDateSpecificValue: document.getElementById("quick-date-specific-value"),
+      quickDateRandomStart: document.getElementById("quick-date-random-start"),
+      quickDateRandomEnd: document.getElementById("quick-date-random-end"),
+      btnQuickDateSave: document.getElementById("btn-quick-date-save"),
+      quickSummaryType: document.getElementById("quick-summary-type"),
+      btnQuickSummaryExport: document.getElementById("btn-quick-summary-export"),
+      btnQuickWipeMetadata: document.getElementById("btn-quick-wipe-metadata"),
 
       viewParts: document.getElementById("view-parts"),
       partSelect: document.getElementById("part-select"),
@@ -790,6 +1041,8 @@
       viewForensics: document.getElementById("view-forensics"),
       forHead: document.getElementById("forensics-head"),
       forBody: document.getElementById("forensics-body"),
+      imagePreviewGrid: document.getElementById("image-preview-grid"),
+      xmlTreeContainer: document.getElementById("xml-tree-container"),
 
       viewRegex: document.getElementById("view-regex"),
       rxPattern: document.getElementById("rx-pattern"),
@@ -810,11 +1063,17 @@
       ghostAuth: document.getElementById("ghost-auth"),
       ghostDate: document.getElementById("ghost-date"),
 
+      viewExport: document.getElementById("view-export"),
+      exportSummaryType: document.getElementById("export-summary-type"),
+      btnExportWordTab: document.getElementById("btn-export-word-tab"),
+      btnExportSummaryTab: document.getElementById("btn-export-summary-tab"),
+      btnExportRedlineTab: document.getElementById("btn-export-redline-tab"),
+
       viewMeta: document.getElementById("view-meta"),
-      metaCreator: document.getElementById("meta-creator"),
-      metaLastMod: document.getElementById("meta-lastMod"),
-      metaTime: document.getElementById("meta-time"),
-      metaRevision: document.getElementById("meta-revision"),
+      metaCoreFields: document.getElementById("meta-core-fields"),
+      metaAppFields: document.getElementById("meta-app-fields"),
+      metaCustomFields: document.getElementById("meta-custom-fields"),
+      btnSaveMeta: document.getElementById("btn-save-meta"),
 
       btModal: document.getElementById("batchToolsModal"),
       btScope: document.getElementById("batch-scope"),
@@ -915,27 +1174,215 @@
       return getBatchCandidateRows(scope);
     }
 
-    function applyQuickAuthorAction() {
-      commitPendingUiEdits();
-      const author = String(dom.quickAuthor?.value || "").trim();
-      if (!author) { alert("Enter an author."); return; }
-
-      const scope = String(dom.quickScope?.value || "all");
-      let rows = batchOrder(getQuickScopeRows(scope), scope === "currentPart" ? "all" : scope);
-      if (scope === "currentPart") {
-        rows = rows.filter(x => (x.part || "") === activePartPath);
-      }
-      if (!rows.length) { alert("No matching items for that scope."); return; }
-
-      rows.forEach(x => { x.auth = author; x._dirtyMeta = true; });
-      if (scope === "all") pendingGlobalMetaOps.push({ op:"setAuthor", to:author });
-
-      renderMainTableBody();
-      if (currentTab === "parts") renderSidebarForPart(activePartPath);
-      setStatus(`Author updated for ${rows.length} item(s).`, true);
+    function itemMatchesQuickKind(x, kind) {
+      if (!x) return false;
+      if (kind === "comments") return x.type === "com";
+      if (kind === "revisions") return x.type === "ins" || x.type === "del";
+      return x.type === "com" || x.type === "ins" || x.type === "del";
     }
 
-    function escapeRegExp(s) {
+    function getQuickRows(kind) {
+      return Array.from(items.values()).filter(x => itemMatchesQuickKind(x, kind));
+    }
+
+    function saveMemoryStatus(count) {
+      const suffix = typeof count === "number" ? " (" + count + " item" + (count === 1 ? "" : "s") + ")" : "";
+      setStatus("changes saved to memory; will export in Word doc" + suffix, true);
+      try {
+        dom.status.classList.remove("memory-flash");
+        void dom.status.offsetWidth;
+        dom.status.classList.add("memory-flash");
+      } catch {}
+    }
+
+    function populateQuickControls() {
+      if (dom.quickDateNumber && dom.quickDateNumber.children.length === 0) {
+        for (let i = 1; i <= 10; i++) {
+          const opt = document.createElement("option");
+          opt.value = String(i);
+          opt.textContent = String(i);
+          dom.quickDateNumber.appendChild(opt);
+        }
+      }
+
+      if (!dom.quickAuthorFrom) return;
+      const oldVal = dom.quickAuthorFrom.value;
+      const authors = [];
+      const seen = new Set();
+      for (const it of Array.from(items.values())) {
+        if (!itemMatchesQuickKind(it, "both")) continue;
+        const raw = String(it.auth || "").trim();
+        const key = raw || "__blank__";
+        if (seen.has(key)) continue;
+        seen.add(key);
+        authors.push({ value:key, label:raw || "(blank)" });
+      }
+      authors.sort((a,b) => a.label.localeCompare(b.label));
+      dom.quickAuthorFrom.textContent = "";
+      if (!authors.length) {
+        const opt = document.createElement("option");
+        opt.value = "__none__";
+        opt.textContent = "No authors found";
+        dom.quickAuthorFrom.appendChild(opt);
+      } else {
+        for (const a of authors) {
+          const opt = document.createElement("option");
+          opt.value = a.value;
+          opt.textContent = a.label;
+          dom.quickAuthorFrom.appendChild(opt);
+        }
+        if (authors.some(a => a.value === oldVal)) dom.quickAuthorFrom.value = oldVal;
+      }
+      updateQuickDateUi();
+    }
+
+    function authorValueMatches(current, selected) {
+      const cur = String(current || "").trim();
+      if (selected === "__blank__") return cur === "";
+      return cur === String(selected || "").trim();
+    }
+
+    function applyQuickAuthorReplace() {
+      commitPendingUiEdits();
+      const from = dom.quickAuthorFrom ? dom.quickAuthorFrom.value : "";
+      const kind = dom.quickAuthorKind ? dom.quickAuthorKind.value : "both";
+      const to = String(dom.quickAuthorTo?.value || "").trim();
+      if (!from || from === "__none__") { alert("No existing author is selected."); return; }
+      if (!to) { alert("Enter replacement author text."); return; }
+      const rows = getQuickRows(kind).filter(x => authorValueMatches(x.auth, from));
+      if (!rows.length) { alert("No matching comments or redlines for that author and type."); return; }
+      rows.forEach(x => { x.auth = to; x._dirtyMeta = true; });
+      mainHeadBuilt = false;
+      renderMainTableBody();
+      if (currentTab === "parts") renderSidebarForPart(activePartPath);
+      populateQuickControls();
+      saveMemoryStatus(rows.length);
+    }
+
+    function updateQuickDateUi() {
+      const mode = dom.quickDateMode ? dom.quickDateMode.value : "offset";
+      if (dom.quickDateOffset) dom.quickDateOffset.style.display = mode === "offset" ? "flex" : "none";
+      if (dom.quickDateSpecific) dom.quickDateSpecific.style.display = mode === "specific" ? "flex" : "none";
+      if (dom.quickDateRandom) dom.quickDateRandom.style.display = mode === "random" ? "flex" : "none";
+    }
+
+    function dateWithOriginalTime(originalIso, dateStr) {
+      if (!dateStr) return "";
+      const m = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return "";
+      const base = originalIso ? new Date(originalIso) : new Date();
+      if (isNaN(base.getTime())) return "";
+      base.setFullYear(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return base.toISOString();
+    }
+
+    function localDateString(d) {
+      const pad = n => String(n).padStart(2, "0");
+      return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    }
+
+    function parseLocalDateOnly(s) {
+      const m = String(s || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return null;
+      return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    }
+
+    function randomDateOnly(startStr, endStr) {
+      const a = parseLocalDateOnly(startStr);
+      const b = parseLocalDateOnly(endStr);
+      if (!a || !b || isNaN(a.getTime()) || isNaN(b.getTime())) return "";
+      const startMs = Math.min(a.getTime(), b.getTime());
+      const endMs = Math.max(a.getTime(), b.getTime());
+      const day = 24 * 60 * 60 * 1000;
+      const spanDays = Math.floor((endMs - startMs) / day);
+      const picked = new Date(startMs + Math.floor(Math.random() * (spanDays + 1)) * day);
+      return localDateString(picked);
+    }
+
+    function applyQuickDateChange() {
+      commitPendingUiEdits();
+      const mode = dom.quickDateMode ? dom.quickDateMode.value : "offset";
+      const kind = dom.quickDateKind ? dom.quickDateKind.value : "both";
+      const rows = getQuickRows(kind).filter(x => x.date);
+      if (!rows.length) { alert("No dated items match that selection."); return; }
+
+      if (mode === "offset") {
+        const sign = Number(dom.quickDateSign?.value || 1);
+        const n = Number(dom.quickDateNumber?.value || 1);
+        const unit = dom.quickDateUnit?.value || "minutes";
+        if (!n || isNaN(n)) { alert("Select an offset amount."); return; }
+        const msMap = { minutes:60000, hours:3600000, days:86400000, weeks:604800000 };
+        const delta = sign * n * (msMap[unit] || 60000);
+        rows.forEach(x => {
+          const d = new Date(x.date);
+          if (isNaN(d.getTime())) return;
+          d.setTime(d.getTime() + delta);
+          x.date = d.toISOString();
+          x._dirtyMeta = true;
+        });
+      } else if (mode === "specific") {
+        const dateStr = dom.quickDateSpecificValue?.value || "";
+        if (!dateStr) { alert("Pick a date."); return; }
+        rows.forEach(x => {
+          const iso = dateWithOriginalTime(x.date, dateStr);
+          if (!iso) return;
+          x.date = iso;
+          x._dirtyMeta = true;
+        });
+      } else {
+        const startStr = dom.quickDateRandomStart?.value || "";
+        const endStr = dom.quickDateRandomEnd?.value || "";
+        if (!startStr || !endStr) { alert("Pick start and end dates."); return; }
+        rows.forEach(x => {
+          const day = randomDateOnly(startStr, endStr);
+          const iso = dateWithOriginalTime(x.date, day);
+          if (!iso) return;
+          x.date = iso;
+          x._dirtyMeta = true;
+        });
+      }
+
+      mainHeadBuilt = false;
+      renderMainTableBody();
+      if (currentTab === "parts") renderSidebarForPart(activePartPath);
+      saveMemoryStatus(rows.length);
+    }
+
+    function summaryRowsForType(type) {
+      let mode = "all";
+      if (type === "comments") mode = "comments";
+      if (type === "revisions") mode = "revisions";
+      return getItemsForMode(mode).map(r => ({...r, partLabel: partLabel(r.part || "")}));
+    }
+
+    function exportSummaryXlsx(type) {
+      if (!zipObj) { alert("Load a DOCX first."); return; }
+      const data = summaryRowsForType(type || "comments");
+      const headers = ["Date", "Author", "Activity", "Page", "Part", "Commented-on text", "Comment", "Redline text", "Change kind", "ID"];
+      const rows = data.map(r => [
+        r.date || "",
+        r.auth || "",
+        r.type === "com" ? "Comment" : "Redline",
+        r.pg || "",
+        r.partLabel || "",
+        r.type === "com" ? (r.on || "") : "",
+        r.type === "com" ? (r.txt || "") : "",
+        r.type === "com" ? "" : (r.txt || ""),
+        r.type === "com" ? "" : (r.type === "ins" ? "Inserted" : "Deleted"),
+        r.id || ""
+      ]);
+      const nowTag = new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
+      const base = (originalFileName || "document.docx").replace(/\.docx$/i,"");
+      const name = type === "revisions" ? "Redlines" : type === "all" ? "All-Activity" : "Comments";
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, name.slice(0,31));
+      const out = XLSX.write(wb, { bookType:"xlsx", type:"array" });
+      const blob = new Blob([out], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      saveAs(blob, `${base}_${name}_Summary_${nowTag}.xlsx`);
+    }
+
+        function escapeRegExp(s) {
       return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }
 
@@ -1024,6 +1471,14 @@
       return arr.map((v, i) => ({ v, i }))
         .sort((a, b) => cmp(a.v, b.v) || (a.i - b.i))
         .map(x => x.v);
+    }
+
+    function makeCommentUid(id) {
+      return "c_" + String(id);
+    }
+
+    function makeRevisionUid(partPath, type, id) {
+      return "r_" + encodeURIComponent(String(partPath || "")) + "_" + String(type || "") + "_" + String(id);
     }
 
     function partLabel(path) {
@@ -1243,7 +1698,7 @@
 
           const pgKey = type + ":" + id;
           arr.push({
-            uid: "r" + id,
+            uid: makeRevisionUid(partPath, type, id),
             id,
             type,
             pg: ctx.pg[pgKey] ?? ((partPath === "word/document.xml") ? 1 : 0),
@@ -1342,7 +1797,7 @@
         const anchor = anchorMap.get(id) || null;
 
         arr.push({
-          uid: "c" + id,
+          uid: makeCommentUid(id),
           id,
           type: "com",
           pg: anchor?.pg ?? 0,
@@ -1462,9 +1917,11 @@
     ];
 
     let mainHeadBuilt = false;
+    let mainEditMode = false;
 
     function mainDisplayValue(row, k) {
-      if (k === "type") return row.type === "com" ? "Comment" : row.type === "ins" ? "Insertion" : "Deletion";
+      if (k === "type") return row.type === "com" ? "Comment" : row.type === "ins" ? "Inserted" : "Deleted";
+      if (k === "txt") return row.type === "com" ? ((row.on || "") + " " + (row.txt || "")).trim() : (row.txt || "");
       if (k === "date") return row.date ? toDatetimeLocal(row.date).slice(0,10) : "";
       return row[k] ?? "";
     }
@@ -1584,8 +2041,8 @@
       }
 
       const thAct = document.createElement("th");
-      thAct.textContent = "Act";
-      thAct.style.width = "58px";
+      thAct.textContent = "Go To";
+      thAct.style.width = "74px";
       trH.appendChild(thAct);
       trF.appendChild(document.createElement("th"));
 
@@ -1610,94 +2067,128 @@
         tdType.style.textAlign = "center";
         const b = document.createElement("span");
         b.className = "badge " + (row.type==="com" ? "bg-com" : row.type==="ins" ? "bg-ins" : "bg-del");
-        b.textContent = row.type==="com" ? "Comment" : row.type==="ins" ? "Added" : "Deleted";
+        b.textContent = row.type==="com" ? "Comment" : row.type==="ins" ? "Inserted" : "Deleted";
         tdType.appendChild(b);
         tr.appendChild(tdType);
 
         const tdTxt = document.createElement("td");
         if (row.type === "com") {
-          tdTxt.style.whiteSpace = "pre-wrap";
           const subj = document.createElement("div");
-          subj.style.fontSize = "11px";
-          subj.style.opacity = "0.9";
-          subj.style.marginBottom = "6px";
-          subj.style.padding = "6px 8px";
-          subj.style.border = "1px solid #ffe8a1";
-          subj.style.borderRadius = "6px";
-          subj.style.background = "#fff8e1";
-          subj.textContent = row.on ? ("Commented text: " + row.on) : "Commented text: (could not extract)";
+          subj.className = "context-pill";
+          subj.textContent = row.on ? ("Commented-on text: " + row.on) : "Commented-on text: (could not extract)";
           tdTxt.appendChild(subj);
 
-          const com = document.createElement("div");
-          com.className = "editable";
-          com.contentEditable = "true";
-          com.spellcheck = false;
-          com.style.padding = "6px 8px";
-          com.style.borderRadius = "6px";
-          com.textContent = row.txt || "";
-          const syncCommentText = () => { touchItemText(row.uid, com.textContent.trim()); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
-          com.addEventListener("input", syncCommentText);
-          com.addEventListener("blur", syncCommentText);
-          tdTxt.appendChild(com);
+          if (mainEditMode) {
+            const area = document.createElement("textarea");
+            area.className = "edit-field";
+            area.rows = 3;
+            area.value = row.txt || "";
+            const syncCommentText = () => { touchItemText(row.uid, area.value); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
+            area.addEventListener("input", syncCommentText);
+            area.addEventListener("blur", syncCommentText);
+            tdTxt.appendChild(area);
+          } else {
+            const com = document.createElement("div");
+            com.className = "static-text";
+            com.textContent = row.txt || "";
+            tdTxt.appendChild(com);
+          }
         } else {
           const box = document.createElement("div");
           box.className = "change-box";
           const line = document.createElement("div");
-          line.className = "change-line " + (row.type === "del" ? "deleted" : "added") + " editable";
-          line.contentEditable = "true";
-          line.spellcheck = false;
+          line.className = "change-line " + (row.type === "del" ? "deleted" : "added");
           const label = document.createElement("span");
           label.className = "label";
           label.textContent = row.type === "del" ? "Deleted text" : "Inserted text";
-          const textNode = document.createElement("div");
-          textNode.textContent = row.txt || "";
           line.appendChild(label);
-          line.appendChild(textNode);
-          const syncRowText = () => { touchItemText(row.uid, textNode.textContent.trim()); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
-          line.addEventListener("input", syncRowText);
-          line.addEventListener("blur", syncRowText);
+          if (mainEditMode) {
+            const area = document.createElement("textarea");
+            area.className = "edit-field";
+            area.rows = 2;
+            area.value = row.txt || "";
+            const syncRowText = () => { touchItemText(row.uid, area.value); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
+            area.addEventListener("input", syncRowText);
+            area.addEventListener("blur", syncRowText);
+            line.appendChild(area);
+          } else {
+            const textNode = document.createElement("div");
+            textNode.className = "static-text";
+            textNode.textContent = row.txt || "";
+            line.appendChild(textNode);
+          }
           box.appendChild(line);
           tdTxt.appendChild(box);
         }
         tr.appendChild(tdTxt);
 
         const tdAuth = document.createElement("td");
-        tdAuth.className = "editable";
-        tdAuth.contentEditable = "true";
-        tdAuth.spellcheck = false;
-        tdAuth.textContent = row.auth || "";
-        const syncRowAuthor = () => { touchItemMeta(row.uid, { auth: tdAuth.textContent.trim() }); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
-        tdAuth.addEventListener("input", syncRowAuthor);
-        tdAuth.addEventListener("blur", syncRowAuthor);
+        if (mainEditMode) {
+          const inp = document.createElement("input");
+          inp.type = "text";
+          inp.className = "cell-input";
+          inp.value = row.auth || "";
+          const syncRowAuthor = () => { touchItemMeta(row.uid, { auth: inp.value.trim() }); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
+          inp.addEventListener("input", syncRowAuthor);
+          inp.addEventListener("blur", syncRowAuthor);
+          tdAuth.appendChild(inp);
+        } else {
+          tdAuth.textContent = row.auth || "";
+        }
         tr.appendChild(tdAuth);
 
         const tdDate = document.createElement("td");
-        const inp = document.createElement("input");
-        inp.type = "datetime-local";
-        inp.className = "cell-input editish";
-        inp.value = toDatetimeLocal(row.date);
-        const syncRowDate = () => { touchItemMeta(row.uid, { date: fromDatetimeLocal(inp.value) }); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
-        inp.addEventListener("input", syncRowDate);
-        inp.addEventListener("change", syncRowDate);
-        inp.addEventListener("blur", syncRowDate);
-        tdDate.appendChild(inp);
+        if (mainEditMode) {
+          const inp = document.createElement("input");
+          inp.type = "datetime-local";
+          inp.className = "cell-input edit-date";
+          inp.value = toDatetimeLocal(row.date);
+          const syncRowDate = () => { touchItemMeta(row.uid, { date: fromDatetimeLocal(inp.value) }); if (currentTab === "parts") renderSidebarForPart(activePartPath); };
+          inp.addEventListener("input", syncRowDate);
+          inp.addEventListener("change", syncRowDate);
+          inp.addEventListener("blur", syncRowDate);
+          tdDate.appendChild(inp);
+        } else {
+          tdDate.textContent = toDatetimeLocal(row.date).replace("T", " ");
+        }
         tr.appendChild(tdDate);
 
         const tdAct = document.createElement("td");
         const btn = document.createElement("button");
-        btn.className = "btn btn-secondary";
+        btn.className = "btn btn-secondary go-btn";
         btn.type = "button";
-        btn.style.padding = "6px 8px";
-        btn.style.minWidth = "0";
-        btn.style.flex = "0 0 auto";
-        btn.textContent = "↩";
-        btn.title = "Jump to item in Parts";
+        btn.textContent = "Go To";
+        btn.title = "Jump to item in Document View";
         btn.addEventListener("click", () => stepInto(row.uid));
         tdAct.appendChild(btn);
         tr.appendChild(tdAct);
 
         dom.tableBody.appendChild(tr);
       }
+    }
+
+
+
+    function setMainEditMode(on) {
+      mainEditMode = !!on;
+      if (dom.btnActivityEdit) dom.btnActivityEdit.style.display = mainEditMode ? "none" : "inline-block";
+      if (dom.btnActivitySave) dom.btnActivitySave.style.display = mainEditMode ? "inline-block" : "none";
+      renderMainTableBody();
+    }
+
+    function saveActivityEdits() {
+      commitPendingUiEdits();
+      mainHeadBuilt = false;
+      setMainEditMode(false);
+      populateQuickControls();
+      saveMemoryStatus();
+    }
+
+    function applyActivityFilterMode() {
+      const mode = dom.activityFilter ? dom.activityFilter.value : "all";
+      activityMode = mode;
+      mainHeadBuilt = false;
+      renderMainTableBody();
     }
 
     function getRenderRoot(xmlDoc, partPath) {
@@ -1801,7 +2292,7 @@
       function wrapAndAppend(parent, el){
         let container = parent;
         for (const cid of activeComments) {
-          const uid = "c" + cid;
+          const uid = makeCommentUid(cid);
           const s = document.createElement("span");
           s.className = "doc-com";
           s.dataset.uid = uid;
@@ -1832,7 +2323,7 @@
           const id = attrW(node,"id");
           if (id !== "") {
             activeComments.push(id);
-            const uid = "c" + id;
+            const uid = makeCommentUid(id);
             if (!firstRendered.has(uid)) {
               const marker = document.createElement("span");
               marker.className = "doc-com";
@@ -1892,7 +2383,7 @@
 
         if (ln === "ins" || ln === "del") {
           const id = attrW(node,"id");
-          const uid = "r" + id;
+          const uid = makeRevisionUid(partPath, ln, id);
           const span = document.createElement("span");
           span.className = (ln === "ins") ? "doc-ins" : "doc-del";
           span.id = "hl-" + uid;
@@ -2158,19 +2649,15 @@
           card.classList.add("active-card");
           setTimeout(()=>card.classList.remove("active-card"), 2000);
         }
+        if (!el && !card) setStatus("Could not find that item in the rendered document view.", false);
       }, 80);
     }
 
     async function stepInto(uid) {
       const it = items.get(uid);
-      if (it && it.part && partsIndex.has(it.part)) {
-        switchTab("parts");
-        await setActivePart(it.part);
-        focusUidInCurrentPart(uid);
-        return;
-      }
-      switchTab("parts");
-      await setActivePart("word/document.xml");
+      const targetPart = it && it.part && partsIndex.has(it.part) ? it.part : "word/document.xml";
+      await switchTab("parts");
+      await setActivePart(targetPart);
       focusUidInCurrentPart(uid);
     }
 
@@ -2428,7 +2915,7 @@
       { k:"path", label:"File" },
       { k:"type", label:"Type" },
       { k:"size", label:"Size" },
-      { k:"risks", label:"Risks" },
+      { k:"details", label:"Details" },
     ];
     let forHeadBuilt = false;
 
@@ -2519,9 +3006,163 @@
       syncForSortIndicators();
     }
 
+    function humanSize(bytes) {
+      const n = Number(bytes);
+      if (!isFinite(n) || n < 0) return "";
+      if (n < 1024) return n + " B";
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+      return (n / (1024 * 1024)).toFixed(2) + " MB";
+    }
+
+    function fileSizeFromZipEntry(file) {
+      try {
+        const n = file && file._data && typeof file._data.uncompressedSize === "number" ? file._data.uncompressedSize : null;
+        return n == null ? null : n;
+      } catch { return null; }
+    }
+
+    function fileExtension(path) {
+      const m = String(path || "").match(/\.([^.\/]+)$/);
+      return m ? m[1].toLowerCase() : "";
+    }
+
+    function mimeForImagePath(path) {
+      const ext = fileExtension(path);
+      if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+      if (ext === "png") return "image/png";
+      if (ext === "gif") return "image/gif";
+      if (ext === "bmp") return "image/bmp";
+      if (ext === "webp") return "image/webp";
+      if (ext === "svg") return "image/svg+xml";
+      if (ext === "tif" || ext === "tiff") return "image/tiff";
+      return "";
+    }
+
+    function isImagePath(path) {
+      return !!mimeForImagePath(path);
+    }
+
+    function renderImagePreviews() {
+      if (!dom.imagePreviewGrid) return;
+      dom.imagePreviewGrid.textContent = "";
+      if (!imagePreviewData.length) {
+        const empty = document.createElement("div");
+        empty.className = "tiny";
+        empty.textContent = "No embedded images found.";
+        dom.imagePreviewGrid.appendChild(empty);
+        return;
+      }
+      imagePreviewData.sort((a,b)=>String(a.path).localeCompare(String(b.path)));
+      for (const img of imagePreviewData) {
+        const card = document.createElement("div");
+        card.className = "image-card";
+        const image = document.createElement("img");
+        image.alt = img.path;
+        image.src = "data:" + img.mime + ";base64," + img.b64;
+        const path = document.createElement("div");
+        path.className = "path";
+        path.textContent = img.path;
+        const size = document.createElement("div");
+        size.className = "size";
+        size.textContent = humanSize(img.size);
+        card.appendChild(image);
+        card.appendChild(path);
+        card.appendChild(size);
+        dom.imagePreviewGrid.appendChild(card);
+      }
+    }
+
+    function xmlNodeLabel(node) {
+      const name = node.nodeName || node.localName || "node";
+      const attrs = [];
+      if (node.attributes) {
+        for (const a of Array.from(node.attributes)) attrs.push(a.name + "=\"" + a.value + "\"");
+      }
+      return "<" + name + (attrs.length ? " " + attrs.join(" ") : "") + ">";
+    }
+
+    function buildXmlTreeElement(node) {
+      const li = document.createElement("li");
+      const line = document.createElement("div");
+      line.className = "xml-node";
+      line.textContent = xmlNodeLabel(node);
+      const text = Array.from(node.childNodes || [])
+        .filter(n => n.nodeType === 3)
+        .map(n => String(n.nodeValue || "").replace(/\s+/g, " ").trim())
+        .filter(Boolean)
+        .join(" ");
+      if (text) {
+        const span = document.createElement("span");
+        span.className = "xml-text";
+        span.textContent = " “" + safeSnippet(text, 90) + "”";
+        line.appendChild(span);
+      }
+      li.appendChild(line);
+      const children = Array.from(node.childNodes || []).filter(n => n.nodeType === 1);
+      if (children.length) {
+        const ul = document.createElement("ul");
+        for (const ch of children) ul.appendChild(buildXmlTreeElement(ch));
+        li.appendChild(ul);
+      }
+      return li;
+    }
+
+    async function renderXmlTreeForPath(path, host) {
+      if (!zipObj || !zipObj.file(path) || !host || host.dataset.built === "1") return;
+      host.textContent = "Building tree…";
+      try {
+        const xmlStr = await zipObj.file(path).async("string");
+        const doc = new DOMParser().parseFromString(xmlStr, "text/xml");
+        if (isParserError(doc)) {
+          host.textContent = "Could not parse XML.";
+          return;
+        }
+        const tree = document.createElement("div");
+        tree.className = "xml-tree";
+        const ul = document.createElement("ul");
+        ul.appendChild(buildXmlTreeElement(doc.documentElement));
+        tree.appendChild(ul);
+        host.textContent = "";
+        host.appendChild(tree);
+        host.dataset.built = "1";
+      } catch (e) {
+        host.textContent = "Could not build tree: " + (e.message || e);
+      }
+    }
+
+    function buildXmlTreeIndex() {
+      if (!dom.xmlTreeContainer) return;
+      dom.xmlTreeContainer.textContent = "";
+      if (!zipObj) return;
+      const paths = Object.keys(zipObj.files || {})
+        .filter(path => !zipObj.files[path].dir && (/\.xml$/i.test(path) || /\.rels$/i.test(path)))
+        .sort((a,b)=>a.localeCompare(b));
+      if (!paths.length) {
+        dom.xmlTreeContainer.textContent = "No XML parts found.";
+        return;
+      }
+      for (const path of paths) {
+        const detail = document.createElement("details");
+        const summary = document.createElement("summary");
+        summary.textContent = path;
+        const host = document.createElement("div");
+        host.className = "tiny";
+        host.textContent = "Open to render this XML tree.";
+        host.dataset.path = path;
+        detail.appendChild(summary);
+        detail.appendChild(host);
+        detail.addEventListener("toggle", () => {
+          if (detail.open) renderXmlTreeForPath(path, host);
+        });
+        dom.xmlTreeContainer.appendChild(detail);
+      }
+    }
+
     function renderForensicsBody() {
       buildForensicsHead();
       dom.forBody.textContent = "";
+      renderImagePreviews();
+      buildXmlTreeIndex();
 
       const data = getProcessedForensicsData();
       for (const row of data) {
@@ -2529,18 +3170,8 @@
 
         const tdPath = document.createElement("td"); tdPath.textContent = row.path || ""; tr.appendChild(tdPath);
         const tdType = document.createElement("td"); tdType.textContent = row.type || ""; tr.appendChild(tdType);
-        const tdSize = document.createElement("td"); tdSize.textContent = (row.size!=null) ? ((row.size/1024).toFixed(1) + " KB") : ""; tr.appendChild(tdSize);
-
-        const tdRisk = document.createElement("td");
-        if (row.risks && row.risks !== "Clean") {
-          tdRisk.style.color="crimson";
-          tdRisk.style.fontWeight="900";
-          tdRisk.textContent = "⚠ " + row.risks;
-        } else {
-          tdRisk.style.color="green";
-          tdRisk.textContent = "✓ Clean";
-        }
-        tr.appendChild(tdRisk);
+        const tdSize = document.createElement("td"); tdSize.textContent = humanSize(row.size); tr.appendChild(tdSize);
+        const tdDetails = document.createElement("td"); tdDetails.textContent = row.details || ""; tr.appendChild(tdDetails);
 
         const tdDl = document.createElement("td");
         const btn = document.createElement("button");
@@ -2560,33 +3191,33 @@
 
     async function scanForensics() {
       if (!zipObj) return;
-      setStatus("Scanning binaries…", true);
+      setStatus("Running deep scan…", true);
       forensicsData = [];
+      imagePreviewData = [];
 
-      const tasks = [];
-      zipObj.forEach((path, file) => {
-        const ext = (path.split(".").pop() || "").toLowerCase();
-        if (!["xml","rels"].includes(ext) && path !== "[Content_Types].xml") {
-          tasks.push(file.async("uint8array").then(data => {
-            let head = "";
-            try { head = new TextDecoder().decode(data.slice(0, 200)); } catch { head = ""; }
-            const risks = [];
-            if (head.includes("Exif")) risks.push("EXIF");
-            if (head.includes("Adobe")) risks.push("XMP/Adobe");
-            if (head.includes("Photoshop")) risks.push("Photoshop");
-            forensicsData.push({
-              path,
-              type: ext ? ext.toUpperCase() : "(none)",
-              size: data.length,
-              risks: risks.join(", ") || "Clean",
-            });
-          }));
+      const imageTasks = [];
+      const paths = Object.keys(zipObj.files || {}).filter(path => !zipObj.files[path].dir).sort((a,b)=>a.localeCompare(b));
+      for (const path of paths) {
+        const file = zipObj.file(path);
+        if (!file) continue;
+        const ext = fileExtension(path);
+        const size = fileSizeFromZipEntry(file);
+        const isXml = /\.xml$/i.test(path) || /\.rels$/i.test(path);
+        const isImg = isImagePath(path);
+        const details = isImg ? "Embedded image" : isXml ? "XML part" : path === "[Content_Types].xml" ? "Content types" : "Package file";
+        forensicsData.push({ path, type: ext ? ext.toUpperCase() : "FILE", size, details });
+        if (isImg) {
+          const mime = mimeForImagePath(path);
+          imageTasks.push(file.async("base64").then(b64 => {
+            imagePreviewData.push({ path, mime, size, b64 });
+          }).catch(()=>{}));
         }
-      });
-
-      await Promise.all(tasks);
+      }
+      await Promise.all(imageTasks);
+      forHeadBuilt = false;
+      if (dom.forHead) dom.forHead.textContent = "";
       renderForensicsBody();
-      setStatus("Scan complete.", true);
+      setStatus("Deep scan complete.", true);
     }
 
 
@@ -2885,8 +3516,8 @@
 
       if (currentTab === "forensics") {
         const data = getProcessedForensicsData();
-        const headers = ["File","Type","SizeBytes","Risks"];
-        const rows = data.map(r => [ r.path || "", r.type || "", r.size || 0, r.risks || "" ]);
+        const headers = ["File","Type","SizeBytes","Details"];
+        const rows = data.map(r => [ r.path || "", r.type || "", r.size || 0, r.details || "" ]);
         return { filename: `${base}_Forensics_${nowTag}.xlsx`, sheet:"Forensics", headers, rows };
       }
 
@@ -2946,57 +3577,157 @@
       dom.btnExport.disabled = !enabled;
     }
 
-    function populateMeta() {
-      if (coreXmlDoc) {
-        const creator = qAll(coreXmlDoc,"creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
-        const lastMod = qAll(coreXmlDoc,"lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
-        if (creator) dom.metaCreator.value = creator.textContent || "";
-        if (lastMod) dom.metaLastMod.value = lastMod.textContent || "";
+    const CORE_META_FIELDS = [
+      ["title", "Title"],
+      ["subject", "Subject"],
+      ["creator", "Author"],
+      ["keywords", "Keywords"],
+      ["description", "Description"],
+      ["lastModifiedBy", "Modified By"],
+      ["revision", "Revision"],
+      ["created", "Created"],
+      ["modified", "Modified"],
+      ["lastPrinted", "Last Printed"],
+      ["category", "Category"],
+      ["contentStatus", "Content Status"],
+      ["language", "Language"],
+      ["version", "Version"]
+    ];
+
+    const APP_META_FIELDS = [
+      ["Application", "Application"],
+      ["AppVersion", "App Version"],
+      ["Template", "Template"],
+      ["Company", "Company"],
+      ["Manager", "Manager"],
+      ["TotalTime", "Total Minutes"],
+      ["Pages", "Pages"],
+      ["Words", "Words"],
+      ["Characters", "Characters"],
+      ["CharactersWithSpaces", "Characters With Spaces"],
+      ["Lines", "Lines"],
+      ["Paragraphs", "Paragraphs"],
+      ["DocSecurity", "Document Security"],
+      ["ScaleCrop", "Scale Crop"],
+      ["LinksUpToDate", "Links Up To Date"],
+      ["SharedDoc", "Shared Document"],
+      ["HyperlinksChanged", "Hyperlinks Changed"]
+    ];
+
+    function firstMetaNode(doc, localName) {
+      if (!doc) return null;
+      return qAll(doc, localName)[0] || doc.getElementsByTagName(localName)[0] || null;
+    }
+
+    function renderMetaField(container, group, key, label, value, extra) {
+      const row = document.createElement("div");
+      row.className = "form-row";
+      const lab = document.createElement("label");
+      lab.textContent = label;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = value || "";
+      input.dataset.metaGroup = group;
+      input.dataset.metaKey = key;
+      if (extra) {
+        for (const k of Object.keys(extra)) input.dataset[k] = extra[k];
       }
-      if (appXmlDoc) {
-        const totalTime = qAll(appXmlDoc,"TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
-        const revision = qAll(appXmlDoc,"Revision")[0] || appXmlDoc.getElementsByTagName("Revision")[0];
-        if (totalTime) dom.metaTime.value = totalTime.textContent || "";
-        if (revision) dom.metaRevision.value = revision.textContent || "";
+      input.addEventListener("input", () => { metaDirty = true; });
+      row.appendChild(lab);
+      row.appendChild(input);
+      container.appendChild(row);
+    }
+
+    function populateMeta() {
+      if (dom.metaCoreFields) {
+        dom.metaCoreFields.textContent = "";
+        for (const [key, label] of CORE_META_FIELDS) {
+          const node = firstMetaNode(coreXmlDoc, key);
+          renderMetaField(dom.metaCoreFields, "core", key, label, node ? node.textContent || "" : "");
+        }
+      }
+      if (dom.metaAppFields) {
+        dom.metaAppFields.textContent = "";
+        for (const [key, label] of APP_META_FIELDS) {
+          const node = firstMetaNode(appXmlDoc, key);
+          renderMetaField(dom.metaAppFields, "app", key, label, node ? node.textContent || "" : "");
+        }
+      }
+      if (dom.metaCustomFields) {
+        dom.metaCustomFields.textContent = "";
+        const props = customXmlDoc ? qAll(customXmlDoc, "property") : [];
+        if (!props.length) {
+          const empty = document.createElement("div");
+          empty.className = "tiny";
+          empty.textContent = "No custom properties found.";
+          dom.metaCustomFields.appendChild(empty);
+        } else {
+          for (const prop of props) {
+            const name = prop.getAttribute("name") || prop.getAttribute("fmtid") || "Custom Property";
+            const pid = prop.getAttribute("pid") || name;
+            const valueNode = Array.from(prop.childNodes || []).find(n => n.nodeType === 1);
+            renderMetaField(dom.metaCustomFields, "custom", name, name, valueNode ? valueNode.textContent || "" : "", { metaPid: pid });
+          }
+        }
+      }
+    }
+
+    function syncMetaInputsToDocs() {
+      const inputs = document.querySelectorAll("[data-meta-group]");
+      for (const input of Array.from(inputs)) {
+        const group = input.dataset.metaGroup;
+        const key = input.dataset.metaKey;
+        if (group === "core") {
+          const node = firstMetaNode(coreXmlDoc, key);
+          if (node) node.textContent = input.value || "";
+        } else if (group === "app") {
+          const node = firstMetaNode(appXmlDoc, key);
+          if (node) node.textContent = input.value || "";
+        } else if (group === "custom" && customXmlDoc) {
+          const pid = input.dataset.metaPid;
+          const props = qAll(customXmlDoc, "property");
+          const prop = props.find(p => (p.getAttribute("pid") || p.getAttribute("name") || "") === pid);
+          if (prop) {
+            const valueNode = Array.from(prop.childNodes || []).find(n => n.nodeType === 1);
+            if (valueNode) valueNode.textContent = input.value || "";
+          }
+        }
       }
     }
 
     function writeMetaBackToZip() {
-      if (!metaDirty) return;
       if (!zipObj) return;
+      if (!metaDirty) return;
+      syncMetaInputsToDocs();
       const ser = new XMLSerializer();
 
-      if (coreXmlDoc) {
-        const creator = qAll(coreXmlDoc,"creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
-        const lastMod = qAll(coreXmlDoc,"lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
-        if (creator) creator.textContent = dom.metaCreator.value || "";
-        if (lastMod) lastMod.textContent = dom.metaLastMod.value || "";
-        zipObj.file("docProps/core.xml", ser.serializeToString(coreXmlDoc));
-      }
-      if (appXmlDoc) {
-        const totalTime = qAll(appXmlDoc,"TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
-        const revision = qAll(appXmlDoc,"Revision")[0] || appXmlDoc.getElementsByTagName("Revision")[0];
-        if (totalTime) totalTime.textContent = String(dom.metaTime.value || "0");
-        if (revision) revision.textContent = String(dom.metaRevision.value || "0");
-        zipObj.file("docProps/app.xml", ser.serializeToString(appXmlDoc));
-      }
+      if (coreXmlDoc) zipObj.file("docProps/core.xml", ser.serializeToString(coreXmlDoc));
+      if (appXmlDoc) zipObj.file("docProps/app.xml", ser.serializeToString(appXmlDoc));
+      if (customXmlDoc) zipObj.file("docProps/custom.xml", ser.serializeToString(customXmlDoc));
+      metaDirty = false;
+    }
+
+    function setMetaValue(doc, localName, value) {
+      const node = firstMetaNode(doc, localName);
+      if (node) node.textContent = value;
     }
 
     function wipeMetadata() {
-      if (!confirm("Wipe metadata (core/app + rsid across LOADED Word parts)?")) return;
+      if (!confirm("Wipe document metadata? This will be held in memory until you export the Word document.")) return;
 
-      if (coreXmlDoc) {
-        const creator = qAll(coreXmlDoc,"creator")[0] || coreXmlDoc.getElementsByTagName("dc:creator")[0];
-        const lastMod = qAll(coreXmlDoc,"lastModifiedBy")[0] || coreXmlDoc.getElementsByTagName("cp:lastModifiedBy")[0];
-        if (creator) creator.textContent = "Author";
-        if (lastMod) lastMod.textContent = "Author";
-        dom.metaCreator.value = "Author";
-        dom.metaLastMod.value = "Author";
-      }
-      if (appXmlDoc) {
-        const totalTime = qAll(appXmlDoc,"TotalTime")[0] || appXmlDoc.getElementsByTagName("TotalTime")[0];
-        if (totalTime) totalTime.textContent = "0";
-        dom.metaTime.value = "0";
+      const zeroFields = ["revision", "TotalTime", "Pages", "Words", "Characters", "CharactersWithSpaces", "Lines", "Paragraphs", "DocSecurity"];
+      for (const [key] of CORE_META_FIELDS) setMetaValue(coreXmlDoc, key, zeroFields.includes(key) ? "0" : "");
+      for (const [key] of APP_META_FIELDS) setMetaValue(appXmlDoc, key, zeroFields.includes(key) ? "0" : "");
+      setMetaValue(coreXmlDoc, "creator", "Author");
+      setMetaValue(coreXmlDoc, "lastModifiedBy", "Author");
+      setMetaValue(appXmlDoc, "Company", "");
+      setMetaValue(appXmlDoc, "Manager", "");
+
+      if (customXmlDoc) {
+        for (const prop of qAll(customXmlDoc, "property")) {
+          const valueNode = Array.from(prop.childNodes || []).find(n => n.nodeType === 1);
+          if (valueNode) valueNode.textContent = "";
+        }
       }
 
       for (const meta of partsIndex.values()) {
@@ -3011,14 +3742,24 @@
             .replace(/\s+w:rsidRPr="[^"]*"/g,"");
           const re = new DOMParser().parseFromString(cleaned,"text/xml");
           meta.xmlDoc = re;
+          meta.dirty = true;
           partsIndex.set(meta.path, meta);
           if (meta.path === "word/document.xml") mainDocXml = re;
         } catch {}
       }
 
-      alert("Metadata wiped (loaded parts).");
+      metaDirty = true;
+      populateMeta();
       if (currentTab === "parts") renderPart(activePartPath);
+      saveMemoryStatus();
     }
+
+    function saveMetadataChanges() {
+      commitPendingUiEdits();
+      metaDirty = true;
+      saveMemoryStatus();
+    }
+
 
     function prepareGhost(docXml) {
       ghostParagraphs = [];
@@ -3336,7 +4077,7 @@ async function downloadWord() {
 
       await applyPendingGlobalMetaOpsToZip(zipObj);
 
-      const blob = await zipObj.generateAsync({ type:"blob", compression:"DEFLATE", compressionOptions:{ level:6 } });
+      const blob = await zipObj.generateAsync({ type:"blob", compression:"DEFLATE", compressionOptions:{ level:9 } });
       saveAs(blob, "Edited_" + (originalFileName || "document.docx"));
       setStatus("Saved!", true);
     }
@@ -3501,7 +4242,7 @@ if (op === "setDate") {
     async function switchTab(t) {
       commitPendingUiEdits();
       currentTab = t;
-      if (t === "comments" || t === "revisions" || t === "all") activityMode = t;
+      if (t === "all") activityMode = dom.activityFilter ? dom.activityFilter.value : "all";
 
       document.querySelectorAll(".view-section").forEach(e => e.style.display="none");
       document.querySelectorAll(".tab-btn").forEach(e => e.classList.remove("active"));
@@ -3520,6 +4261,7 @@ if (op === "setDate") {
         renderForensicsBody();
       } else if (t === "quick") {
         dom.viewQuick.style.display="block";
+        populateQuickControls();
       } else if (t === "parts") {
         dom.viewParts.style.display="block";
         if (!partsIndex.has(activePartPath)) activePartPath = "word/document.xml";
@@ -3539,15 +4281,20 @@ if (op === "setDate") {
         renderRegexBody();
       } else if (t === "meta") {
         dom.viewMeta.style.display="block";
+      } else if (t === "export") {
+        dom.viewExport.style.display="block";
       } else {
         dom.viewTable.style.display="block";
+        mainHeadBuilt = false;
         renderMainTableBody();
+        if (dom.activityFilter) dom.activityFilter.value = activityMode;
+        setMainEditMode(false);
       }
 
       refreshExportButtons();
     }
 
-    async function loadFile(file) {
+        async function loadFile(file) {
       if (!file) return;
       clearErrorLog();
 
@@ -3582,7 +4329,7 @@ if (op === "setDate") {
           if (isParserError(commentsXmlDoc)) throw new Error("Failed to parse word/comments.xml");
         }
 
-        coreXmlDoc = null; appXmlDoc = null;
+        coreXmlDoc = null; appXmlDoc = null; customXmlDoc = null;
         if (zipObj.file("docProps/core.xml")) {
           const s = await zipObj.file("docProps/core.xml").async("string");
           coreXmlDoc = new DOMParser().parseFromString(s, "text/xml");
@@ -3593,9 +4340,17 @@ if (op === "setDate") {
           appXmlDoc = new DOMParser().parseFromString(s, "text/xml");
           if (isParserError(appXmlDoc)) appXmlDoc = null;
         }
+        if (zipObj.file("docProps/custom.xml")) {
+          const s = await zipObj.file("docProps/custom.xml").async("string");
+          customXmlDoc = new DOMParser().parseFromString(s, "text/xml");
+          if (isParserError(customXmlDoc)) customXmlDoc = null;
+        }
         populateMeta();
 
         buildInitialActivityFast();
+        setStatus("Reading all comments and redlines…", true);
+        await ensureAllPartsLoadedForExport();
+        populateQuickControls();
 
         relationshipsBuilt = false;
         relationshipsData = [];
@@ -3613,8 +4368,10 @@ if (op === "setDate") {
         dom.toolbar.style.display="flex";
         dom.tabs.style.display="flex";
 
-        setStatus("Loaded. (Relationships and other parts load on demand.)", true);
-        await switchTab("all");
+        setStatus("Loaded. Running deep scan…", true);
+        await scanForensics();
+        setStatus("Loaded.", true);
+        await switchTab("quick");
       } catch (e) {
         console.error(e);
         setStatus("Error loading file", false);
@@ -3643,10 +4400,18 @@ if (op === "setDate") {
       });
 
       document.getElementById("btn-save").addEventListener("click", downloadWord);
-      if (dom.btnQuickSave) dom.btnQuickSave.addEventListener("click", downloadWord);
-      if (dom.btnQuickRedline) dom.btnQuickRedline.addEventListener("click", exportRedlineHtml);
-      if (dom.btnQuickSetAuthor) dom.btnQuickSetAuthor.addEventListener("click", applyQuickAuthorAction);
-      if (dom.quickAuthor) dom.quickAuthor.addEventListener("keydown", (e) => { if (e.key === "Enter") applyQuickAuthorAction(); });
+      if (dom.btnQuickAuthorSave) dom.btnQuickAuthorSave.addEventListener("click", applyQuickAuthorReplace);
+      if (dom.quickAuthorTo) dom.quickAuthorTo.addEventListener("keydown", (e) => { if (e.key === "Enter") applyQuickAuthorReplace(); });
+      if (dom.quickDateMode) dom.quickDateMode.addEventListener("change", updateQuickDateUi);
+      if (dom.btnQuickDateSave) dom.btnQuickDateSave.addEventListener("click", applyQuickDateChange);
+      if (dom.btnQuickSummaryExport) dom.btnQuickSummaryExport.addEventListener("click", () => exportSummaryXlsx(dom.quickSummaryType?.value || "comments"));
+      if (dom.btnQuickWipeMetadata) dom.btnQuickWipeMetadata.addEventListener("click", wipeMetadata);
+      if (dom.activityFilter) dom.activityFilter.addEventListener("change", applyActivityFilterMode);
+      if (dom.btnActivityEdit) dom.btnActivityEdit.addEventListener("click", () => setMainEditMode(true));
+      if (dom.btnActivitySave) dom.btnActivitySave.addEventListener("click", saveActivityEdits);
+      if (dom.btnExportWordTab) dom.btnExportWordTab.addEventListener("click", downloadWord);
+      if (dom.btnExportSummaryTab) dom.btnExportSummaryTab.addEventListener("click", () => exportSummaryXlsx(dom.exportSummaryType?.value || "comments"));
+      if (dom.btnExportRedlineTab) dom.btnExportRedlineTab.addEventListener("click", exportRedlineHtml);
       document.getElementById("btn-reset").addEventListener("click", () => location.reload());
       document.getElementById("btn-batch-tools").addEventListener("click", openBatchTools);
 
@@ -3656,10 +4421,9 @@ if (op === "setDate") {
 
       dom.partSelect.addEventListener("change", async () => { await setActivePart(dom.partSelect.value); });
       dom.partFilter.addEventListener("input", () => { if (currentTab === "parts") renderSidebarForPart(activePartPath); });
-      const clearSelBtn = document.getElementById("btn-clear-selection"); if (clearSelBtn) clearSelBtn.addEventListener("click", () => { selectedUids.clear(); if (currentTab!=="relationships") renderMainTableBody(); alert("Selection cleared."); });
-
       document.getElementById("btn-scan").addEventListener("click", scanForensics);
 
+      if (dom.btnSaveMeta) dom.btnSaveMeta.addEventListener("click", saveMetadataChanges);
       document.getElementById("btn-wipe").addEventListener("click", wipeMetadata);
 
       dom.ghostRender.addEventListener("mouseup", handleGhostSelection);
@@ -3675,7 +4439,38 @@ if (op === "setDate") {
       refreshExportButtons();
     }
 
-    window.addEventListener("DOMContentLoaded", wireUi);
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error(src));
+        document.head.appendChild(s);
+      });
+    }
+
+    async function loadOneLibrary(globalName, localSrc, cdnSrc) {
+      if (window[globalName]) return;
+      try { await loadScript(localSrc); } catch {}
+      if (window[globalName]) return;
+      await loadScript(cdnSrc);
+    }
+
+    async function loadRequiredLibraries() {
+      await loadOneLibrary("JSZip", "./jszip.min.js", "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js");
+      await loadOneLibrary("XLSX", "./xlsx.bundle.js", "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js");
+      await loadOneLibrary("saveAs", "./FileSaver.min.js", "https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js");
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        await loadRequiredLibraries();
+        wireUi();
+      } catch (e) {
+        setStatus("Missing required libraries. Put jszip.min.js, xlsx.bundle.js, and FileSaver.min.js in this folder or allow CDN fallback.", false);
+        alert("Missing required libraries. Put jszip.min.js, xlsx.bundle.js, and FileSaver.min.js in this folder or allow CDN fallback.");
+      }
+    });
   </script>
 </body>
 </html>
