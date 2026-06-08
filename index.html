@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Comment and Redline Manager v5.6</title>
+  <title>Word Comment and Redline Manager v5.7</title>
 
 
   <style>
@@ -646,6 +646,13 @@
           </div>
         </div>
         <div class="quick-card action-card">
+          <h3>Export Smaller Word File</h3>
+          <p>Rebuilds the DOCX package using DEFLATE compression. Saved in-memory edits are included.</p>
+          <div class="quick-row align-end">
+            <button class="btn btn-primary compact-btn" id="btn-quick-deflate-export" type="button">Export Deflated DOCX</button>
+          </div>
+        </div>
+        <div class="quick-card action-card">
           <h3>Wipe Metadata</h3>
           <p>Clears document properties and loaded Word edit IDs. The wipe is held in memory until export.</p>
           <div class="quick-row align-end">
@@ -1026,6 +1033,7 @@
       btnQuickDateSave: document.getElementById("btn-quick-date-save"),
       quickSummaryType: document.getElementById("quick-summary-type"),
       btnQuickSummaryExport: document.getElementById("btn-quick-summary-export"),
+      btnQuickDeflateExport: document.getElementById("btn-quick-deflate-export"),
       btnQuickWipeMetadata: document.getElementById("btn-quick-wipe-metadata"),
 
       viewParts: document.getElementById("view-parts"),
@@ -3993,10 +4001,14 @@
       }
     }
 
-async function downloadWord() {
+async function downloadWord(options = {}) {
+      const opts = options && typeof options === "object" ? options : {};
+      const prefix = opts.prefix || "Edited_";
+      const savingText = opts.savingText || "Saving…";
+      const doneText = opts.doneText || "Saved!";
       commitPendingUiEdits();
       if (!zipObj) return;
-      setStatus("Saving…", true);
+      setStatus(savingText, true);
 
       await ensurePartLoaded("word/document.xml");
 
@@ -4078,8 +4090,12 @@ async function downloadWord() {
       await applyPendingGlobalMetaOpsToZip(zipObj);
 
       const blob = await zipObj.generateAsync({ type:"blob", compression:"DEFLATE", compressionOptions:{ level:9 } });
-      saveAs(blob, "Edited_" + (originalFileName || "document.docx"));
-      setStatus("Saved!", true);
+      saveAs(blob, prefix + (originalFileName || "document.docx"));
+      setStatus(doneText, true);
+    }
+
+    async function downloadDeflatedWord() {
+      return downloadWord({ prefix:"Deflated_", savingText:"Exporting deflated DOCX…", doneText:"Deflated DOCX exported." });
     }
 
 
@@ -4405,6 +4421,7 @@ if (op === "setDate") {
       if (dom.quickDateMode) dom.quickDateMode.addEventListener("change", updateQuickDateUi);
       if (dom.btnQuickDateSave) dom.btnQuickDateSave.addEventListener("click", applyQuickDateChange);
       if (dom.btnQuickSummaryExport) dom.btnQuickSummaryExport.addEventListener("click", () => exportSummaryXlsx(dom.quickSummaryType?.value || "comments"));
+      if (dom.btnQuickDeflateExport) dom.btnQuickDeflateExport.addEventListener("click", downloadDeflatedWord);
       if (dom.btnQuickWipeMetadata) dom.btnQuickWipeMetadata.addEventListener("click", wipeMetadata);
       if (dom.activityFilter) dom.activityFilter.addEventListener("change", applyActivityFilterMode);
       if (dom.btnActivityEdit) dom.btnActivityEdit.addEventListener("click", () => setMainEditMode(true));
