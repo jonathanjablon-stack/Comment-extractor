@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Comment and Redline Manager v5.7</title>
+  <title>Word Comment and Redline Manager v5.7 Overview</title>
 
 
   <style>
@@ -414,6 +414,19 @@
     .link-warn{color:#b45309;font-weight:900;}
     .link-checking{color:#6c757d;font-weight:900;}
 
+    .links-panel .section-head{margin-bottom:8px;}
+    .links-subhead{font-size:13px;font-weight:900;color:#111827;margin:8px 0 8px 0;text-transform:uppercase;letter-spacing:.04em;}
+    .link-table-wrap{max-height:54vh;border-radius:10px;}
+    .internal-links-details{margin-top:12px;border:1px solid #dbe3ee;border-radius:12px;background:#f8fafc;padding:0;}
+    .internal-links-details summary{cursor:pointer;padding:12px 14px;font-weight:900;color:#334155;user-select:none;}
+    .internal-table-wrap{border:none;border-top:1px solid #dbe3ee;border-radius:0 0 12px 12px;max-height:34vh;}
+    .link-cell{word-break:break-word;white-space:normal;}
+    .doc-link{background:#dbeafe;border-bottom:2px solid #2563eb;cursor:pointer;border-radius:2px;}
+    .doc-link-marker{display:inline-block;margin:0 3px;padding:2px 6px;border:1px solid #93c5fd;border-radius:999px;background:#eff6ff;color:#1d4ed8;font:11px/1.4 Arial,sans-serif;vertical-align:middle;}
+    .mini-link-button{border:none;border-radius:8px;padding:7px 10px;font-weight:900;cursor:pointer;background:#6c757d;color:#fff;white-space:nowrap;}
+    .mini-link-button.primary{background:#0d6efd;}
+    .mini-link-button:disabled{opacity:.45;cursor:not-allowed;}
+
 
     .toolbar{display:none!important;}
     .tabs{gap:4px;border-bottom:1px solid #d8dee7;margin:12px 0 14px 0;}
@@ -481,8 +494,19 @@
     .xml-node{color:#0f172a;word-break:break-all;}
     .xml-text{color:#64748b;margin-left:6px;}
     .go-btn{padding:6px 9px!important;min-width:54px!important;width:auto!important;}
+
+    .overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:12px;}
+    .overview-card{border:1px solid #dbe3ee;border-radius:14px;background:#fff;padding:14px;box-shadow:0 2px 8px rgba(15,23,42,.04);}
+    .overview-card .label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#64748b;font-weight:900;margin-bottom:6px;}
+    .overview-card .value{font-size:24px;font-weight:950;color:#0f172a;line-height:1.15;word-break:break-word;}
+    .overview-card .sub{font-size:11px;color:#64748b;margin-top:6px;line-height:1.35;}
+    .overview-card.good .value{color:#15803d;}
+    .overview-card.bad .value{color:#b91c1c;}
+    .overview-wide{grid-column:1/-1;}
+    .overview-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+    .overview-pill{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;background:#eef2ff;color:#1e3a8a;font-size:12px;font-weight:800;}
     @media(max-width:1200px){.clean-grid,.export-grid{grid-template-columns:repeat(2,minmax(260px,1fr));}}
-    @media(max-width:700px){body{padding:6px}.container{padding:8px}.clean-grid,.export-grid,.metadata-grid,.forensics-grid{grid-template-columns:1fr}.tabs{gap:2px}.tab-btn{padding:8px 9px}.quick-row label{min-width:100%}.quick-row .compact-btn{width:100%;}.section-head{align-items:stretch}.section-actions{width:100%}.section-actions select,.section-actions button{flex:1 1 140px;}}
+    @media(max-width:700px){body{padding:6px}.container{padding:8px}.clean-grid,.export-grid,.metadata-grid,.forensics-grid,.overview-grid{grid-template-columns:1fr}.tabs{gap:2px}.tab-btn{padding:8px 9px}.quick-row label{min-width:100%}.quick-row .compact-btn{width:100%;}.section-head{align-items:stretch}.section-actions{width:100%}.section-actions select,.section-actions button{flex:1 1 140px;}}
 
   </style>
 </head>
@@ -500,7 +524,8 @@
     <div id="error-log"></div>
 
     <div class="tabs" id="tabs">
-      <button class="tab-btn active" data-tab="quick">Quick Actions</button>
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="quick">Quick Actions</button>
       <button class="tab-btn" data-tab="all">Activity</button>
       <button class="tab-btn" data-tab="parts">Document View</button>
       <button class="tab-btn" data-tab="relationships">Links</button>
@@ -519,6 +544,21 @@
     </div>
 
     
+    <div id="view-overview" class="view-section">
+      <div class="section-panel">
+        <div class="section-head">
+          <div>
+            <h2>Overview</h2>
+            <p>Basic document facts, review activity, links, authors, and package details.</p>
+          </div>
+          <div class="section-actions">
+            <button class="btn btn-primary compact-btn" id="btn-overview-refresh" type="button">Refresh</button>
+          </div>
+        </div>
+        <div id="overview-grid" class="overview-grid"></div>
+      </div>
+    </div>
+
     <div id="view-table" class="view-section">
       <div class="section-panel">
         <div class="section-head">
@@ -594,6 +634,10 @@
                 <option value="comments">Comments only</option>
                 <option value="revisions">Redlines only</option>
               </select>
+            </label>
+            <label>
+              <span>Author</span>
+              <select id="quick-date-author" aria-label="Date author filter"></select>
             </label>
           </div>
           <div id="quick-date-offset" class="quick-row date-mode-row">
@@ -678,11 +722,31 @@
     </div>
 
     
-    <div id="view-rel" class="view-section table-wrap">
-      <table id="rel-table">
-        <thead id="rel-head"></thead>
-        <tbody id="rel-body"></tbody>
-      </table>
+    <div id="view-rel" class="view-section">
+      <div class="section-panel links-panel">
+        <div class="section-head">
+          <div>
+            <h2>Links</h2>
+            <p>External links are checked after the relationship index is built. Internal package links are collapsed by default.</p>
+          </div>
+        </div>
+        <div class="links-subhead">External links</div>
+        <div class="table-wrap link-table-wrap">
+          <table id="rel-table">
+            <thead id="rel-head"></thead>
+            <tbody id="rel-body"></tbody>
+          </table>
+        </div>
+        <details id="internal-links-details" class="internal-links-details">
+          <summary>Internal package links (<span id="internal-links-count">0</span>)</summary>
+          <div class="table-wrap link-table-wrap internal-table-wrap">
+            <table id="rel-internal-table">
+              <thead id="rel-internal-head"></thead>
+              <tbody id="rel-internal-body"></tbody>
+            </table>
+          </div>
+        </details>
+      </div>
     </div>
 
     
@@ -945,9 +1009,11 @@
 
     const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     const XML_NS = "http://www.w3.org/XML/1998/namespace";
+    const R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
     let zipObj = null;
     let originalFileName = "";
+    let loadedFileSize = 0;
 
     let mainDocXml = null;
     let coreXmlDoc = null;
@@ -984,7 +1050,7 @@
     let ghostSelIdx = -1;
     let nextChangeId = 1;
 
-    let currentTab = "quick";
+    let currentTab = "overview";
     let activityMode = "all";
 
     const tableState = {
@@ -1007,6 +1073,10 @@
       btnExport: document.getElementById("btn-export"),
       btnExportRedline: document.getElementById("btn-export-redline"),
 
+      viewOverview: document.getElementById("view-overview"),
+      overviewGrid: document.getElementById("overview-grid"),
+      btnOverviewRefresh: document.getElementById("btn-overview-refresh"),
+
       viewTable: document.getElementById("view-table"),
       tableHead: document.getElementById("data-head"),
       tableBody: document.getElementById("data-body"),
@@ -1021,6 +1091,7 @@
       btnQuickAuthorSave: document.getElementById("btn-quick-author-save"),
       quickDateMode: document.getElementById("quick-date-mode"),
       quickDateKind: document.getElementById("quick-date-kind"),
+      quickDateAuthor: document.getElementById("quick-date-author"),
       quickDateOffset: document.getElementById("quick-date-offset"),
       quickDateSpecific: document.getElementById("quick-date-specific"),
       quickDateRandom: document.getElementById("quick-date-random"),
@@ -1045,6 +1116,9 @@
       viewRel: document.getElementById("view-rel"),
       relHead: document.getElementById("rel-head"),
       relBody: document.getElementById("rel-body"),
+      relInternalHead: document.getElementById("rel-internal-head"),
+      relInternalBody: document.getElementById("rel-internal-body"),
+      relInternalCount: document.getElementById("internal-links-count"),
 
       viewForensics: document.getElementById("view-forensics"),
       forHead: document.getElementById("forensics-head"),
@@ -1203,6 +1277,47 @@
       } catch {}
     }
 
+    function getAuthorOptionsForKind(kind) {
+      const authors = [];
+      const seen = new Set();
+      for (const it of Array.from(items.values())) {
+        if (!itemMatchesQuickKind(it, kind || "both")) continue;
+        const raw = String(it.auth || "").trim();
+        const key = raw || "__blank__";
+        if (seen.has(key)) continue;
+        seen.add(key);
+        authors.push({ value:key, label:raw || "(blank author)" });
+      }
+      authors.sort((a,b) => a.label.localeCompare(b.label));
+      return authors;
+    }
+
+    function populateAuthorSelect(select, authors, includeAll) {
+      if (!select) return;
+      const oldVal = select.value;
+      select.textContent = "";
+      if (includeAll) {
+        const allOpt = document.createElement("option");
+        allOpt.value = "__all__";
+        allOpt.textContent = "All authors";
+        select.appendChild(allOpt);
+      }
+      if (!authors.length && !includeAll) {
+        const opt = document.createElement("option");
+        opt.value = "__none__";
+        opt.textContent = "No authors found";
+        select.appendChild(opt);
+        return;
+      }
+      for (const a of authors) {
+        const opt = document.createElement("option");
+        opt.value = a.value;
+        opt.textContent = a.label;
+        select.appendChild(opt);
+      }
+      if (Array.from(select.options).some(o => o.value === oldVal)) select.value = oldVal;
+    }
+
     function populateQuickControls() {
       if (dom.quickDateNumber && dom.quickDateNumber.children.length === 0) {
         for (let i = 1; i <= 10; i++) {
@@ -1213,34 +1328,13 @@
         }
       }
 
-      if (!dom.quickAuthorFrom) return;
-      const oldVal = dom.quickAuthorFrom.value;
-      const authors = [];
-      const seen = new Set();
-      for (const it of Array.from(items.values())) {
-        if (!itemMatchesQuickKind(it, "both")) continue;
-        const raw = String(it.auth || "").trim();
-        const key = raw || "__blank__";
-        if (seen.has(key)) continue;
-        seen.add(key);
-        authors.push({ value:key, label:raw || "(blank)" });
-      }
-      authors.sort((a,b) => a.label.localeCompare(b.label));
-      dom.quickAuthorFrom.textContent = "";
-      if (!authors.length) {
-        const opt = document.createElement("option");
-        opt.value = "__none__";
-        opt.textContent = "No authors found";
-        dom.quickAuthorFrom.appendChild(opt);
-      } else {
-        for (const a of authors) {
-          const opt = document.createElement("option");
-          opt.value = a.value;
-          opt.textContent = a.label;
-          dom.quickAuthorFrom.appendChild(opt);
-        }
-        if (authors.some(a => a.value === oldVal)) dom.quickAuthorFrom.value = oldVal;
-      }
+      const allAuthors = getAuthorOptionsForKind("both");
+      populateAuthorSelect(dom.quickAuthorFrom, allAuthors, false);
+
+      const dateKind = dom.quickDateKind ? dom.quickDateKind.value : "both";
+      const dateAuthors = getAuthorOptionsForKind(dateKind);
+      populateAuthorSelect(dom.quickDateAuthor, dateAuthors, true);
+
       updateQuickDateUi();
     }
 
@@ -1311,8 +1405,9 @@
       commitPendingUiEdits();
       const mode = dom.quickDateMode ? dom.quickDateMode.value : "offset";
       const kind = dom.quickDateKind ? dom.quickDateKind.value : "both";
-      const rows = getQuickRows(kind).filter(x => x.date);
-      if (!rows.length) { alert("No dated items match that selection."); return; }
+      const author = dom.quickDateAuthor ? dom.quickDateAuthor.value : "__all__";
+      const rows = getQuickRows(kind).filter(x => x.date && (author === "__all__" || authorValueMatches(x.auth, author)));
+      if (!rows.length) { alert("No dated items match that type and author selection."); return; }
 
       if (mode === "offset") {
         const sign = Number(dom.quickDateSign?.value || 1);
@@ -1487,6 +1582,20 @@
 
     function makeRevisionUid(partPath, type, id) {
       return "r_" + encodeURIComponent(String(partPath || "")) + "_" + String(type || "") + "_" + String(id);
+    }
+
+    function makeRelationshipUid(sourcePart, rId) {
+      return "rel_" + encodeURIComponent(String(sourcePart || "")) + "_" + encodeURIComponent(String(rId || ""));
+    }
+
+    function attrRel(node, name) {
+      if (!node) return "";
+      return node.getAttribute("r:" + name) || node.getAttributeNS?.(R_NS, name) || "";
+    }
+
+    function firstRelationshipRef(node) {
+      if (!node || node.nodeType !== 1) return "";
+      return attrRel(node, "id") || attrRel(node, "embed") || attrRel(node, "link");
     }
 
     function partLabel(path) {
@@ -2290,6 +2399,22 @@
 
       const activeComments = [];
       const firstRendered = new Set();
+      const renderedLinks = new Set();
+
+      function appendRelationshipMarker(parent, rId, label) {
+        if (!rId) return;
+        const uid = makeRelationshipUid(partPath, rId);
+        if (renderedLinks.has(uid)) return;
+        renderedLinks.add(uid);
+        const marker = document.createElement("span");
+        marker.className = "doc-link-marker";
+        marker.id = "link-" + uid;
+        marker.dataset.relUid = uid;
+        marker.textContent = label || "link";
+        marker.title = "Link target";
+        marker.addEventListener("click", (ev) => { ev.stopPropagation(); focusRelationshipRow(uid); });
+        wrapAndAppend(parent, marker);
+      }
 
       function removeActiveComment(id){
         for (let i=activeComments.length-1;i>=0;i--){
@@ -2349,6 +2474,24 @@
         }
         if (ln === "commentRangeEnd") { const id = attrW(node,"id"); if (id !== "") removeActiveComment(id); return; }
         if (ln === "commentReference") return;
+
+        if (ln === "hyperlink") {
+          const rId = attrRel(node, "id");
+          const span = document.createElement("span");
+          span.className = rId ? "doc-link" : "";
+          if (rId) {
+            const uid = makeRelationshipUid(partPath, rId);
+            if (!renderedLinks.has(uid)) { span.id = "link-" + uid; renderedLinks.add(uid); }
+            span.dataset.relUid = uid;
+            span.addEventListener("click", (ev) => { ev.stopPropagation(); focusRelationshipRow(uid); });
+          }
+          wrapAndAppend(parent, span);
+          node.childNodes.forEach(ch => walk(span,ch));
+          return;
+        }
+
+        const relRef = firstRelationshipRef(node);
+        if (relRef && ln !== "hyperlink") appendRelationshipMarker(parent, relRef, relTypeLabel((relationshipsData.find(x => x.uid === makeRelationshipUid(partPath, relRef)) || {}).typeUri || "Link"));
 
         
         if (ln === "tbl") {
@@ -2671,13 +2814,13 @@
 
     const REL_COLS = [
       { k:"source", label:"Source", width:"95px" },
-      { k:"sourceLabel", label:"From", width:"170px" },
-      { k:"typeLabel", label:"Type", width:"190px" },
-      { k:"targetShown", label:"Target", width:"" },
+      { k:"sourceLabel", label:"Location", width:"160px" },
+      { k:"typeLabel", label:"Type", width:"155px" },
+      { k:"targetShown", label:"Link", width:"" },
       { k:"statusLabel", label:"Status", width:"130px" },
-      { k:"refs", label:"Refs", width:"60px" },
     ];
     let relHeadBuilt = false;
+    let relInternalHeadBuilt = false;
 
     function relTypeLabel(typeUri) {
       const m = {
@@ -2698,7 +2841,7 @@
         "http://schemas.microsoft.com/office/2011/relationships/webextension":"Web Extension",
         "http://schemas.microsoft.com/office/2006/relationships/ui/extensibility":"Office Add-in/Extensibility",
       };
-      return m[typeUri] || (typeUri ? typeUri.split("/").pop() : "(unknown)");
+      return m[typeUri] || (typeUri ? typeUri.split("/").pop() : "Link");
     }
 
     function relSource(targetMode, target) {
@@ -2724,34 +2867,92 @@
       return count;
     }
 
+    function findRelationshipRow(uid) {
+      return relationshipsData.find(r => r && r.uid === uid) || null;
+    }
+
+    function focusRelationshipRow(uid) {
+      setTimeout(() => {
+        const row = document.getElementById("row-" + uid);
+        if (!row) return;
+        row.scrollIntoView({ behavior:"smooth", block:"center" });
+        row.classList.add("flash-target");
+        setTimeout(() => row.classList.remove("flash-target"), 2000);
+      }, 80);
+    }
+
+    async function goToRelationship(uid) {
+      const r = findRelationshipRow(uid);
+      if (!r) return;
+      if (!partsIndex.has(r.sourcePart)) { setStatus("That link is in a package part that is not rendered in Document View.", false); return; }
+      await switchTab("parts");
+      await setActivePart(r.sourcePart);
+      setTimeout(() => {
+        const el = document.getElementById("link-" + uid);
+        if (el) {
+          el.scrollIntoView({ behavior:"smooth", block:"center" });
+          el.classList.add("flash-target");
+          setTimeout(()=>el.classList.remove("flash-target"), 2000);
+          setStatus("Jumped to link in document view.", true);
+        } else {
+          setStatus("Could not render an exact marker for that link in Document View.", false);
+        }
+      }, 120);
+    }
+
+    function visitRelationship(uid) {
+      const r = findRelationshipRow(uid);
+      if (!r || r.source !== "External") return;
+      const url = r.targetShown || r.target || "";
+      if (!url) return;
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+
+    async function checkOneExternalLink(r) {
+      const url = String(r && r.targetShown ? r.targetShown : "");
+      if (!r) return;
+      if (/^mailto:[^@\s]+@[^@\s]+\.[^@\s]+/i.test(url)) { r.statusLabel = "Live"; r.statusClass = "link-ok"; return; }
+      if (!isCheckableWebLink(url)) { r.statusLabel = url ? "Live" : "Dead"; r.statusClass = url ? "link-ok" : "link-bad"; return; }
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 7000);
+        let resp = null;
+        try { resp = await fetch(url, { method:"HEAD", cache:"no-store", signal:controller.signal }); }
+        catch (e1) { resp = await fetch(url, { method:"GET", cache:"no-store", signal:controller.signal }); }
+        clearTimeout(timer);
+        if (resp && resp.ok) { r.statusLabel = "Live"; r.statusClass = "link-ok"; return; }
+        if (resp && (resp.status >= 400 || resp.status === 0)) { r.statusLabel = "Dead"; r.statusClass = "link-bad"; return; }
+      } catch (e) {}
+      try {
+        const controller2 = new AbortController();
+        const timer2 = setTimeout(() => controller2.abort(), 7000);
+        await fetch(url, { method:"GET", mode:"no-cors", cache:"no-store", signal:controller2.signal });
+        clearTimeout(timer2);
+        r.statusLabel = "Live";
+        r.statusClass = "link-ok";
+      } catch (e2) {
+        r.statusLabel = "Dead";
+        r.statusClass = "link-bad";
+      }
+    }
+
     async function checkExternalLinks() {
-      const targets = relationshipsData.filter(r => r && r.source === "External" && isCheckableWebLink(r.targetShown));
-      if (!targets.length) { renderRelBody(); return; }
-      setStatus("Checking external web links…", true);
+      const targets = relationshipsData.filter(r => r && r.source === "External");
+      if (!targets.length) { renderRelTable(); return; }
+      setStatus("Checking external links…", true);
       let i = 0;
       for (const r of targets) {
-        r.statusLabel = "Checking…";
+        r.statusLabel = "Checking";
         r.statusClass = "link-checking";
-        renderRelBody();
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 6500);
-          let resp;
-          try { resp = await fetch(r.targetShown, { method:"HEAD", mode:"cors", cache:"no-store", signal:controller.signal }); }
-          catch (e1) { resp = await fetch(r.targetShown, { method:"GET", mode:"cors", cache:"no-store", signal:controller.signal }); }
-          clearTimeout(timer);
-          if (resp && resp.ok) { r.statusLabel = "Live (" + resp.status + ")"; r.statusClass = "link-ok"; }
-          else if (resp) { r.statusLabel = "Problem (" + resp.status + ")"; r.statusClass = "link-bad"; }
-          else { r.statusLabel = "Could not verify"; r.statusClass = "link-warn"; }
-        } catch (e) {
-          r.statusLabel = "Could not verify";
-          r.statusClass = "link-warn";
-        }
+        renderRelTable();
+        await checkOneExternalLink(r);
+        renderOverview();
         i++;
         if (i % 3 === 0) await yieldToUI();
       }
-      renderRelBody();
-      setStatus("Relationships ready. Checked " + targets.length + " external web link(s).", true);
+      renderRelTable();
+      renderOverview();
+      setStatus("Relationships ready. Checked " + targets.length + " external link(s).", true);
     }
 
     async function buildRelationshipsOnDemand() {
@@ -2784,14 +2985,15 @@
           const resolved = (source.label === "External") ? target : normalizePath(baseDir, target);
           const exists = (source.label === "External") ? false : !!zipObj.file(resolved);
           const refs = srcXml ? countOccurrences(srcXml, rId) : 0;
+          const uid = makeRelationshipUid(sourcePart, rId);
           relationshipsData.push({
-            relsPath, sourcePart, sourceLabel: partLabel(sourcePart), rId, typeUri,
+            uid, relsPath, sourcePart, sourceLabel: partLabel(sourcePart), rId, typeUri,
             typeLabel: relTypeLabel(typeUri), target, mode: targetMode || (source.label === "External" ? "External" : "Internal"),
             resolvedTarget: resolved, targetShown: resolved, exists,
-            existsLabel: (source.label === "External") ? "—" : (exists ? "Yes" : "Missing"),
+            existsLabel: (source.label === "External") ? "" : (exists ? "Live" : "Dead"),
             source: source.label, sourceRank: source.rank, sourceCls: source.cls,
-            statusLabel: (source.label === "External" && isCheckableWebLink(resolved)) ? "Not checked" : ((source.label === "External" || exists) ? "—" : "Missing"),
-            statusClass: (source.label !== "External" && !exists) ? "link-bad" : "",
+            statusLabel: (source.label === "External") ? "Checking" : (exists ? "Live" : "Dead"),
+            statusClass: (source.label !== "External" && !exists) ? "link-bad" : (source.label !== "External" ? "link-ok" : "link-checking"),
             refs,
           });
           processed++;
@@ -2803,9 +3005,10 @@
       await checkExternalLinks();
     }
 
-    function getProcessedRelData() {
+    function getProcessedRelData(sourceFilter) {
       const state = tableState.rel;
       let src = relationshipsData.slice();
+      if (sourceFilter) src = src.filter(r => r.source === sourceFilter);
       const filters = state.filters;
       src = src.filter(row => {
         for (const k of Object.keys(filters)) {
@@ -2829,8 +3032,8 @@
       return src;
     }
 
-    function syncRelSortIndicators() {
-      const trH = dom.relHead.querySelector("tr");
+    function syncRelSortIndicators(headEl) {
+      const trH = headEl?.querySelector("tr");
       if (!trH) return;
       const ths = Array.from(trH.children);
       for (const th of ths) th.classList.remove("sort-asc","sort-desc");
@@ -2840,10 +3043,12 @@
       if (idx >= 0 && ths[idx]) ths[idx].classList.add(state.dir===1 ? "sort-asc" : "sort-desc");
     }
 
-    function buildRelHead() {
-      if (relHeadBuilt) return;
-      relHeadBuilt = true;
-      dom.relHead.textContent = "";
+    function buildRelHead(headEl, internal) {
+      if (!headEl) return;
+      if (!internal && relHeadBuilt) return;
+      if (internal && relInternalHeadBuilt) return;
+      if (internal) relInternalHeadBuilt = true; else relHeadBuilt = true;
+      headEl.textContent = "";
       const trH = document.createElement("tr");
       const trF = document.createElement("tr");
       trF.className = "filter-row";
@@ -2856,8 +3061,10 @@
           const state = tableState.rel;
           if (state.sortCol === key) state.dir *= -1;
           else { state.sortCol = key; state.dir = 1; }
-          syncRelSortIndicators();
+          syncRelSortIndicators(dom.relHead);
+          syncRelSortIndicators(dom.relInternalHead);
           renderRelBody();
+          renderInternalRelBody();
         });
         trH.appendChild(th);
         const thF = document.createElement("th");
@@ -2865,18 +3072,18 @@
         inp.type = "text";
         inp.className = "filter-input";
         inp.value = tableState.rel.filters[col.k] || "";
-        inp.addEventListener("input", () => { if (inp.value && inp.value.trim()) tableState.rel.filters[col.k] = inp.value; else delete tableState.rel.filters[col.k]; renderRelBody(); });
+        inp.addEventListener("input", () => { if (inp.value && inp.value.trim()) tableState.rel.filters[col.k] = inp.value; else delete tableState.rel.filters[col.k]; renderRelBody(); renderInternalRelBody(); });
         thF.appendChild(inp);
         trF.appendChild(thF);
       }
       const thAct = document.createElement("th");
-      thAct.textContent = "Act";
-      thAct.style.width = "130px";
+      thAct.textContent = "Actions";
+      thAct.style.width = internal ? "140px" : "150px";
       trH.appendChild(thAct);
       trF.appendChild(document.createElement("th"));
-      dom.relHead.appendChild(trH);
-      dom.relHead.appendChild(trF);
-      syncRelSortIndicators();
+      headEl.appendChild(trH);
+      headEl.appendChild(trF);
+      syncRelSortIndicators(headEl);
     }
 
     async function dlFile(path) {
@@ -2885,39 +3092,65 @@
       saveAs(blob, path.split("/").pop() || "file.bin");
     }
 
-    function renderRelBody() {
-      buildRelHead();
-      dom.relBody.textContent = "";
-      const data = getProcessedRelData();
-      for (const r of data) {
-        const tr = document.createElement("tr");
-        const tdSource = document.createElement("td");
-        const badge = document.createElement("span");
-        badge.className = "badge " + r.sourceCls;
-        badge.textContent = r.source;
-        tdSource.appendChild(badge);
-        tr.appendChild(tdSource);
-        const tdFrom = document.createElement("td"); tdFrom.textContent = r.sourceLabel || r.sourcePart; tr.appendChild(tdFrom);
-        const tdType = document.createElement("td"); tdType.textContent = r.typeLabel || ""; tr.appendChild(tdType);
-        const tdTarget = document.createElement("td"); tdTarget.textContent = r.targetShown || r.target || ""; tr.appendChild(tdTarget);
-        const tdStatus = document.createElement("td"); tdStatus.textContent = r.statusLabel || r.existsLabel || ""; if (r.statusClass) tdStatus.className = r.statusClass; tr.appendChild(tdStatus);
-        const tdRefs = document.createElement("td"); tdRefs.textContent = String(r.refs || 0); tr.appendChild(tdRefs);
-        const tdAct = document.createElement("td"); tdAct.style.display="flex"; tdAct.style.gap="6px";
-        const btnOpen = document.createElement("button");
-        btnOpen.className="btn btn-secondary"; btnOpen.type="button"; btnOpen.style.padding="6px 8px"; btnOpen.style.minWidth="0"; btnOpen.style.flex="0 0 auto"; btnOpen.textContent="Open";
-        btnOpen.addEventListener("click", async () => { if (partsIndex.has(r.sourcePart)) { switchTab("parts"); await setActivePart(r.sourcePart); } else { alert("Source part not in Word parts list."); } });
-        tdAct.appendChild(btnOpen);
+    function appendRelCells(tr, r, internal) {
+      const tdSource = document.createElement("td");
+      const badge = document.createElement("span");
+      badge.className = "badge " + r.sourceCls;
+      badge.textContent = r.source;
+      tdSource.appendChild(badge);
+      tr.appendChild(tdSource);
+      const tdFrom = document.createElement("td"); tdFrom.textContent = r.sourceLabel || r.sourcePart; tr.appendChild(tdFrom);
+      const tdType = document.createElement("td"); tdType.textContent = r.typeLabel || ""; tr.appendChild(tdType);
+      const tdTarget = document.createElement("td"); tdTarget.className = "link-cell"; tdTarget.textContent = r.targetShown || r.target || ""; tr.appendChild(tdTarget);
+      const tdStatus = document.createElement("td"); tdStatus.textContent = r.statusLabel || r.existsLabel || ""; if (r.statusClass) tdStatus.className = r.statusClass; tr.appendChild(tdStatus);
+      const tdAct = document.createElement("td"); tdAct.style.display="flex"; tdAct.style.gap="6px"; tdAct.style.flexWrap="wrap";
+      if (!internal) {
+        const btnVisit = document.createElement("button");
+        btnVisit.className="mini-link-button primary"; btnVisit.type="button"; btnVisit.textContent="Visit";
+        btnVisit.disabled = !r.targetShown;
+        btnVisit.addEventListener("click", () => visitRelationship(r.uid));
+        tdAct.appendChild(btnVisit);
+      } else {
         const btnDl = document.createElement("button");
-        btnDl.className="btn btn-secondary"; btnDl.type="button"; btnDl.style.padding="6px 8px"; btnDl.style.minWidth="0"; btnDl.style.flex="0 0 auto"; btnDl.textContent="DL";
-        btnDl.disabled = (String(r.source).toLowerCase()==="external") || !r.exists;
+        btnDl.className="mini-link-button"; btnDl.type="button"; btnDl.textContent="DL";
+        btnDl.disabled = !r.exists;
         btnDl.addEventListener("click", () => dlFile(r.resolvedTarget));
         tdAct.appendChild(btnDl);
-        tr.appendChild(tdAct);
+      }
+      const btnGo = document.createElement("button");
+      btnGo.className="mini-link-button"; btnGo.type="button"; btnGo.textContent="Go To";
+      btnGo.addEventListener("click", () => goToRelationship(r.uid));
+      tdAct.appendChild(btnGo);
+      tr.appendChild(tdAct);
+    }
+
+    function renderRelBody() {
+      buildRelHead(dom.relHead, false);
+      dom.relBody.textContent = "";
+      const data = getProcessedRelData("External");
+      for (const r of data) {
+        const tr = document.createElement("tr");
+        tr.id = "row-" + r.uid;
+        appendRelCells(tr, r, false);
         dom.relBody.appendChild(tr);
       }
     }
 
-    function renderRelTable() { renderRelBody(); }
+    function renderInternalRelBody() {
+      if (!dom.relInternalHead || !dom.relInternalBody) return;
+      buildRelHead(dom.relInternalHead, true);
+      dom.relInternalBody.textContent = "";
+      const data = getProcessedRelData("Internal");
+      if (dom.relInternalCount) dom.relInternalCount.textContent = String(data.length);
+      for (const r of data) {
+        const tr = document.createElement("tr");
+        tr.id = "row-" + r.uid;
+        appendRelCells(tr, r, true);
+        dom.relInternalBody.appendChild(tr);
+      }
+    }
+
+    function renderRelTable() { renderRelBody(); renderInternalRelBody(); }
 
     const FORENSICS_COLS = [
       { k:"path", label:"File" },
@@ -3229,6 +3462,151 @@
     }
 
 
+    function numberWithCommas(n) {
+      const x = Number(n);
+      if (!isFinite(x)) return String(n || "");
+      return x.toLocaleString();
+    }
+
+    function metaText(doc, key) {
+      const node = firstMetaNode(doc, key);
+      return node ? String(node.textContent || "").trim() : "";
+    }
+
+    function countMainDocumentWords() {
+      if (!mainDocXml) return 0;
+      const root = getRenderRoot(mainDocXml, "word/document.xml") || mainDocXml.documentElement;
+      const text = qAll(root, "t").map(n => n.textContent || "").join(" ");
+      const words = text.match(/[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*/g);
+      return words ? words.length : 0;
+    }
+
+    function estimatePageCount() {
+      const metaPages = metaText(appXmlDoc, "Pages");
+      if (metaPages && /^\d+$/.test(metaPages)) return metaPages;
+      if (!mainDocXml) return "";
+      let pages = 1;
+      const all = mainDocXml.getElementsByTagName("*");
+      for (const el of all) {
+        if (el.localName === "lastRenderedPageBreak" || (el.localName === "br" && attrW(el, "type") === "page")) pages++;
+      }
+      return String(pages);
+    }
+
+    function formatIsoForDisplay(iso) {
+      const s = String(iso || "").trim();
+      if (!s) return "";
+      const d = new Date(s);
+      if (isNaN(d.getTime())) return s;
+      return d.toLocaleString();
+    }
+
+    function overviewCard(label, value, sub, cls) {
+      const card = document.createElement("div");
+      card.className = "overview-card" + (cls ? " " + cls : "");
+      const lab = document.createElement("div");
+      lab.className = "label";
+      lab.textContent = label;
+      const val = document.createElement("div");
+      val.className = "value";
+      val.textContent = value == null || value === "" ? "—" : String(value);
+      card.appendChild(lab);
+      card.appendChild(val);
+      if (sub) {
+        const detail = document.createElement("div");
+        detail.className = "sub";
+        detail.textContent = sub;
+        card.appendChild(detail);
+      }
+      return card;
+    }
+
+    function overviewAuthorsCard(authors) {
+      const card = document.createElement("div");
+      card.className = "overview-card overview-wide";
+      const lab = document.createElement("div");
+      lab.className = "label";
+      lab.textContent = "Comment/redline authors";
+      const val = document.createElement("div");
+      val.className = "value";
+      val.textContent = authors.length ? authors.length + " author" + (authors.length === 1 ? "" : "s") : "None found";
+      const list = document.createElement("div");
+      list.className = "overview-list";
+      if (authors.length) {
+        for (const a of authors) {
+          const pill = document.createElement("span");
+          pill.className = "overview-pill";
+          pill.textContent = a;
+          list.appendChild(pill);
+        }
+      } else {
+        const sub = document.createElement("div");
+        sub.className = "sub";
+        sub.textContent = "No comment or redline authors were detected.";
+        list.appendChild(sub);
+      }
+      card.appendChild(lab);
+      card.appendChild(val);
+      card.appendChild(list);
+      return card;
+    }
+
+    function getOverviewStats() {
+      const rows = Array.from(items.values()).filter(Boolean);
+      const comments = rows.filter(x => x.type === "com");
+      const insertions = rows.filter(x => x.type === "ins");
+      const deletions = rows.filter(x => x.type === "del");
+      const authors = Array.from(new Set(rows.map(x => String(x.auth || "").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+      const extLinks = relationshipsData.filter(r => r && r.source === "External");
+      const intLinks = relationshipsData.filter(r => r && r.source === "Internal");
+      const deadExt = extLinks.filter(r => String(r.statusLabel || "").toLowerCase() === "dead");
+      const liveExt = extLinks.filter(r => String(r.statusLabel || "").toLowerCase() === "live");
+      const pkgFiles = zipObj ? Object.keys(zipObj.files || {}).filter(path => !zipObj.files[path].dir) : [];
+      const xmlParts = pkgFiles.filter(path => /\.xml$/i.test(path) || /\.rels$/i.test(path));
+      const uncompressed = pkgFiles.reduce((sum, path) => {
+        const f = zipObj.file(path);
+        const n = f ? fileSizeFromZipEntry(f) : 0;
+        return sum + (Number(n) || 0);
+      }, 0);
+      const customProps = customXmlDoc ? qAll(customXmlDoc, "property").length : 0;
+      const paragraphsMeta = metaText(appXmlDoc, "Paragraphs");
+      const paragraphs = paragraphsMeta && /^\d+$/.test(paragraphsMeta) ? Number(paragraphsMeta) : (mainDocXml ? qAll(mainDocXml, "p").length : 0);
+      const wordsMeta = metaText(appXmlDoc, "Words");
+      const words = wordsMeta && /^\d+$/.test(wordsMeta) ? Number(wordsMeta) : countMainDocumentWords();
+      return {
+        fileName: originalFileName || "", fileSize: loadedFileSize, uncompressed, words, pages: estimatePageCount(), paragraphs,
+        comments: comments.length, insertions: insertions.length, deletions: deletions.length, redlines: insertions.length + deletions.length, authors,
+        extLinks: extLinks.length, intLinks: intLinks.length, deadExt: deadExt.length, liveExt: liveExt.length, relationshipsChecked: relationshipsBuilt && extLinks.every(r => ["live","dead"].includes(String(r.statusLabel || "").toLowerCase())),
+        images: imagePreviewData.length, pkgFiles: pkgFiles.length, xmlParts: xmlParts.length, customProps, tables: mainDocXml ? qAll(mainDocXml, "tbl").length : 0,
+        creator: metaText(coreXmlDoc, "creator"), modifiedBy: metaText(coreXmlDoc, "lastModifiedBy"), created: metaText(coreXmlDoc, "created"), modified: metaText(coreXmlDoc, "modified")
+      };
+    }
+
+    function renderOverview() {
+      if (!dom.overviewGrid) return;
+      dom.overviewGrid.textContent = "";
+      if (!zipObj) {
+        dom.overviewGrid.appendChild(overviewCard("Document", "No file loaded", "Open a DOCX to see the overview."));
+        return;
+      }
+      const st = getOverviewStats();
+      const linkSub = relationshipsBuilt ? (st.extLinks ? (st.liveExt + " live, " + st.deadExt + " dead") : "No external links found") : "Links have not been checked yet";
+      const linkCls = relationshipsBuilt && st.deadExt > 0 ? "bad" : relationshipsBuilt ? "good" : "";
+      dom.overviewGrid.appendChild(overviewCard("File", st.fileName, humanSize(st.fileSize)));
+      dom.overviewGrid.appendChild(overviewCard("Word count", numberWithCommas(st.words), "From Word metadata when available; otherwise calculated from main document text."));
+      dom.overviewGrid.appendChild(overviewCard("Pages", st.pages, "From Word metadata when available; otherwise estimated from rendered page breaks."));
+      dom.overviewGrid.appendChild(overviewCard("File size", humanSize(st.fileSize), st.uncompressed ? "Uncompressed package: " + humanSize(st.uncompressed) : ""));
+      dom.overviewGrid.appendChild(overviewCard("Comments", numberWithCommas(st.comments), "Comment entries found in the DOCX."));
+      dom.overviewGrid.appendChild(overviewCard("Redlines", numberWithCommas(st.redlines), st.insertions + " insertions, " + st.deletions + " deletions"));
+      dom.overviewGrid.appendChild(overviewCard("Dead links", relationshipsBuilt ? String(st.deadExt) : "Checking", linkSub, linkCls));
+      dom.overviewGrid.appendChild(overviewCard("External links", numberWithCommas(st.extLinks), st.intLinks + " internal package links collapsed in Links tab"));
+      dom.overviewGrid.appendChild(overviewCard("Embedded images", numberWithCommas(st.images), "Previewed in Forensics."));
+      dom.overviewGrid.appendChild(overviewCard("Tables", numberWithCommas(st.tables), numberWithCommas(st.paragraphs) + " paragraphs"));
+      dom.overviewGrid.appendChild(overviewCard("Package parts", numberWithCommas(st.pkgFiles), st.xmlParts + " XML/relationship parts"));
+      dom.overviewGrid.appendChild(overviewCard("Document metadata", st.customProps ? (st.customProps + " custom field" + (st.customProps === 1 ? "" : "s")) : "No custom fields", "Created: " + (formatIsoForDisplay(st.created) || "blank") + "; Modified: " + (formatIsoForDisplay(st.modified) || "blank")));
+      dom.overviewGrid.appendChild(overviewAuthorsCard(st.authors));
+    }
+
     const RX_COLS = [
       { k:"pg", label:"Pg", width:"60px" },
       { k:"part", label:"Part", width:"180px" },
@@ -3507,7 +3885,7 @@
 
       if (currentTab === "relationships") {
         const data = getProcessedRelData();
-        const headers = ["Source","From","Type","Target","Status","Refs","rId","relsPath","typeUri"];
+        const headers = ["Source","Location","Type","Link","Status","Refs","rId","relsPath","typeUri"];
         const rows = data.map(r => [
           r.source || "",
           r.sourceLabel || r.sourcePart || "",
@@ -3588,10 +3966,8 @@
     const CORE_META_FIELDS = [
       ["title", "Title"],
       ["subject", "Subject"],
-      ["creator", "Author"],
       ["keywords", "Keywords"],
       ["description", "Description"],
-      ["lastModifiedBy", "Modified By"],
       ["revision", "Revision"],
       ["created", "Created"],
       ["modified", "Modified"],
@@ -4275,6 +4651,9 @@ if (op === "setDate") {
       } else if (t === "forensics") {
         dom.viewForensics.style.display="block";
         renderForensicsBody();
+      } else if (t === "overview") {
+        dom.viewOverview.style.display="block";
+        renderOverview();
       } else if (t === "quick") {
         dom.viewQuick.style.display="block";
         populateQuickControls();
@@ -4319,6 +4698,7 @@ if (op === "setDate") {
 
       try {
         const buf = await file.arrayBuffer();
+        loadedFileSize = file.size || buf.byteLength || 0;
         zipObj = await JSZip.loadAsync(buf);
 
         try {
@@ -4371,8 +4751,12 @@ if (op === "setDate") {
         relationshipsBuilt = false;
         relationshipsData = [];
         relHeadBuilt = false;
+        relInternalHeadBuilt = false;
         dom.relHead.textContent = "";
         dom.relBody.textContent = "";
+        if (dom.relInternalHead) dom.relInternalHead.textContent = "";
+        if (dom.relInternalBody) dom.relInternalBody.textContent = "";
+        if (dom.relInternalCount) dom.relInternalCount.textContent = "0";
 
         ghostReady = false;
         ghostParagraphs = [];
@@ -4386,8 +4770,12 @@ if (op === "setDate") {
 
         setStatus("Loaded. Running deep scan…", true);
         await scanForensics();
+        await switchTab("overview");
+        setStatus("Loaded. Checking links in background…", true);
+        buildRelationshipsOnDemand()
+          .then(() => { renderOverview(); setStatus("Loaded. Links checked.", true); })
+          .catch((e) => { console.error(e); renderOverview(); setStatus("Loaded. Link check failed.", false); });
         setStatus("Loaded.", true);
-        await switchTab("quick");
       } catch (e) {
         console.error(e);
         setStatus("Error loading file", false);
@@ -4419,6 +4807,7 @@ if (op === "setDate") {
       if (dom.btnQuickAuthorSave) dom.btnQuickAuthorSave.addEventListener("click", applyQuickAuthorReplace);
       if (dom.quickAuthorTo) dom.quickAuthorTo.addEventListener("keydown", (e) => { if (e.key === "Enter") applyQuickAuthorReplace(); });
       if (dom.quickDateMode) dom.quickDateMode.addEventListener("change", updateQuickDateUi);
+      if (dom.quickDateKind) dom.quickDateKind.addEventListener("change", populateQuickControls);
       if (dom.btnQuickDateSave) dom.btnQuickDateSave.addEventListener("click", applyQuickDateChange);
       if (dom.btnQuickSummaryExport) dom.btnQuickSummaryExport.addEventListener("click", () => exportSummaryXlsx(dom.quickSummaryType?.value || "comments"));
       if (dom.btnQuickDeflateExport) dom.btnQuickDeflateExport.addEventListener("click", downloadDeflatedWord);
@@ -4438,6 +4827,7 @@ if (op === "setDate") {
 
       dom.partSelect.addEventListener("change", async () => { await setActivePart(dom.partSelect.value); });
       dom.partFilter.addEventListener("input", () => { if (currentTab === "parts") renderSidebarForPart(activePartPath); });
+      if (dom.btnOverviewRefresh) dom.btnOverviewRefresh.addEventListener("click", renderOverview);
       document.getElementById("btn-scan").addEventListener("click", scanForensics);
 
       if (dom.btnSaveMeta) dom.btnSaveMeta.addEventListener("click", saveMetadataChanges);
