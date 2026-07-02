@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Comment and Redline Manager v5.7 Overview</title>
+  <title>Word Comment and Redline Manager v5.7.1 Overview</title>
 
 
   <style>
@@ -1019,6 +1019,7 @@
     let coreXmlDoc = null;
     let appXmlDoc = null;
     let commentsXmlDoc = null;
+    let commentExtensibleDateById = new Map();
     let customXmlDoc = null;
     let metaDirty = false;
 
@@ -1212,6 +1213,33 @@
       if (!node) return;
       try { node.setAttributeNS(W_NS, "w:" + name, value); }
       catch { node.setAttribute("w:" + name, value); }
+    }
+
+    function attrByLocalName(node, names) {
+      if (!node || !node.attributes) return "";
+      const wanted = new Set((Array.isArray(names) ? names : [names]).map(x => String(x || "").toLowerCase()));
+      for (const a of Array.from(node.attributes)) {
+        const local = String(a.localName || a.name || "").split(":").pop().toLowerCase();
+        if (wanted.has(local)) return a.value || "";
+      }
+      return "";
+    }
+
+    function getReviewDateAttr(node) {
+      // Newer Word builds may prefer dateUtc attributes (for example w16du:dateUtc)
+      // over the older w:date value. Prefer dateUtc so the table reflects the date
+      // Word is most likely to display, then keep every date attribute in sync on export.
+      return attrByLocalName(node, "dateUtc") || attrW(node, "date") || "";
+    }
+
+    function setReviewDateAttrs(node, value) {
+      if (!node || !value) return;
+      setAttrW(node, "date", value);
+      if (!node.attributes) return;
+      for (const a of Array.from(node.attributes)) {
+        const local = String(a.localName || a.name || "").split(":").pop().toLowerCase();
+        if (local === "dateutc") a.value = value;
+      }
     }
 
     function setAttrXmlSpacePreserve(node, text) {
@@ -1533,6 +1561,14 @@
       return startTag + " " + attrName + '="' + v + '"';
     }
 
+    function patchDateAttrsInStartTag(startTag, value) {
+      const v = escapeXmlAttr(value == null ? "" : value);
+      let out = upsertAttrInStartTag(startTag, "w:date", value || "");
+      // Keep Word's newer UTC date attributes in sync when they already exist.
+      out = out.replace(/(\s(?:[A-Za-z_][\w.\-]*:)?dateUtc\s*=\s*)(["'])([^"']*)\2/g, (m, pre, q) => pre + q + v + q);
+      return out;
+    }
+
     function patchRevisionAttrsInXml(xml, type, id, author, date) {
       if (!xml) return xml;
       const tag = (type === "ins") ? "w:ins" : "w:del";
@@ -1543,7 +1579,7 @@
         const selfClosing = /\/>$/.test(full);
         let start = full.slice(0, selfClosing ? -2 : -1); 
         start = upsertAttrInStartTag(start, "w:author", author || "");
-        if (date) start = upsertAttrInStartTag(start, "w:date", date);
+        if (date) start = patchDateAttrsInStartTag(start, date);
         return start + (selfClosing ? "/>" : ">");
       });
     }
@@ -1824,7 +1860,7 @@
             _hidden: !isSubstantive,
             _nonText: !isSubstantive,
             auth: attrW(n, "author") || "",
-            date: attrW(n, "date") || "",
+            date: getReviewDateAttr(n) || "",
           });
         }
       };
@@ -1899,6 +1935,132 @@
 
 
 
+    function findZipFilePathCaseInsensitive(zip, targetPath) {
+      if (!zip || !targetPath) return "";
+      if (zip.file(targetPath)) return targetPath;
+      const needle = String(targetPath).toLowerCase();
+      const files = Object.keys(zip.files || {});
+      return files.find(path => !zip.files[path].dir && String(path).toLowerCase() === needle) || "";
+    }
+
+    async function parseZipXmlPart(zip, path) {
+      if (!zip || !path || !zip.file(path)) return null;
+      const s = await zip.file(path).async("string");
+      const doc = new DOMParser().parseFromString(s, "text/xml");
+      return isParserError(doc) ? null : doc;
+    }
+
+    function firstCommentParaId(commentNode) {
+      if (!commentNode) return "";
+      for (const p of qAll(commentNode, "p")) {
+        const paraId = attrByLocalName(p, "paraId");
+        if (paraId) return paraId;
+      }
+      return "";
+    }
+
+    function setDateUtcAttrs(node, value) {
+      if (!node || !value || !node.attributes) return false;
+      let changed = false;
+      for (const a of Array.from(node.attributes)) {
+        const local = String(a.localName || a.name || "").split(":").pop().toLowerCase();
+        if (local === "dateutc") {
+          if (a.value !== value) changed = true;
+          a.value = value;
+        }
+      }
+      return changed;
+    }
+
+    async function buildCommentExtensibleDateMap(zip, commentsDoc) {
+      const out = new Map();
+      if (!zip || !commentsDoc) return out;
+
+      try {
+        const idsPath = findZipFilePathCaseInsensitive(zip, "word/commentsIds.xml");
+        const extPath = findZipFilePathCaseInsensitive(zip, "word/commentsExtensible.xml");
+        if (!idsPath || !extPath) return out;
+
+        const idsDoc = await parseZipXmlPart(zip, idsPath);
+        const extDoc = await parseZipXmlPart(zip, extPath);
+        if (!idsDoc || !extDoc) return out;
+
+        const paraToCommentId = new Map();
+        for (const c of qAll(commentsDoc, "comment")) {
+          const id = attrW(c, "id");
+          const paraId = firstCommentParaId(c);
+          if (id !== "" && paraId) paraToCommentId.set(paraId, id);
+        }
+
+        const durableToCommentId = new Map();
+        for (const cId of qAll(idsDoc, "commentId")) {
+          const paraId = attrByLocalName(cId, "paraId");
+          const durableId = attrByLocalName(cId, "durableId");
+          const commentId = paraToCommentId.get(paraId);
+          if (commentId != null && durableId) durableToCommentId.set(durableId, commentId);
+        }
+
+        for (const ex of qAll(extDoc, "commentExtensible")) {
+          const durableId = attrByLocalName(ex, "durableId");
+          const commentId = durableToCommentId.get(durableId);
+          const dateUtc = attrByLocalName(ex, "dateUtc");
+          if (commentId != null && dateUtc) out.set(commentId, dateUtc);
+        }
+      } catch (e) {
+        console.warn("Could not read commentsExtensible date map", e);
+      }
+      return out;
+    }
+
+    async function applyCommentExtensibleDateEdits(zip, dirtyComments, commentsDoc) {
+      if (!zip || !commentsDoc || !dirtyComments || dirtyComments.length === 0) return false;
+
+      try {
+        const idsPath = findZipFilePathCaseInsensitive(zip, "word/commentsIds.xml");
+        const extPath = findZipFilePathCaseInsensitive(zip, "word/commentsExtensible.xml");
+        if (!idsPath || !extPath) return false;
+
+        const idsDoc = await parseZipXmlPart(zip, idsPath);
+        const extDoc = await parseZipXmlPart(zip, extPath);
+        if (!idsDoc || !extDoc) return false;
+
+        const commentNodeById = new Map();
+        for (const c of qAll(commentsDoc, "comment")) commentNodeById.set(attrW(c, "id"), c);
+
+        const paraToDate = new Map();
+        for (const it of dirtyComments) {
+          if (!it || !it.date) continue;
+          const c = commentNodeById.get(it.id);
+          const paraId = firstCommentParaId(c);
+          if (paraId) paraToDate.set(paraId, it.date);
+        }
+        if (!paraToDate.size) return false;
+
+        const durableToDate = new Map();
+        for (const cId of qAll(idsDoc, "commentId")) {
+          const paraId = attrByLocalName(cId, "paraId");
+          const durableId = attrByLocalName(cId, "durableId");
+          if (durableId && paraToDate.has(paraId)) durableToDate.set(durableId, paraToDate.get(paraId));
+        }
+        if (!durableToDate.size) return false;
+
+        let changed = false;
+        for (const ex of qAll(extDoc, "commentExtensible")) {
+          const durableId = attrByLocalName(ex, "durableId");
+          if (!durableToDate.has(durableId)) continue;
+          changed = setDateUtcAttrs(ex, durableToDate.get(durableId)) || changed;
+        }
+
+        if (changed) {
+          zip.file(extPath, new XMLSerializer().serializeToString(extDoc));
+        }
+        return changed;
+      } catch (e) {
+        console.warn("Could not update commentsExtensible dates", e);
+        return false;
+      }
+    }
+
     function extractComments(commentsXml, anchorMap) {
       if (!commentsXml) return [];
       const arr = [];
@@ -1921,7 +2083,7 @@
           part: anchor?.part ?? "",
           txt,
           auth: attrW(n, "author") || "",
-          date: attrW(n, "date") || "",
+          date: commentExtensibleDateById.get(id) || getReviewDateAttr(n) || "",
           on: "",
         });
       }
@@ -4222,7 +4384,7 @@
         const id = String(nextChangeId++);
         setAttrW(wrap, "id", id);
         setAttrW(wrap, "author", auth);
-        setAttrW(wrap, "date", dateIso);
+        setReviewDateAttrs(wrap, dateIso);
         const run = makeRun(text, type === "del" ? "delText" : "t");
         wrap.appendChild(run);
         return wrap;
@@ -4289,7 +4451,7 @@
         if (!node) continue;
 
         setAttrW(node, "author", it.auth || "");
-        if (it.date) setAttrW(node, "date", it.date);
+        if (it.date) setReviewDateAttrs(node, it.date);
 
         if (it.type === "ins") ensureSingleTextNode(node, "t", it.txt || "");
         else ensureSingleTextNode(node, "delText", it.txt || "");
@@ -4318,7 +4480,7 @@
 
         if (it._dirtyMeta) {
           setAttrW(n, "author", it.auth || "");
-          if (it.date) setAttrW(n, "date", it.date);
+          if (it.date) setReviewDateAttrs(n, it.date);
         }
 
         if (it._dirtyText) {
@@ -4337,6 +4499,7 @@
       }
 
       zip.file("word/comments.xml", new XMLSerializer().serializeToString(cDoc));
+      await applyCommentExtensibleDateEdits(zip, dirty, cDoc);
       return true;
     }
 
@@ -4414,7 +4577,7 @@ async function downloadWord(options = {}) {
 
           if (it._dirtyMeta) {
             setAttrW(node, "author", it.auth || "");
-            if (it.date) setAttrW(node, "date", it.date);
+            if (it.date) setReviewDateAttrs(node, it.date);
           }
 
           if (it._dirtyText) {
@@ -4719,10 +4882,12 @@ if (op === "setDate") {
         await ensurePartLoaded("word/document.xml");
 
         commentsXmlDoc = null;
+        commentExtensibleDateById = new Map();
         if (zipObj.file("word/comments.xml")) {
           const cStr = await zipObj.file("word/comments.xml").async("string");
           commentsXmlDoc = new DOMParser().parseFromString(cStr, "text/xml");
           if (isParserError(commentsXmlDoc)) throw new Error("Failed to parse word/comments.xml");
+          commentExtensibleDateById = await buildCommentExtensibleDateMap(zipObj, commentsXmlDoc);
         }
 
         coreXmlDoc = null; appXmlDoc = null; customXmlDoc = null;
