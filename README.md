@@ -121,7 +121,7 @@ npm run test:e2e     # 19 Playwright browser, privacy, offline, and responsive t
 
 `npm run qa` remains the release contract. It performs a production build, the legacy regression suites, 29 Node unit tests, 4 dedicated privacy tests, and 19 Playwright Chromium specifications.
 
-Playwright requires its matching Chromium executable. In a new development environment, prepare it with `npx playwright install chromium` before running `npm run qa` or `npm run test:e2e`. The GitHub workflow installs the lockfile-pinned browser and its runner dependencies before QA. The browser suite starts the generated `dist/` site on a loopback-only static QA server and does not change the browser-only production architecture.
+Playwright requires its matching Chromium executable. In a new development environment, prepare it with `npx playwright install chromium` before running `npm run qa` or `npm run test:e2e`. The GitHub workflow invokes the lockfile-installed Playwright CLI to install its matching browser and runner dependencies before QA. The browser suite starts the generated `dist/` site on a loopback-only static QA server and does not change the browser-only production architecture.
 
 The build copies only the production entry point, workbench assets, pinned same-origin vendor files, license notices, manifest, and generated service worker into `dist/`. It also generates `asset-manifest.json` with a content-derived build ID, byte sizes, and SHA-256 values.
 

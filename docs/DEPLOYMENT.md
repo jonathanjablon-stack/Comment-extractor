@@ -85,7 +85,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The suite builds `dist/`, serves it only on `127.0.0.1`, and tests desktop and mobile Home, routing, local fixtures, navigable comparison output, PDF work, OCR, redaction, sanitation, binder, conversion, batch inspection, Clean Word, external request interception, exact Cache Storage allowlists, and offline reload. It is included in `npm run qa`. The Pages workflow installs the lockfile-pinned Playwright Chromium browser and its runner dependencies before invoking the full QA contract. Do not describe a local run as passing when the browser executable or another environment prerequisite prevents execution.
+The suite builds `dist/`, serves it only on `127.0.0.1`, and tests desktop and mobile Home, routing, local fixtures, navigable comparison output, PDF work, OCR, redaction, sanitation, binder, conversion, batch inspection, Clean Word, external request interception, exact Cache Storage allowlists, and offline reload. It is included in `npm run qa`. The Pages workflow invokes the lockfile-installed Playwright CLI to install its matching Chromium browser and runner dependencies before the full QA contract. Do not describe a local run as passing when the browser executable or another environment prerequisite prevents execution.
 
 For local development preview, serve `dist/` through any trusted static HTTPS or loopback development server. Direct `file:` opening is not a full production test because JavaScript modules, workers, File System Access, and service workers have browser-specific restrictions. A local server is a contributor tool only and is not required for end users.
 
@@ -102,7 +102,7 @@ The build job:
 1. checks out source without persisting credentials;
 2. installs Node.js 24 with npm caching;
 3. installs the committed lockfile with lifecycle scripts disabled;
-4. reads the lockfile-pinned Playwright Chromium metadata and installs that browser plus required runner dependencies;
+4. invokes the lockfile-installed Playwright CLI and installs its matching Chromium browser plus required runner dependencies;
 5. runs `npm run qa`, including the browser suite;
 6. verifies the expected top-level artifact layout and absence of symlinks;
 7. verifies that service-worker template placeholders are gone;

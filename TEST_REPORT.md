@@ -173,14 +173,14 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The browser suite is part of `npm run qa`. The Pages workflow reads the Chromium revision from the installed lockfile package, installs the matching browser plus its runner dependencies, and then invokes the full QA command. A green CI or equivalent browser run must be recorded before these 19 specifications are reported as passed.
+The browser suite is part of `npm run qa`. The Pages workflow invokes the lockfile-installed Playwright CLI to install its matching Chromium build plus runner dependencies, then runs the full QA command. A green CI or equivalent browser run must be recorded before these 19 specifications are reported as passed.
 
 ## Build and deployment checks
 
 The GitHub Pages workflow prepares the browser environment and adds release checks beyond the local non-browser results:
 
 - installs only from the committed lockfile with lifecycle scripts disabled;
-- reads the pinned Playwright Chromium metadata and installs the matching browser and required runner dependencies;
+- invokes the lockfile-installed Playwright CLI and installs its matching Chromium build and required runner dependencies;
 - runs the complete QA contract, including all 19 browser specifications;
 - verifies required top-level production files;
 - rejects unexpected top-level artifacts and symlinks;

@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node -e "const b=require('playwright-core/browsers.json').browsers.find(({name})=>name==='chromium'); if (!b) throw new Error('Pinned Chromium metadata missing'); console.log('Playwright Chromium revision', b.revision, '(' + b.browserVersion + ')')"
+          ./node_modules/.bin/playwright --version
           ./node_modules/.bin/playwright install --with-deps chromium
           ./node_modules/.bin/playwright install --list
 
