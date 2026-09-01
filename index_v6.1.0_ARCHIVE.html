@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src http: https:; object-src 'none'; base-uri 'none'; form-action 'none'; worker-src 'none'">
-  <title>Comment Master v6.2.0</title>
+  <title>Comment Master v6.1.0</title>
   <style>
 :root {
   color-scheme: light;
@@ -56,52 +56,44 @@ button { touch-action: manipulation; }
 .status:empty { display: none; }
 .status.bad, .error-log { color: #7a271a; border-color: #f2b8b5; background: #fff3f2; }
 .error-log { white-space: pre-wrap; }
-.status.workspace-status { position: fixed; z-index: 45; right: 18px; bottom: max(18px, env(safe-area-inset-bottom)); width: min(520px, calc(100vw - 36px)); margin: 0; box-shadow: 0 8px 24px rgba(23,32,51,.16); }
 
 .tabs { position: sticky; top: 72px; z-index: 20; display: flex; gap: 5px; margin: 0 0 14px; padding: 8px; overflow-x: auto; scrollbar-width: thin; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.96); box-shadow: 0 4px 16px rgba(23,32,51,.06); }
 .tab-btn { flex: 0 0 auto; min-height: 38px; padding: 8px 12px; color: #45536c; border: 0; border-radius: 9px; background: transparent; cursor: pointer; font-size: 13px; font-weight: 700; white-space: nowrap; }
 .tab-btn:hover { background: var(--soft); }
 .tab-btn.active { color: #fff; background: var(--brand); }
-.tab-export { color: var(--danger); background: #fff4f3; box-shadow: inset 0 0 0 1px #f1c4c0; }
-.tab-export:hover { color: #8f1f17; background: #ffe9e7; }
-.tab-export.active { color: #fff; background: var(--danger); box-shadow: none; }
 .tab-more { margin-left: auto; color: var(--brand-dark); background: var(--accent); }
 .tab-more[aria-expanded="true"] { box-shadow: inset 0 0 0 1px #aabce5; }
 .advanced-tabs { display: contents; }
 
-.overview-view { display: grid; gap: 12px; }
-.overview-heading { display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: clamp(16px, 2vw, 23px); color: #fff; border-radius: 15px; background: linear-gradient(120deg, #183263, #3156a6 72%, #5279cc); box-shadow: 0 8px 22px rgba(29,55,108,.18); }
-.overview-heading h2 { margin: 2px 0 4px; font-size: clamp(22px, 2.5vw, 29px); letter-spacing: -.5px; }
+.overview-view { display: grid; gap: 14px; }
+.overview-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: clamp(20px, 3vw, 34px); color: #fff; border-radius: 17px; background: linear-gradient(120deg, #183263, #3156a6 72%, #5279cc); box-shadow: 0 10px 26px rgba(29,55,108,.2); }
+.overview-heading h2 { margin: 2px 0 6px; font-size: clamp(25px, 3vw, 36px); letter-spacing: -.7px; }
 .overview-heading .muted { max-width: 720px; margin: 0; color: rgba(255,255,255,.82); line-height: 1.5; }
 .overview-heading-actions { flex: 0 0 auto; }
 .overview-heading .btn-light { color: #fff; border-color: rgba(255,255,255,.38); background: rgba(255,255,255,.11); }
 .eyebrow { margin: 0; color: #bdd0ff; font-size: 11px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
-.overview-dashboard { display: grid; grid-template-columns: minmax(260px,.72fr) minmax(520px,1.45fr); gap: 12px; min-height: 0; }
-.overview-section { min-width: 0; padding: clamp(15px, 1.8vw, 20px); border: 1px solid var(--line); border-radius: 15px; background: var(--surface); box-shadow: 0 4px 18px rgba(23,32,51,.05); }
+.overview-section { padding: clamp(17px, 2.4vw, 26px); border: 1px solid var(--line); border-radius: 15px; background: var(--surface); box-shadow: 0 4px 18px rgba(23,32,51,.05); }
 .section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .section-heading h2, .section-heading h3 { margin: 0 0 4px; }
 .section-heading h2 { font-size: 22px; }
 .section-heading h3 { font-size: 18px; }
 .section-heading p { margin: 0; color: var(--muted); line-height: 1.45; font-size: 13px; }
-.info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
-.info-grid > div { min-width: 0; padding: 10px 12px; border: 1px solid #e1e6ef; border-radius: 10px; background: #f8faff; }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 9px; margin: 0; }
+.info-grid > div { min-width: 0; padding: 12px 13px; border: 1px solid #e1e6ef; border-radius: 11px; background: #f8faff; }
 .info-grid > div.wide { grid-column: span 2; }
 .info-grid dt { margin-bottom: 5px; color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .055em; text-transform: uppercase; }
 .info-grid dd { margin: 0; color: #243b70; overflow-wrap: anywhere; font-size: 16px; font-weight: 780; line-height: 1.35; }
 .info-grid .wide dd { color: #46546c; font-size: 12px; font-weight: 650; }
 .info-grid .link-metric.has-dead { border-color: #efb5b0; background: #fff4f3; }
 .info-grid .link-metric.has-dead dd { color: var(--danger); }
-.author-list dd { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
-.quick-action-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
-.start-card { position: relative; min-width: 0; padding: 15px; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: #fafbfe; }
-.start-card h3 { margin: 0 0 5px; font-size: 16px; }
-.start-card > p { margin: 0 0 11px; color: var(--muted); line-height: 1.4; font-size: 12px; }
-.rename-card { grid-column: 1 / -1; }
-.rename-card .grid-2 { gap: 10px; }
-.rename-card .form-row { margin-bottom: 8px; }
-.quick-action-grid .btn { min-height: 38px; }
+.start-grid { display: grid; grid-template-columns: 1.2fr 1fr .8fr; gap: 12px; }
+.start-card { position: relative; min-width: 0; padding: 20px; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: #fafbfe; }
+.start-card h3 { margin: 0 0 7px; padding-right: 30px; font-size: 17px; }
+.start-card > p { min-height: 55px; margin: 0 0 16px; color: var(--muted); line-height: 1.45; font-size: 13px; }
+.step-number { position: absolute; top: 14px; right: 15px; display: grid; place-items: center; width: 28px; height: 28px; color: var(--brand); border-radius: 50%; background: var(--accent); font-size: 12px; font-weight: 850; }
 .card-action-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .card-action-row .muted { font-size: 12px; }
+.link-status-line { display: flex; align-items: center; gap: 9px; min-height: 36px; margin: 0 0 15px; }
 .link-badge { display: inline-flex; align-items: center; min-height: 27px; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 850; }
 .link-badge.checking { color: #5b4a00; background: #fff0bd; }
 .link-badge.live { color: #0d623f; background: #d4f2e3; }
@@ -149,7 +141,7 @@ textarea { resize: vertical; }
 .grid-3 { grid-template-columns: minmax(0,1.2fr) minmax(0,.8fr) auto; }
 .sort-grid { grid-template-columns: minmax(0,1fr) minmax(130px,.65fr); }
 .quick-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
-.export-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.export-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
 .input-action { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
 .check-row { display: flex; align-items: flex-start; gap: 8px; margin: 7px 0 12px; color: #46546c; line-height: 1.4; font-size: 12px; }
 .check-row input, .flags input { width: auto; min-height: 0; margin-top: 2px; }
@@ -229,18 +221,11 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   .header-actions { width: 100%; flex-wrap: wrap; }
   .tabs { top: 0; }
   .stats { grid-template-columns: repeat(2, minmax(0,1fr)); }
-  .quick-grid, .export-grid, .overview-dashboard, .quick-action-grid { grid-template-columns: 1fr; }
-  .rename-card { grid-column: auto; }
+  .quick-grid, .export-grid, .start-grid { grid-template-columns: 1fr; }
   .overview-heading { align-items: flex-start; flex-direction: column; }
   .overview-heading-actions { width: 100%; flex-wrap: wrap; }
   .start-card > p { min-height: 0; }
   .table-wrap { max-height: 64vh; }
-}
-
-@media (min-width: 901px) and (min-height: 720px) {
-  .overview-view { min-height: calc(100dvh - 190px); grid-template-rows: auto minmax(0,1fr); }
-  .overview-dashboard > .overview-section { height: 100%; }
-  .overview-dashboard .section-heading { margin-bottom: 11px; }
 }
 
 @media (max-width: 720px) {
@@ -432,7 +417,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   }
 
   function appProperties(sheets) {
-    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>${sheets.length}</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector size="${sheets.length}" baseType="lpstr">${sheets.map((sheet) => `<vt:lpstr>${xml(sheet.name)}</vt:lpstr>`).join('')}</vt:vector></TitlesOfParts><Company></Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>6.2</AppVersion></Properties>`;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>${sheets.length}</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector size="${sheets.length}" baseType="lpstr">${sheets.map((sheet) => `<vt:lpstr>${xml(sheet.name)}</vt:lpstr>`).join('')}</vt:vector></TitlesOfParts><Company></Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>6.0</AppVersion></Properties>`;
   }
 
   async function build(sheets, progress) {
@@ -510,25 +495,17 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     return `<w:tr>${header ? '<w:trPr><w:tblHeader/></w:trPr>' : ''}${widths.map((width, index) => cellXml((values || [])[index], width, header)).join('')}</w:tr>`;
   }
 
-  function documentXml(title, headers, rows, settings) {
-    const options = settings || {};
-    const portrait = options.orientation === 'portrait';
-    const availableWidth = portrait ? 10800 : 12960;
-    const widths = options.widths || (headers.length === 5
-      ? [900, 5700, 1700, 2200, 2460]
-      : Array.from({ length: headers.length }, () => Math.floor(availableWidth / headers.length)));
-    const tableWidth = widths.reduce((sum, width) => sum + width, 0);
+  function documentXml(title, headers, rows) {
+    const widths = [900, 5700, 1700, 2200, 2460];
     const grid = widths.map((width) => `<w:gridCol w:w="${width}"/>`).join('');
     const table = [
-      `<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:w="${tableWidth}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="80" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`,
+      '<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:w="12960" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="80" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>',
       `<w:tblGrid>${grid}</w:tblGrid>`,
       tableRowXml(headers, widths, true),
       ...rows.map((row) => tableRowXml(row, widths, false)),
       '</w:tbl>'
     ].join('');
-    const itemLabel = options.itemLabel || 'review item';
-    const pageSize = portrait ? '<w:pgSz w:w="12240" w:h="15840"/>' : '<w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/>';
-    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${runXml(title || 'Review activity', false)}</w:p><w:p><w:pPr><w:spacing w:after="180"/></w:pPr>${runXml(`${rows.length.toLocaleString()} ${itemLabel}${rows.length === 1 ? '' : 's'} exported by Comment Master`, false)}</w:p>${table}<w:sectPr>${pageSize}<w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${runXml(title || 'Review activity', false)}</w:p><w:p><w:pPr><w:spacing w:after="180"/></w:pPr>${runXml(`${rows.length.toLocaleString()} review item${rows.length === 1 ? '' : 's'} exported by Comment Master`, false)}</w:p>${table}<w:sectPr><w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>`;
   }
 
   function stylesXml() {
@@ -547,23 +524,21 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
   }
 
-  function coreProperties(title) {
+  function coreProperties() {
     const now = new Date().toISOString();
-    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(title || 'Comment Master review activity')}</dc:title><dc:creator>Comment Master</dc:creator><cp:lastModifiedBy>Comment Master</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>Comment Master review activity</dc:title><dc:creator>Comment Master</dc:creator><cp:lastModifiedBy>Comment Master</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`;
   }
 
   function appProperties() {
-    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><Company></Company><AppVersion>6.2</AppVersion></Properties>';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><Company></Company><AppVersion>6.1</AppVersion></Properties>';
   }
 
-  function validate(headers, rows, settings) {
-    if (!Array.isArray(headers) || !headers.length || headers.length > 12) throw new Error('The Word export requires between one and twelve columns.');
+  function validate(headers, rows) {
+    if (!Array.isArray(headers) || headers.length !== 5) throw new Error('The Word review export requires exactly five columns.');
     if (!Array.isArray(rows)) throw new Error('Word export rows must be an array.');
     if (rows.length > MAX_ROWS) throw new Error(`The Word export exceeds the ${MAX_ROWS.toLocaleString()}-row safety limit.`);
-    if (settings.orientation && !['portrait', 'landscape'].includes(settings.orientation)) throw new Error('Word export orientation must be portrait or landscape.');
-    if (settings.widths && (!Array.isArray(settings.widths) || settings.widths.length !== headers.length || settings.widths.some((width) => !Number.isFinite(width) || width <= 0))) throw new Error('Word export column widths must match the table columns.');
     [headers].concat(rows).forEach((row) => {
-      if (!Array.isArray(row) || row.length !== headers.length) throw new Error(`Every Word export row must contain exactly ${headers.length} values.`);
+      if (!Array.isArray(row) || row.length !== 5) throw new Error('Every Word export row must contain exactly five values.');
       row.forEach((value) => {
         if (String(value == null ? '' : value).length > MAX_CELL_CHARS) throw new Error('A Word export cell exceeds the safe text limit.');
       });
@@ -575,14 +550,14 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     const settings = options || {};
     const headers = settings.headers || [];
     const rows = settings.rows || [];
-    validate(headers, rows, settings);
+    validate(headers, rows);
     const zip = new JSZip();
     zip.file('[Content_Types].xml', contentTypes());
     zip.file('_rels/.rels', rootRelationships());
-    zip.file('word/document.xml', documentXml(settings.title, headers, rows, settings));
+    zip.file('word/document.xml', documentXml(settings.title, headers, rows));
     zip.file('word/styles.xml', stylesXml());
     zip.file('word/_rels/document.xml.rels', documentRelationships());
-    zip.file('docProps/core.xml', coreProperties(settings.title));
+    zip.file('docProps/core.xml', coreProperties());
     zip.file('docProps/app.xml', appProperties());
     return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', compression: 'DEFLATE', compressionOptions: { level: 6 }, platform: 'DOS' }, progress);
   }
@@ -593,7 +568,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     return blob;
   }
 
-  window.WFSWord = Object.freeze({ version: '2.0.0', build, write });
+  window.WFSWord = Object.freeze({ version: '1.0.0', build, write });
 })();
 
   </script>
@@ -601,7 +576,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
 (function () {
   'use strict';
 
-  const VERSION = '6.2.0';
+  const VERSION = '6.1.0';
   const WML_TRANSITIONAL = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
   const WML_STRICT = 'http://purl.oclc.org/ooxml/wordprocessingml/main';
   const WML_NAMESPACES = new Set([WML_TRANSITIONAL, WML_STRICT]);
@@ -623,7 +598,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   const MAX_UNDO_BYTES = 64 * 1024 * 1024;
   const LINK_CHECK_CONCURRENCY = 4;
   const LINK_CHECK_TIMEOUT_MS = 10000;
-  const COMMENT_CONTEXT_LIMIT = 140;
 
   const REVISION_DEFS = [
     { local: 'ins', type: 'ins', label: 'Insertion', short: 'INS', textKind: 'insert' },
@@ -678,8 +652,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     textEditOriginals: new Map(),
     lastRegexRows: [],
     linkCheckRun: 0,
-    linkCheckControllers: new Set(),
-    statusTimer: null
+    linkCheckControllers: new Set()
   };
 
   let ui = {};
@@ -720,8 +693,8 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       ghostList: id('ghost-list'), ghostSelection: id('ghost-selection'), ghostReplace: id('ghost-replace'),
       ghostAuthor: id('ghost-author'), ghostDate: id('ghost-date'), exportFormat: id('export-format'),
       exportSummary: id('export-summary'), undoButton: id('btn-undo'),
-      homeTargetAuthor: id('home-target-author'), homeAuthor: id('home-author'),
-      homeCount: id('home-count'), linksSummary: id('links-summary')
+      homeScope: id('home-scope'), homeTargetAuthor: id('home-target-author'), homeAuthor: id('home-author'),
+      homeCount: id('home-count'), homeExportScope: id('home-export-scope'), linksSummary: id('links-summary')
     };
   }
 
@@ -777,7 +750,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     ui.partFilter.addEventListener('input', renderPart);
     ui.ghostList.addEventListener('change', renderGhostSelection);
     [ui.quickScope, ui.quickTargetAuthor].forEach((element) => element.addEventListener('change', renderQuickCount));
-    ui.homeTargetAuthor.addEventListener('change', renderHomeCount);
+    [ui.homeScope, ui.homeTargetAuthor].forEach((element) => element.addEventListener('change', renderHomeCount));
     ui.pageSize.addEventListener('change', () => { state.pageSize = Number(ui.pageSize.value) || 250; state.page = 1; renderMainTable(); });
     document.addEventListener('keydown', globalKeydown);
     window.addEventListener('beforeunload', (event) => {
@@ -829,8 +802,9 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       batchAuthor, batchReplaceAuthor, batchDate, batchClearDate, batchSeq: batchSequential,
       batchShift, randomComments: () => randomizeDates(true), randomAll: () => randomizeDates(false),
       quickAuthor, quickDate, quickClearDate, applyMeta, wipeMeta, runRegex, clearRegex,
-      ghostInject, exportExcel: () => exportExcel(currentExportFormat()), exportWord: () => exportWord(currentExportFormat()),
-      exportCommentsWord, copy: copyCurrent, homeRename, homeStripMetadata: wipeMeta, homeExportComments: exportCommentsWord,
+      ghostInject, exportExcel: () => exportExcel(currentExportFormat()), exportWord: () => exportWord(currentExportFormat()), copy: copyCurrent,
+      homeRename, homeExportExcel: () => exportExcel(ui.homeExportScope.value || 'all'),
+      homeExportWord: () => exportWord(ui.homeExportScope.value || 'all'),
       checkAllLinks: () => startExternalLinkChecks(), retryLink: () => retryExternalLink(source && source.dataset.linkKey),
       goReview: () => switchTab('all'), goLinks: () => switchTab('relationships'),
       toggleAdvanced: toggleAdvancedTabs
@@ -873,18 +847,8 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   }
 
   function setStatus(message, ok) {
-    if (state.statusTimer) clearTimeout(state.statusTimer);
-    state.statusTimer = null;
     ui.status.textContent = message || '';
     ui.status.classList.toggle('bad', ok === false);
-    ui.status.classList.toggle('workspace-status', Boolean(state.doc));
-    if (state.doc && ok !== false && message) {
-      const expected = message;
-      state.statusTimer = setTimeout(() => {
-        if (ui.status.textContent === expected && !state.busy) ui.status.textContent = '';
-        state.statusTimer = null;
-      }, 5500);
-    }
   }
 
   function showError(error) {
@@ -1077,7 +1041,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     ui.sort2.value = 'date'; ui.sort2Dir.value = 'asc';
     ui.sort3.value = 'author'; ui.sort3Dir.value = 'asc';
     ui.batchScope.value = 'selected'; ui.batchSeqStep.value = '5'; ui.batchShiftAmt.value = '60'; ui.batchShiftUnit.value = 'minutes';
-    ui.randomOrdered.checked = true; ui.quickScope.value = 'all'; ui.rxScope.value = 'all';
+    ui.randomOrdered.checked = true; ui.quickScope.value = 'all'; ui.homeScope.value = 'all'; ui.homeExportScope.value = 'all'; ui.rxScope.value = 'all';
     ui.rxI.checked = ui.rxM.checked = ui.rxS.checked = false;
     ui.exportFormat.value = 'filtered'; ui.exportSummary.checked = false; ui.pageSize.value = '250'; state.pageSize = 250;
     toggleAdvancedTabs(false);
@@ -1189,7 +1153,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
         });
       });
     });
-    linkCommentReplies(items, docState);
     items.sort((a, b) => compareValues(a.order, b.order) || compareValues(a.uid, b.uid));
     docState.items = items;
     docState.itemByUid = new Map(items.map((item) => [item.uid, item]));
@@ -1198,54 +1161,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       const valid = new Set(items.map((item) => item.uid));
       state.selected = new Set(Array.from(state.selected).filter((uid) => valid.has(uid)));
     }
-  }
-
-  function linkCommentReplies(items, docState) {
-    const comments = items.filter((item) => item.type === 'com');
-    const commentByParagraphId = new Map();
-    const paragraphIdsByComment = new Map();
-    comments.forEach((item) => {
-      const paragraphIds = findWordElements(item.node, 'p', docState)
-        .map((paragraph) => normalizeParagraphId(attributeByLocalName(paragraph, 'paraId')))
-        .filter(Boolean);
-      paragraphIdsByComment.set(item.uid, paragraphIds);
-      paragraphIds.forEach((paragraphId) => commentByParagraphId.set(paragraphId, item));
-      item.replyToUid = '';
-      item.replyToId = '';
-    });
-
-    const parentByParagraphId = new Map();
-    docState.xmlDocs.forEach((doc, path) => {
-      const root = doc && doc.documentElement;
-      if (!root || (root.localName !== 'commentsEx' && !/^word\/commentsExtended\d*\.xml$/i.test(path))) return;
-      Array.from(doc.getElementsByTagNameNS('*', 'commentEx')).forEach((commentEx) => {
-        const paragraphId = normalizeParagraphId(attributeByLocalName(commentEx, 'paraId'));
-        const parentId = normalizeParagraphId(attributeByLocalName(commentEx, 'paraIdParent'));
-        if (paragraphId && parentId) parentByParagraphId.set(paragraphId, parentId);
-      });
-    });
-
-    comments.forEach((item) => {
-      const paragraphIds = paragraphIdsByComment.get(item.uid) || [];
-      for (const paragraphId of paragraphIds) {
-        const parentParagraphId = parentByParagraphId.get(paragraphId);
-        const parent = parentParagraphId ? commentByParagraphId.get(parentParagraphId) : null;
-        if (!parent || parent === item) continue;
-        item.replyToUid = parent.uid;
-        item.replyToId = parent.id;
-        break;
-      }
-    });
-  }
-
-  function attributeByLocalName(node, localName) {
-    if (!node || !node.attributes) return '';
-    const attribute = Array.from(node.attributes).find((candidate) => candidate.localName === localName);
-    return attribute ? attribute.value || '' : '';
-  }
-
-  function normalizeParagraphId(value) {
-    return String(value || '').replace(/[{}-]/g, '').trim().toUpperCase();
   }
 
   function commentAnchorsForPart(commentPart, storyContexts, fallbackAnchors, docState) {
@@ -2122,9 +2037,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   }
 
   function homeRows() {
-    requireFile();
-    const author = ui.homeTargetAuthor.value || '__all__';
-    return author === '__all__' ? state.doc.items.slice() : state.doc.items.filter((item) => authorFilterValue(item.author, item.authorPresent) === author);
+    return scopedAuthorRows(ui.homeScope, ui.homeTargetAuthor);
   }
 
   function scopedAuthorRows(scopeControl, authorControl) {
@@ -2139,7 +2052,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   function homeRename() {
     const value = ui.homeAuthor.value;
     if (!value.trim()) throw new Error('Enter the new reviewer name.');
-    const changed = applyBatch(homeRows(), 'Global reviewer name change', (item) => {
+    const changed = applyBatch(homeRows(), 'Reviewer name change', (item) => {
       if (item.author === value) return false;
       patchItemField(item, 'author', value); return true;
     });
@@ -2261,10 +2174,10 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     return withDocumentBusy('Building edited DOCX…', async () => {
       const docToken = state.documentToken;
       const version = state.mutationVersion;
-      const outputName = editedDocumentFilename(state.doc.fileName);
+      const baseName = state.doc.baseName;
       const blob = await buildDocxBlob();
       if (!state.doc || state.documentToken !== docToken) throw new Error('The active document changed while the save was being prepared.');
-      saveAs(blob, outputName);
+      saveAs(blob, `${baseName}_Comment_Master_${stamp()}.docx`);
       if (state.mutationVersion === version) {
         state.dirty = false;
         state.savedMutationVersion = version;
@@ -2273,7 +2186,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
         state.undoBytes = 0;
         updateDirtyUi();
       }
-      setStatus(`Saved ${outputName}. No original file was overwritten.`, true);
+      setStatus(`Saved ${baseName}. No original file was overwritten.`, true);
     });
   }
 
@@ -2333,7 +2246,8 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     if (!state.doc) return;
     const comments = state.doc.items.filter((item) => item.type === 'com');
     const revisions = state.doc.items.filter((item) => item.type !== 'com');
-    const authors = reviewAuthorList(state.doc.items);
+    const commentAuthors = reviewAuthorList(comments);
+    const revisionAuthors = reviewAuthorList(revisions);
     const linkStatus = externalLinkSummary();
     setText('overview-filename', state.doc.fileName);
     setText('overview-summary', `${state.doc.items.length.toLocaleString()} review item${plural(state.doc.items.length)} from ${unique(state.doc.items.map((item) => authorFilterValue(item.author, item.authorPresent))).length.toLocaleString()} reviewer${plural(unique(state.doc.items.map((item) => authorFilterValue(item.author, item.authorPresent))).length)}.`);
@@ -2342,22 +2256,46 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     setText('overview-words', Number(state.doc.stats.words || 0).toLocaleString());
     setText('overview-comments', comments.length.toLocaleString());
     setText('overview-revisions', revisions.length.toLocaleString());
-    setText('overview-authors', authors || 'None');
-    const authorList = document.getElementById('overview-authors');
-    if (authorList) authorList.title = authors || 'None';
-    setText('overview-link-health', `${linkStatus.total.toLocaleString()} / ${linkStatus.pending ? 'checking' : linkStatus.dead.toLocaleString()}`);
+    setText('overview-comment-authors', commentAuthors || 'None');
+    setText('overview-revision-authors', revisionAuthors || 'None');
+    setText('overview-links', linkStatus.total.toLocaleString());
+    setText('overview-dead-links', linkStatus.pending ? 'Checking…' : linkStatus.dead.toLocaleString());
+    setText('overview-images', Number(state.doc.stats.images || 0).toLocaleString());
+    setText('overview-tables', Number(state.doc.stats.tables || 0).toLocaleString());
+    setText('overview-paragraphs', Number(state.doc.stats.paragraphs || 0).toLocaleString());
+    setText('overview-parts', Number(state.doc.stats.xmlParts || 0).toLocaleString());
+    setText('overview-metadata', overviewMetadata());
     const metric = document.querySelector('.link-metric');
     if (metric) metric.classList.toggle('has-dead', linkStatus.dead > 0);
+    const badge = document.getElementById('overview-link-badge');
+    if (badge) {
+      badge.classList.remove('checking', 'live', 'dead');
+      const badgeState = linkStatus.pending ? 'checking' : linkStatus.dead ? 'dead' : 'live';
+      badge.classList.add(badgeState);
+      badge.textContent = badgeState === 'checking' ? 'Checking' : badgeState === 'dead' ? 'Dead' : 'Live';
+    }
     const summary = !linkStatus.total ? 'No external website links were found.' : linkStatus.pending
       ? `Checking every external website now. ${linkStatus.checked.toLocaleString()} of ${linkStatus.total.toLocaleString()} finished.`
       : `${linkStatus.live.toLocaleString()} Live and ${linkStatus.dead.toLocaleString()} Dead external link${plural(linkStatus.total)}.`;
+    setText('overview-link-summary', summary);
+    setText('overview-link-progress', `${linkStatus.checked.toLocaleString()} of ${linkStatus.total.toLocaleString()} checked`);
     if (ui.linksSummary) ui.linksSummary.textContent = summary;
     renderHomeCount();
   }
 
   function reviewAuthorList(items) {
     const values = unique(items.map((item) => authorDisplay(item.author, item.authorPresent))).sort(compareValues);
-    return values.join(', ');
+    if (values.length <= 5) return values.join(', ');
+    return `${values.slice(0, 5).join(', ')} and ${(values.length - 5).toLocaleString()} more`;
+  }
+
+  function overviewMetadata() {
+    const values = [];
+    if (state.doc.metadata.created) values.push(`Created ${toHuman(state.doc.metadata.created)}`);
+    if (state.doc.metadata.modified) values.push(`Modified ${toHuman(state.doc.metadata.modified)}`);
+    if (state.doc.metadata.revision) values.push(`Revision ${state.doc.metadata.revision}`);
+    if (state.doc.metadata.totalTime) values.push(`${state.doc.metadata.totalTime} minutes editing time`);
+    return values.join(' · ') || 'No saved dates, revision number, or editing-time value';
   }
 
   function externalLinkSummary() {
@@ -2836,62 +2774,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     });
   }
 
-  async function exportCommentsWord() {
-    requireFile();
-    await withDocumentBusy('Building comments report…', async () => {
-      if (!window.WFSWord) throw new Error('The embedded Word export writer is unavailable.');
-      const report = buildCommentReport();
-      if (!report.rows.length) throw new Error('This document has no comments to export.');
-      const filename = commentReportFilename(state.doc.fileName);
-      await WFSWord.write(report, filename);
-      setStatus(`Exported ${report.rows.length.toLocaleString()} comment${plural(report.rows.length)} to ${filename}. The source DOCX was not changed.`, true);
-    });
-  }
-
-  function buildCommentReport() {
-    const comments = state.doc.items.filter((item) => item.type === 'com')
-      .slice().sort((left, right) => compareValues(left.order, right.order) || compareValues(left.uid, right.uid));
-    const numberByUid = new Map(comments.map((item, index) => [item.uid, index + 1]));
-    return {
-      title: `${state.doc.baseName} comments`,
-      headers: ['Comment #', 'Author', 'Date/time', 'Page', 'Commented on', 'Comment'],
-      rows: comments.map((item, index) => [
-        index + 1,
-        authorDisplay(item.author, item.authorPresent),
-        readableExportDate(item.date),
-        item.pg || '',
-        item.replyToUid && numberByUid.has(item.replyToUid) ? `[Comment #${numberByUid.get(item.replyToUid)}]` : truncateCommentContext(item.on),
-        item.text
-      ]),
-      orientation: 'portrait',
-      widths: [650, 1350, 1650, 600, 2800, 3750],
-      itemLabel: 'comment'
-    };
-  }
-
-  function truncateCommentContext(value, limit = COMMENT_CONTEXT_LIMIT) {
-    const text = collapse(value);
-    const characters = Array.from(text);
-    if (characters.length <= limit) return text;
-    let shortened = characters.slice(0, limit).join('');
-    const lastSpace = shortened.lastIndexOf(' ');
-    if (lastSpace >= Math.floor(limit * .7)) shortened = shortened.slice(0, lastSpace);
-    return `${shortened.trim()}…`;
-  }
-
-  function readableExportDate(value) {
-    if (!value) return '';
-    const date = new Date(value);
-    return Number.isFinite(date.getTime()) ? date.toLocaleString() : value;
-  }
-
-  function commentReportFilename(fileName, date = new Date()) {
-    const original = String(fileName || 'document.docx');
-    const extension = (original.match(/\.docx$/i) || ['.docx'])[0];
-    const base = original.slice(0, original.length - (original.toLowerCase().endsWith('.docx') ? extension.length : 0));
-    return `${base} (Comments ${editDateStamp(date)})${extension}`;
-  }
-
   function buildExportSheets(format) {
     const rows = exportRowsFor(format);
     const main = [exportHeader()].concat(rows.map(exportRow));
@@ -3027,17 +2909,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   function compareValues(left, right) { return String(left == null ? '' : left).localeCompare(String(right == null ? '' : right), undefined, { numeric: true, sensitivity: 'base' }); }
   function partLabel(path) { return String(path || '').replace(/^word\//, '').replace(/\.xml$/i, '') || path; }
   function safeBaseName(name) { return (String(name || 'document').replace(/\.docx$/i, '').replace(/[<>:"/\\|?*\u0000-\u001f]+/g, '_').trim().slice(0, 120) || 'document'); }
-  function editDateStamp(date) {
-    const value = date instanceof Date ? date : new Date(date);
-    if (!Number.isFinite(value.getTime())) throw new Error('A valid date is required for the edited filename.');
-    return `${value.getMonth() + 1}.${value.getDate()}.${String(value.getFullYear()).slice(-2)}`;
-  }
-  function editedDocumentFilename(fileName, date = new Date()) {
-    const original = String(fileName || 'document.docx');
-    const extension = (original.match(/\.docx$/i) || ['.docx'])[0];
-    const base = original.slice(0, original.length - (original.toLowerCase().endsWith('.docx') ? extension.length : 0));
-    return `${base} (Edit ${editDateStamp(date)})${extension}`;
-  }
   function stamp() { return new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 17); }
   function docxMime() { return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'; }
   function formatBytes(bytes) { if (bytes < 1024) return `${bytes} B`; if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`; return `${(bytes / 1048576).toFixed(1)} MB`; }
@@ -3064,11 +2935,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
         refreshAfterVisibleCommit(commitVisibleEdits());
         return new Uint8Array(await (await buildDocxBlob()).arrayBuffer());
       },
-      buildCommentReportBytes: async () => new Uint8Array(await (await WFSWord.build(buildCommentReport())).arrayBuffer()),
-      commentReport: () => buildCommentReport(),
-      editedFilename: (name, date) => editedDocumentFilename(name, date ? new Date(date) : new Date()),
-      commentReportFilename: (name, date) => commentReportFilename(name, date ? new Date(date) : new Date()),
-      truncateCommentContext,
       snapshot: testSnapshot,
       selectTab: switchTab,
       modifiedParts: () => state.doc ? Array.from(state.doc.modifiedParts) : [],
@@ -3079,7 +2945,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   function testSnapshot() {
     return state.doc ? {
       fileName: state.doc.fileName, mainPart: state.doc.mainPart, strict: state.doc.strict,
-      itemCount: state.doc.items.length, items: state.doc.items.map((item) => ({ uid: item.uid, type: item.type, author: item.author, date: item.date, text: item.text, on: item.on, part: item.part, xmlPath: item.xmlPath, id: item.id, replyToUid: item.replyToUid || '', replyToId: item.replyToId || '' })),
+      itemCount: state.doc.items.length, items: state.doc.items.map((item) => ({ uid: item.uid, type: item.type, author: item.author, date: item.date, text: item.text, on: item.on, part: item.part, xmlPath: item.xmlPath, id: item.id })),
       relationships: state.doc.relationships.map((rel) => ({ status: rel.status, source: rel.source, target: rel.target, resolved: rel.resolved, used: rel.used })),
       externalLinks: state.doc.externalLinks.map((link) => ({ url: link.url, sources: link.sources.slice(), occurrences: link.occurrences, status: link.status, detail: link.detail })),
       stats: Object.assign({}, state.doc.stats),
@@ -3105,7 +2971,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     <div class="brand-mark" aria-hidden="true">CM</div>
     <div>
       <h1>Comment Master</h1>
-      <p>Private, browser-local DOCX review editor <span class="version">v6.2.0</span></p>
+      <p>Private, browser-local DOCX review editor <span class="version">v6.1.0</span></p>
     </div>
   </div>
   <div class="header-actions">
@@ -3149,7 +3015,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       <button class="tab-btn" data-tab="revisions" type="button">Tracked Changes</button>
       <button class="tab-btn" data-tab="quick" type="button">Quick Edits</button>
       <button class="tab-btn" data-tab="relationships" type="button">Links</button>
-      <button class="tab-btn tab-export" data-tab="export" type="button">Export</button>
+      <button class="tab-btn" data-tab="export" type="button">Export</button>
       <button id="toggle-advanced" class="tab-btn tab-more" data-action="toggleAdvanced" type="button" aria-expanded="false" aria-controls="advanced-tabs">Advanced Tools</button>
       <span id="advanced-tabs" class="advanced-tabs" hidden>
         <button class="tab-btn" data-tab="parts" type="button">Parts</button>
@@ -3165,55 +3031,66 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
         <div>
           <p class="eyebrow">Document ready</p>
           <h2 id="overview-filename">Document overview</h2>
-          <p id="overview-summary" class="muted">Review the essentials and use the most common document actions without leaving this page.</p>
+          <p id="overview-summary" class="muted">Review the document summary, make a common author change, or export a simple review log.</p>
         </div>
         <div class="button-row overview-heading-actions">
           <button class="btn btn-light" data-action="goReview" type="button">Review and edit rows</button>
-          <button class="btn btn-primary" data-action="save" type="button">Save edited Word doc</button>
+          <button class="btn btn-primary" data-action="save" type="button">Save edited DOCX</button>
         </div>
       </div>
 
-      <div class="overview-dashboard">
-        <section class="overview-section" aria-labelledby="basic-info-heading">
-          <div class="section-heading"><div><h3 id="basic-info-heading">Document information</h3><p>Page and word totals use Word's saved properties when available.</p></div><button class="btn btn-light" data-action="goLinks" type="button">View links</button></div>
-          <dl class="info-grid">
-            <div><dt>File size</dt><dd id="overview-filesize">0 B</dd></div>
-            <div><dt>Pages</dt><dd id="overview-pages">0</dd></div>
-            <div><dt>Words</dt><dd id="overview-words">0</dd></div>
-            <div><dt>Comments</dt><dd id="overview-comments">0</dd></div>
-            <div><dt>Tracked changes</dt><dd id="overview-revisions">0</dd></div>
-            <div class="wide author-list"><dt>Review authors</dt><dd id="overview-authors">None</dd></div>
-            <div class="wide link-metric"><dt>External links / dead links</dt><dd id="overview-link-health">0 / checking</dd></div>
-          </dl>
-        </section>
+      <section class="overview-section" aria-labelledby="basic-info-heading">
+        <div class="section-heading"><div><h3 id="basic-info-heading">Basic document information</h3><p>Counts come from the Word package. Page and word totals use Word's saved properties when available.</p></div></div>
+        <dl class="info-grid">
+          <div><dt>File size</dt><dd id="overview-filesize">0 B</dd></div>
+          <div><dt>Pages</dt><dd id="overview-pages">0</dd></div>
+          <div><dt>Words</dt><dd id="overview-words">0</dd></div>
+          <div><dt>Comments</dt><dd id="overview-comments">0</dd></div>
+          <div><dt>Tracked changes</dt><dd id="overview-revisions">0</dd></div>
+          <div><dt>Comment authors</dt><dd id="overview-comment-authors">None</dd></div>
+          <div><dt>Tracked-change authors</dt><dd id="overview-revision-authors">None</dd></div>
+          <div><dt>External website links</dt><dd id="overview-links">0</dd></div>
+          <div class="link-metric"><dt>Dead external links</dt><dd id="overview-dead-links">Checking…</dd></div>
+          <div><dt>Images</dt><dd id="overview-images">0</dd></div>
+          <div><dt>Tables</dt><dd id="overview-tables">0</dd></div>
+          <div><dt>Paragraphs</dt><dd id="overview-paragraphs">0</dd></div>
+          <div><dt>XML parts</dt><dd id="overview-parts">0</dd></div>
+          <div class="wide"><dt>Document metadata</dt><dd id="overview-metadata">None recorded</dd></div>
+        </dl>
+      </section>
 
-        <section class="overview-section" aria-labelledby="start-actions-heading">
-          <div class="section-heading"><div><h3 id="start-actions-heading">Quick actions</h3><p>Use Review Activity when you need to limit a change to particular rows or activity types.</p></div></div>
-          <div class="quick-action-grid">
-            <article class="start-card rename-card">
-              <h3>Change an author name everywhere</h3>
-              <p>Replace one existing name, or all names, across comments and tracked changes.</p>
-              <div class="grid-2">
-                <div class="form-row"><label for="home-target-author">Current name</label><select id="home-target-author"></select></div>
-                <div class="form-row"><label for="home-author">New name</label><input id="home-author" autocomplete="off" placeholder="Enter the replacement name"></div>
-              </div>
-              <div class="card-action-row"><span id="home-count" class="muted">0 matching items</span><button class="btn btn-primary" data-action="homeRename" type="button">Change everywhere</button></div>
-            </article>
+      <section class="overview-section" aria-labelledby="start-actions-heading">
+        <div class="section-heading"><div><h3 id="start-actions-heading">Start here</h3><p>The two most common jobs are available without opening the advanced tools.</p></div></div>
+        <div class="start-grid">
+          <article class="start-card">
+            <span class="step-number" aria-hidden="true">1</span>
+            <h3>Change reviewer names</h3>
+            <p>Change every reviewer or just one existing name. Choose whether the change applies to comments, tracked changes, or both.</p>
+            <div class="grid-2">
+              <div class="form-row"><label for="home-scope">Activity</label><select id="home-scope"><option value="all">Comments and tracked changes</option><option value="comments">Comments only</option><option value="changes">Tracked changes only</option><option value="selected">Selected review rows</option></select></div>
+              <div class="form-row"><label for="home-target-author">Existing reviewer</label><select id="home-target-author"></select></div>
+            </div>
+            <div class="form-row"><label for="home-author">New reviewer name</label><input id="home-author" autocomplete="off" placeholder="Enter the replacement name"></div>
+            <div class="card-action-row"><span id="home-count" class="muted">0 matching items</span><button class="btn" data-action="homeRename" type="button">Change name</button></div>
+          </article>
 
-            <article class="start-card">
-              <h3>Strip document metadata</h3>
-              <p>Remove creator, modified-by, saved dates, revision number, and editing time without touching review authors or dates.</p>
-              <button class="btn btn-danger" data-action="homeStripMetadata" type="button">Strip metadata</button>
-            </article>
+          <article class="start-card">
+            <span class="step-number" aria-hidden="true">2</span>
+            <h3>Export a simple review log</h3>
+            <p>Excel and Word exports contain only: page number, commented-on or redlined language, type of change, reviewer name, and date/time.</p>
+            <div class="form-row"><label for="home-export-scope">Rows to export</label><select id="home-export-scope"><option value="all">Comments and tracked changes</option><option value="comments">Comments only</option><option value="changes">Tracked changes only</option><option value="selected">Selected review rows</option></select></div>
+            <div class="button-row"><button class="btn btn-primary" data-action="homeExportExcel" type="button">Export Excel</button><button class="btn" data-action="homeExportWord" type="button">Export Word</button></div>
+          </article>
 
-            <article class="start-card">
-              <h3>Export comments to Word</h3>
-              <p>Create a simple portrait report with numbered comments, readable context, and reply references.</p>
-              <button class="btn btn-primary" data-action="homeExportComments" type="button">Export comments</button>
-            </article>
-          </div>
-        </section>
-      </div>
+          <article class="start-card link-card">
+            <span class="step-number" aria-hidden="true">3</span>
+            <h3>External link check</h3>
+            <p id="overview-link-summary">Checking every external website in the background…</p>
+            <div class="link-status-line"><span id="overview-link-badge" class="link-badge checking">Checking</span><span id="overview-link-progress" class="muted">0 of 0 checked</span></div>
+            <div class="button-row"><button class="btn" data-action="goLinks" type="button">View links</button><button class="btn btn-light" data-action="checkAllLinks" type="button">Check again</button></div>
+          </article>
+        </div>
+      </section>
     </div>
 
     <div id="view-table" class="view-section" hidden>
@@ -3310,38 +3187,11 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
 
     <div id="view-meta" class="view-section panel" hidden><h2>Document metadata</h2><p>These controls affect document-level properties only. Comment and tracked-change authorship is never treated as disposable metadata.</p><div class="grid-2"><div class="form-row"><label for="meta-creator">Creator</label><input id="meta-creator"></div><div class="form-row"><label for="meta-lastMod">Last modified by</label><input id="meta-lastMod"></div><div class="form-row"><label for="meta-created">Created</label><input id="meta-created" type="datetime-local" step="1"></div><div class="form-row"><label for="meta-modified">Modified</label><input id="meta-modified" type="datetime-local" step="1"></div><div class="form-row"><label for="meta-time">Total editing time</label><input id="meta-time" type="number" min="0"></div><div class="form-row"><label for="meta-revision">Revision</label><input id="meta-revision"></div></div><div class="button-row"><button class="btn" data-action="applyMeta" type="button">Apply metadata</button><button class="btn btn-danger" data-action="wipeMeta" type="button">Clean common metadata</button></div></div>
 
-    <div id="view-export" class="view-section panel" hidden>
-      <h2>Save and export</h2>
-      <p>Saving creates a new Word document. Reports do not change the document you opened.</p>
-      <div class="export-grid">
-        <div class="quick-card">
-          <h3>Edited document</h3>
-          <p>Preserves the original filename and adds a local-date suffix such as <strong>(Edit 9.1.26)</strong>.</p>
-          <button class="btn btn-primary" data-action="save" type="button">Save edited Word doc</button>
-        </div>
-        <div class="quick-card">
-          <h3>Comments report</h3>
-          <p>Creates a portrait Word table with numbered comments, readable context, full comment text, and reply references.</p>
-          <button class="btn btn-primary" data-action="exportCommentsWord" type="button">Export comments to Word</button>
-        </div>
-        <div class="quick-card">
-          <h3>Review activity data</h3>
-          <p>Exports comments and tracked changes using the existing five-column review schema.</p>
-          <div class="form-row"><label for="export-format">Rows</label><select id="export-format"><option value="filtered">Current filtered view</option><option value="selected">Selected rows</option><option value="comments">Comments only</option><option value="changes">Tracked changes only</option><option value="all">All review activity</option><option value="workbook">All activity with Excel summaries</option></select></div>
-          <label class="check-row"><input id="export-summary" type="checkbox"> Add summary sheets to Excel</label>
-          <div class="button-row"><button class="btn" data-action="exportExcel" type="button">Export Excel</button><button class="btn" data-action="exportWord" type="button">Export Word</button><button class="btn btn-light" data-action="copy" type="button">Copy rows</button></div>
-        </div>
-        <div class="quick-card">
-          <h3>Document session</h3>
-          <p>Open another document or return to the opening screen.</p>
-          <div class="button-row"><button class="btn" data-action="open" type="button">Open another</button><button class="btn btn-danger" data-action="reset" type="button">Close document</button></div>
-        </div>
-      </div>
-    </div>
+    <div id="view-export" class="view-section panel" hidden><h2>Save and export</h2><p>Saving creates a new DOCX. Review-log exports do not change the document.</p><div class="export-grid"><div class="quick-card"><h3>Edited document</h3><p>Saves only requested XML changes. A no-change save returns the original package bytes.</p><button class="btn btn-primary" data-action="save" type="button">Save edited DOCX</button></div><div class="quick-card"><h3>Simple review log</h3><p>The main sheet or Word table has five clear columns only.</p><div class="form-row"><label for="export-format">Rows</label><select id="export-format"><option value="filtered">Current filtered view</option><option value="selected">Selected rows</option><option value="comments">Comments only</option><option value="changes">Tracked changes only</option><option value="all">All review activity</option><option value="workbook">All activity with Excel summaries</option></select></div><label class="check-row"><input id="export-summary" type="checkbox"> Add summary sheets to Excel</label><div class="button-row"><button class="btn" data-action="exportExcel" type="button">Export Excel</button><button class="btn" data-action="exportWord" type="button">Export Word</button><button class="btn btn-light" data-action="copy" type="button">Copy rows</button></div></div><div class="quick-card"><h3>Document session</h3><p>Open another document or return to the opening screen.</p><div class="button-row"><button class="btn" data-action="open" type="button">Open another</button><button class="btn btn-danger" data-action="reset" type="button">Close document</button></div></div></div></div>
   </section>
 </main>
 
-<footer class="app-footer">Comment Master v6.2.0 · Document processing stays in your browser</footer>
+<footer class="app-footer">Comment Master v6.1.0 · Document processing stays in your browser</footer>
 
 </body>
 </html>
