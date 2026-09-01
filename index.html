@@ -4,8 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src http: https:; object-src 'none'; base-uri 'none'; form-action 'none'; worker-src 'none'">
-  <title>Comment Master v6.3.0</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; worker-src 'self' blob:; manifest-src 'self'">
+  <meta name="theme-color" content="#243f77">
+  <meta name="color-scheme" content="light">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>Comment Master v7.0.0</title>
   <style>
 :root {
   color-scheme: light;
@@ -341,6 +344,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
 }
 
   </style>
+  <link rel="stylesheet" href="assets/workbench.css">
   <script>
 
 
@@ -483,7 +487,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   }
 
   function appProperties(sheets) {
-    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>${sheets.length}</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector size="${sheets.length}" baseType="lpstr">${sheets.map((sheet) => `<vt:lpstr>${xml(sheet.name)}</vt:lpstr>`).join('')}</vt:vector></TitlesOfParts><Company></Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>6.3</AppVersion></Properties>`;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>${sheets.length}</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector size="${sheets.length}" baseType="lpstr">${sheets.map((sheet) => `<vt:lpstr>${xml(sheet.name)}</vt:lpstr>`).join('')}</vt:vector></TitlesOfParts><Company></Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>7.0</AppVersion></Properties>`;
   }
 
   async function build(sheets, progress) {
@@ -604,7 +608,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   }
 
   function appProperties() {
-    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><Company></Company><AppVersion>6.3</AppVersion></Properties>';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><Company></Company><AppVersion>7.0</AppVersion></Properties>';
   }
 
   function validate(headers, rows, settings) {
@@ -652,7 +656,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
 (function () {
   'use strict';
 
-  const VERSION = '6.3.0';
+  const VERSION = '7.0.0';
   const WML_TRANSITIONAL = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
   const WML_STRICT = 'http://purl.oclc.org/ooxml/wordprocessingml/main';
   const WML_NAMESPACES = new Set([WML_TRANSITIONAL, WML_STRICT]);
@@ -739,7 +743,10 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   const comparisonState = {
     tab: 'documents',
     reviews: [],
-    nextReviewId: 1
+    nextReviewId: 1,
+    preparedOriginal: null,
+    preparedChanged: null,
+    preparedBase: null
   };
 
   let ui = {};
@@ -809,9 +816,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     ui.drop.addEventListener('click', (event) => {
       if (!event.target.closest('button')) ui.file.click();
     });
-    ui.drop.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); ui.file.click(); }
-    });
     ['dragenter', 'dragover'].forEach((name) => ui.drop.addEventListener(name, (event) => {
       event.preventDefault(); event.stopPropagation(); ui.drop.classList.add('dragover');
     }));
@@ -855,7 +859,12 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     [ui.quickScope, ui.quickTargetAuthor].forEach((element) => element.addEventListener('change', renderQuickCount));
     ui.homeTargetAuthor.addEventListener('change', renderHomeCount);
     [ui.compareOriginalSource, ui.compareChangedSource, ui.combineBaseSource].forEach((element) => element.addEventListener('change', renderComparisonSources));
-    [ui.compareOriginalFile, ui.compareChangedFile, ui.combineBaseFile].forEach((element) => element.addEventListener('change', renderComparisonSources));
+    [ui.compareOriginalFile, ui.compareChangedFile, ui.combineBaseFile].forEach((element) => element.addEventListener('change', () => {
+      if (element === ui.compareOriginalFile) comparisonState.preparedOriginal = null;
+      if (element === ui.compareChangedFile) comparisonState.preparedChanged = null;
+      if (element === ui.combineBaseFile) comparisonState.preparedBase = null;
+      renderComparisonSources();
+    }));
     [ui.compareTextOriginal, ui.compareTextChanged].forEach((element) => element.addEventListener('paste', richTextPaste));
     ui.combineReviewFiles.addEventListener('change', addCombineReviewFiles);
     ui.combineReviewList.addEventListener('input', updateCombineReviewAuthor);
@@ -895,6 +904,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
 
   function globalKeydown(event) {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      if (window.CommentMasterWorkbench && window.CommentMasterWorkbench.currentRoute() !== 'word') return;
       event.preventDefault();
       if (state.doc && !state.busy) void runAction('save');
     }
@@ -1060,9 +1070,40 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   function renderSourceNote(select, input, note, label) {
     if (select.value === 'current') note.textContent = state.doc ? `Using currently loaded ${state.doc.fileName}, including unsaved in-memory edits.` : `No current ${label} is available.`;
     else {
-      const file = input.files && input.files[0];
+      const file = preparedComparisonFile(input) || input.files && input.files[0];
       note.textContent = file ? `${file.name} · ${formatBytes(file.size)}` : `No ${label} selected.`;
     }
+  }
+
+  function preparedComparisonFile(input) {
+    if (input === ui.compareOriginalFile) return comparisonState.preparedOriginal;
+    if (input === ui.compareChangedFile) return comparisonState.preparedChanged;
+    if (input === ui.combineBaseFile) return comparisonState.preparedBase;
+    return null;
+  }
+
+  function hasComparisonState() {
+    const selectedUpload = [ui.compareOriginalFile, ui.compareChangedFile, ui.combineBaseFile, ui.combineReviewFiles]
+      .some((input) => Boolean(input && input.files && input.files.length));
+    return Boolean(comparisonState.preparedOriginal || comparisonState.preparedChanged || comparisonState.preparedBase || comparisonState.reviews.length || selectedUpload);
+  }
+
+  function clearComparisonState() {
+    comparisonState.preparedOriginal = null;
+    comparisonState.preparedChanged = null;
+    comparisonState.preparedBase = null;
+    comparisonState.reviews = [];
+    comparisonState.nextReviewId = 1;
+    [ui.compareOriginalFile, ui.compareChangedFile, ui.combineBaseFile, ui.combineReviewFiles].forEach((input) => {
+      if (input) input.value = '';
+    });
+    [ui.compareOriginalSource, ui.compareChangedSource, ui.combineBaseSource].forEach((select) => {
+      if (select) select.value = 'upload';
+    });
+    if (ui.compareDocResult) ui.compareDocResult.textContent = '';
+    if (ui.compareTextResult) ui.compareTextResult.textContent = '';
+    if (ui.compareOriginalSource && ui.compareChangedSource && ui.combineBaseSource) renderComparisonSources();
+    if (ui.combineReviewList && ui.combineResult) renderCombineReviews();
   }
 
   function addCombineReviewFiles() {
@@ -1202,7 +1243,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       requestAnimationFrame(() => {
         const overviewTab = ui.tabs.querySelector('[data-tab="overview"]');
         if (overviewTab) overviewTab.focus();
-        if (state.doc && state.doc.token === candidate.token) void startExternalLinkChecks();
       });
     } catch (error) {
       if (token === state.loadToken) showError(error);
@@ -1350,6 +1390,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     updateDirtyUi();
     comparisonState.reviews.filter((entry) => entry.type === 'current').forEach((entry) => { entry.name = candidate.fileName; });
     renderComparisonSources();
+    window.dispatchEvent(new CustomEvent('commentmaster:word-opened', { detail: { fileName: candidate.fileName, snapshot: testSnapshot() } }));
   }
 
   function resetPerDocumentControls() {
@@ -1370,9 +1411,9 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     clearRegex();
   }
 
-  function closeDocument() {
+  function closeDocument(force = false) {
     if (!state.doc) return;
-    if (hasUnsavedChanges() && !confirm('Close this document and discard unsaved changes?')) return;
+    if (!force && hasUnsavedChanges() && !confirm('Close this document and discard unsaved changes?')) return;
     cancelExternalLinkChecks();
     state.loadToken += 1;
     state.doc = null;
@@ -1398,7 +1439,8 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     updateDocumentButtons();
     renderComparisonSources();
     renderCombineReviews();
-    ui.drop.focus();
+    ui.browse.focus();
+    window.dispatchEvent(new CustomEvent('commentmaster:word-closed'));
   }
 
   function findWordElements(root, local, docState) {
@@ -1765,7 +1807,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       if (!links.has(url)) {
         links.set(url, {
           key: url, url, displayUrl: relationship.target, sources: [], occurrences: 0,
-          status: 'pending', detail: 'Waiting to check', httpStatus: null, checkedAt: ''
+          status: 'listed', detail: 'Listed locally; the address was not contacted', httpStatus: null, checkedAt: ''
         });
       }
       const link = links.get(url);
@@ -1872,8 +1914,8 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       ['Embedded/active content', activeEntries.length ? 'Present' : 'Not found', activeEntries.join(', ') || 'No ActiveX, embedding, or VBA package entry detected'],
       ['Package signatures', signatureEntries.length ? 'Present' : 'Not found', signatureEntries.length ? 'Any document edit can invalidate these signatures; unchanged saves return the original bytes' : 'No XML signature package entries detected'],
       ['Custom XML', String(customXml.length), customXml.length ? 'Custom XML is preserved and not rewritten unless explicitly modified elsewhere' : 'None found'],
-      ['External website links', String(docState.externalLinks.length), docState.externalLinks.length ? 'Distinct HTTP/HTTPS hyperlink targets are checked directly in the background' : 'No external HTTP/HTTPS hyperlinks detected'],
-      ['Dead external links', String(docState.externalLinks.filter((link) => link.status === 'dead').length), docState.externalLinks.some((link) => ['pending', 'checking'].includes(link.status)) ? 'Link checking is still in progress' : 'Based on the latest direct browser checks'],
+      ['External website links', String(docState.externalLinks.length), docState.externalLinks.length ? 'Distinct HTTP/HTTPS hyperlink targets are listed locally and are never contacted by Comment Master' : 'No external HTTP/HTTPS hyperlinks detected'],
+      ['Network link checks', 'Disabled', 'Privacy mode prevents document-derived addresses from being sent outside the browser'],
       ['Broken internal relationships', String(docState.relationships.filter((rel) => !rel.external && !rel.exists).length), 'Based on local package target resolution'],
       ['Orphan/point comments', String(orphanComments), orphanComments ? 'Some comment definitions have no matched range; they are still listed and preserved' : 'All comment definitions matched a range or point reference'],
       ['Duplicate review IDs', String(duplicateItemIds), duplicateItemIds ? 'Internal unique row identities prevent UI collisions; source OOXML IDs are preserved' : 'No repeated type/part/ID combinations detected']
@@ -2059,7 +2101,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       : `<div class="activity-block"><span class="cell-label">${esc(item.label)} language</span><div class="editable" data-field="text" ${editable} spellcheck="false" aria-label="Reviewed language for ${escAttr(item.label)} ${escAttr(item.id || item.order)}">${esc(item.text)}</div></div>`;
     return `<tr data-uid="${escAttr(item.uid)}" class="${selected ? 'selected' : ''}">
       <td class="check-cell"><input type="checkbox" data-field="selected" aria-label="Select ${escAttr(item.label)} ${escAttr(item.id || item.order)}" ${selected ? 'checked' : ''}></td>
-      <td data-label="Page">${esc(item.pg || '—')}</td>
+      <td data-label="Page">${esc(item.pg || 'Not listed')}</td>
       <td class="type-cell" data-label="Change"><span class="badge ${badgeClass}" title="${escAttr(item.label)}">${esc(item.short)}</span><span class="type-label">${esc(item.label)}</span></td>
       <td class="activity-cell" data-label="Reviewed language and comment">${reviewedLanguage}<details class="row-details"><summary>Source details</summary><dl><dt>Part</dt><dd>${esc(item.partLabel)}</dd><dt>OOXML ID</dt><dd>${esc(item.id || '(none)')}</dd></dl></details></td>
       <td data-label="Reviewer name"><input data-field="author" aria-label="Reviewer name for ${escAttr(item.label)} ${escAttr(item.id || item.order)}" value="${escAttr(item.author)}"></td>
@@ -2530,7 +2572,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     renderActiveSecondary();
     updateDirtyUi();
     setStatus(`Undid: ${snapshot.label}.`, true);
-    void startExternalLinkChecks();
+    renderLinkViews();
   }
 
   function finishMutation(paths, message) {
@@ -2633,12 +2675,11 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     setText('overview-authors', authors || 'None');
     const authorList = document.getElementById('overview-authors');
     if (authorList) authorList.title = authors || 'None';
-    setText('overview-link-health', `${linkStatus.total.toLocaleString()} / ${linkStatus.pending ? 'checking' : linkStatus.dead.toLocaleString()}`);
+    setText('overview-link-health', `${linkStatus.total.toLocaleString()} / Off`);
     const metric = document.querySelector('.link-metric');
     if (metric) metric.classList.toggle('has-dead', linkStatus.dead > 0);
-    const summary = !linkStatus.total ? 'No external website links were found.' : linkStatus.pending
-      ? `Checking every external website now. ${linkStatus.checked.toLocaleString()} of ${linkStatus.total.toLocaleString()} finished.`
-      : `${linkStatus.live.toLocaleString()} Live and ${linkStatus.dead.toLocaleString()} Dead external link${plural(linkStatus.total)}.`;
+    const summary = !linkStatus.total ? 'No external website links were found.'
+      : `${linkStatus.total.toLocaleString()} external link${plural(linkStatus.total)} listed locally. Comment Master did not contact any address.`;
     if (ui.linksSummary) ui.linksSummary.textContent = summary;
     renderHomeCount();
   }
@@ -2746,79 +2787,40 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
 
   async function startExternalLinkChecks(key) {
     requireFile();
-    const run = cancelExternalLinkChecks();
-    const documentToken = state.documentToken;
+    cancelExternalLinkChecks();
     const links = key ? state.doc.externalLinks.filter((link) => link.key === key) : state.doc.externalLinks.slice();
     if (key && !links.length) throw new Error('That external link is no longer available in this document.');
-    links.forEach((link) => { link.status = 'pending'; link.detail = 'Waiting to check'; link.httpStatus = null; link.checkedAt = ''; });
-    renderLinkViews();
+    links.forEach((link) => {
+      link.status = 'listed';
+      link.detail = 'Listed locally; the address was not contacted';
+      link.httpStatus = null;
+      link.checkedAt = '';
+    });
     if (!links.length) {
       setStatus('No external HTTP or HTTPS links were found.', true);
       return;
     }
-    let cursor = 0;
-    const worker = async () => {
-      while (cursor < links.length) {
-        const index = cursor++;
-        const link = links[index];
-        if (!state.doc || state.documentToken !== documentToken || state.linkCheckRun !== run) return;
-        link.status = 'checking';
-        link.detail = 'Checking now';
-        queueLinkRender();
-        const result = await probeExternalLink(link.url, run);
-        if (!state.doc || state.documentToken !== documentToken || state.linkCheckRun !== run) return;
-        Object.assign(link, result, { checkedAt: new Date().toISOString() });
-        queueLinkRender();
-      }
-    };
-    await Promise.all(Array.from({ length: Math.min(LINK_CHECK_CONCURRENCY, links.length) }, worker));
-    if (!state.doc || state.documentToken !== documentToken || state.linkCheckRun !== run) return;
     renderLinkViews();
-    const summary = externalLinkSummary();
-    setStatus(`External link check finished: ${summary.live.toLocaleString()} Live, ${summary.dead.toLocaleString()} Dead.`, true);
+    setStatus(`${links.length.toLocaleString()} external link${plural(links.length)} listed locally. No address was contacted.`, true);
   }
 
   function retryExternalLink(key) {
-    if (!key) throw new Error('Choose an external link to check again.');
+    if (!key) throw new Error('Choose an external link to inspect.');
     return startExternalLinkChecks(key);
   }
 
-  async function probeExternalLink(url, run) {
-    const request = typeof fetch === 'function' && typeof AbortController === 'function' ? (target, options) => fetchExternal(target, options, run) : null;
-    return probeExternalUrl(url, request);
+  async function probeExternalLink(url) {
+    return probeExternalUrl(url);
   }
 
-  async function probeExternalUrl(url, request) {
-    if (isPrivateOrLocalUrl(url)) return { status: 'dead', detail: 'Private or local network address was not contacted', httpStatus: null };
-    if (typeof request !== 'function') return { status: 'dead', detail: 'This browser does not support direct link checks', httpStatus: null };
-    let exactError = null;
+  async function probeExternalUrl(url) {
     try {
-      const response = await request(url, {
-        method: 'HEAD', mode: 'cors', credentials: 'omit', redirect: 'follow', cache: 'no-store', referrerPolicy: 'no-referrer'
-      });
-      const live = response.status >= 200 && response.status < 400 || [401, 403, 405, 429].includes(response.status);
-      return { status: live ? 'live' : 'dead', detail: `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''}`, httpStatus: response.status };
-    } catch (error) {
-      exactError = error;
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Unsupported address');
+      return { status: 'listed', detail: 'Valid web address; not contacted', httpStatus: null };
+    } catch (_) {
+      return { status: 'invalid', detail: 'The stored address is not a valid HTTP or HTTPS URL', httpStatus: null };
     }
-    try {
-      await request(url, {
-        method: 'GET', mode: 'no-cors', credentials: 'omit', redirect: 'follow', cache: 'no-store', referrerPolicy: 'no-referrer'
-      });
-      return { status: 'live', detail: 'Site responded; HTTP status is hidden by the browser', httpStatus: null };
-    } catch (error) {
-      const timedOut = error && error.name === 'AbortError' || exactError && exactError.name === 'AbortError';
-      return { status: 'dead', detail: timedOut ? `No response within ${Math.round(LINK_CHECK_TIMEOUT_MS / 1000)} seconds` : 'The browser could not reach this address', httpStatus: null };
-    }
-  }
-
-  async function fetchExternal(url, options, run) {
-    if (state.linkCheckRun !== run) throw new Error('Link check cancelled.');
-    const controller = new AbortController();
-    state.linkCheckControllers.add(controller);
-    const timeout = setTimeout(() => controller.abort(), LINK_CHECK_TIMEOUT_MS);
-    try { return await fetch(url, Object.assign({}, options, { signal: controller.signal })); }
-    finally { clearTimeout(timeout); state.linkCheckControllers.delete(controller); }
   }
 
   let linkRenderQueued = false;
@@ -2839,14 +2841,14 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     if (!state.doc) return;
     const rows = state.doc.externalLinks;
     const summary = externalLinkSummary();
-    if (ui.linksSummary) ui.linksSummary.textContent = !summary.total ? 'No external HTTP or HTTPS links were found.' : summary.pending ? `Checking links: ${summary.checked.toLocaleString()} of ${summary.total.toLocaleString()} finished.` : `${summary.live.toLocaleString()} Live and ${summary.dead.toLocaleString()} Dead external link${plural(summary.total)}.`;
+    if (ui.linksSummary) ui.linksSummary.textContent = !summary.total ? 'No external HTTP or HTTPS links were found.' : `${summary.total.toLocaleString()} external link${plural(summary.total)} listed locally. No address was contacted.`;
     if (!rows.length) { ui.relBody.innerHTML = '<tr><td colspan="5" class="empty">No external website links were found. Internal document links are intentionally omitted.</td></tr>'; return; }
     ui.relBody.innerHTML = rows.map((link) => {
-      const status = link.status === 'dead' ? 'Dead' : link.status === 'live' ? 'Live' : 'Checking';
-      const statusClass = link.status === 'dead' ? 'dead' : link.status === 'live' ? 'live' : 'checking';
+      const status = link.status === 'invalid' ? 'Review' : 'Listed';
+      const statusClass = link.status === 'invalid' ? 'dead' : 'live';
       const sources = `${link.sources.join(', ')}${link.occurrences > 1 ? ` · ${link.occurrences.toLocaleString()} occurrences` : ''}`;
-      const checked = link.checkedAt ? `${toHuman(link.checkedAt)}<br><span class="link-result">${esc(link.detail)}</span>` : `<span class="link-result">${esc(link.detail)}</span>`;
-      return `<tr><td><span class="link-badge ${statusClass}">${status}</span></td><td class="link-url">${esc(link.displayUrl)}</td><td>${esc(sources)}</td><td>${checked}</td><td><button class="btn btn-light" data-action="retryLink" data-link-key="${escAttr(link.key)}" type="button">Check</button></td></tr>`;
+      const checked = `<span class="link-result">${esc(link.detail)}</span>`;
+      return `<tr><td><span class="link-badge ${statusClass}">${status}</span></td><td class="link-url">${esc(link.displayUrl)}</td><td>${esc(sources)}</td><td>${checked}</td><td><button class="btn btn-light" data-action="retryLink" data-link-key="${escAttr(link.key)}" type="button">Inspect</button></td></tr>`;
     }).join('');
   }
 
@@ -3109,9 +3111,9 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       const author = cleanRevisionAuthor(ui.compareDocAuthor.value || 'Comparison');
       const result = await buildComparisonOutput(original, [{ candidate: changed, author, sourceName: changed.fileName }]);
       const filename = comparisonFilename(original.fileName, 'Compare');
-      saveAs(result.blob, filename);
+      deliverWorkbenchResult('comparison', { blob: result.blob, filename, stats: result.stats, preview: result.preview, originalName: original.fileName, revisedName: changed.fileName });
       ui.compareDocResult.textContent = comparisonSummary(result.stats, filename);
-      setStatus(`Created ${filename}.`, true);
+      setStatus(`Comparison ready: ${filename}.`, true);
     });
   }
 
@@ -3131,9 +3133,9 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       const author = cleanRevisionAuthor(ui.compareTextAuthor.value || 'Comparison');
       const result = await buildComparisonOutput(original, [{ candidate: changed, author, sourceName: 'Changed text' }]);
       const filename = `Text Comparison (${editDateStamp(new Date())}).docx`;
-      saveAs(result.blob, filename);
+      deliverWorkbenchResult('comparison', { blob: result.blob, filename, stats: result.stats, preview: result.preview, originalName: 'Original text', revisedName: 'Revised text' });
       ui.compareTextResult.textContent = comparisonSummary(result.stats, filename);
-      setStatus(`Created ${filename}.`, true);
+      setStatus(`Text comparison ready: ${filename}.`, true);
     });
   }
 
@@ -3144,20 +3146,27 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       refreshAfterVisibleCommit(commitVisibleEdits());
       const base = await resolveComparisonSource(ui.combineBaseSource, ui.combineBaseFile, 'base document');
       const reviews = [];
+      const report = [];
       for (let index = 0; index < comparisonState.reviews.length; index += 1) {
         const entry = comparisonState.reviews[index];
         setBusy(true, `Reading reviewed version ${index + 1} of ${comparisonState.reviews.length}…`);
         let candidate;
         if (entry.type === 'current') candidate = await candidateFromCurrentDocument();
         else candidate = await buildCandidate(entry.file, state.loadToken);
-        reviews.push({ candidate, author: cleanRevisionAuthor(entry.author || guessReviewer(candidate, index)), sourceName: entry.name });
+        const author = cleanRevisionAuthor(entry.author || guessReviewer(candidate, index));
+        reviews.push({ candidate, author, sourceName: entry.name });
+        candidate.items.forEach((item) => report.push({
+          sourceName: entry.name, reviewer: author, type: item.type === 'com' ? 'Comment' : item.label,
+          author: item.author || author, date: item.date || '', context: item.on || '', text: item.text || '',
+          replyToId: item.replyToId || '', id: item.id || ''
+        }));
       }
       setBusy(true, 'Merging independent revisions and comments…');
       const result = await buildComparisonOutput(base, reviews);
       const filename = comparisonFilename(base.fileName, 'Combined Commentary');
-      saveAs(result.blob, filename);
+      deliverWorkbenchResult('combined-commentary', { blob: result.blob, filename, stats: result.stats, report, baseName: base.fileName });
       ui.combineResult.textContent = comparisonSummary(result.stats, filename);
-      setStatus(`Created ${filename}.`, true);
+      setStatus(`Combined review ready: ${filename}.`, true);
     });
   }
 
@@ -3174,7 +3183,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
 
   async function resolveComparisonSource(select, input, label) {
     if (select.value === 'current') return candidateFromCurrentDocument();
-    const file = input.files && input.files[0];
+    const file = preparedComparisonFile(input) || input.files && input.files[0];
     if (!file) throw new Error(`Choose the ${label}, or select the currently loaded document.`);
     return buildCandidate(file, state.loadToken);
   }
@@ -3189,6 +3198,20 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     return collapse(value || 'Comparison').replace(/[\u0000-\u001f]+/g, ' ').slice(0, 255) || 'Comparison';
   }
 
+  function comparisonPreviewParagraphs(candidate) {
+    const doc = candidate && candidate.xmlDocs.get(candidate.mainPart);
+    if (!doc) return [];
+    return findWordElements(doc, 'p', candidate).map((paragraph) => nodeTextInOrder(paragraph, candidate));
+  }
+
+  function deliverWorkbenchResult(type, detail) {
+    if (window.CommentMasterWorkbench && typeof window.CommentMasterWorkbench.showResult === 'function') {
+      window.CommentMasterWorkbench.showResult(type, detail);
+    } else {
+      saveAs(detail.blob, detail.filename);
+    }
+  }
+
   function guessReviewer(candidate, index) {
     const authors = unique(candidate.items.map((item) => collapse(item.author)).filter(Boolean));
     if (authors.length === 1) return authors[0];
@@ -3199,8 +3222,11 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   function comparisonFilename(fileName, label, date = new Date()) {
     const original = String(fileName || 'document.docx');
     const extension = (original.match(/\.docx$/i) || ['.docx'])[0];
-    const base = original.slice(0, original.length - (original.toLowerCase().endsWith('.docx') ? extension.length : 0));
-    return `${base} (${label} ${editDateStamp(date)})${extension}`;
+    const rawBase = original.slice(0, original.length - (original.toLowerCase().endsWith('.docx') ? extension.length : 0));
+    const base = rawBase.replace(/[<>:"/\\|?*\u0000-\u001f]+/g, '_').replace(/\s+/g, ' ').trim().replace(/[. ]+$/g, '') || 'document';
+    const safeLabel = collapse(label || 'Compare').replace(/[<>:"/\\|?*\u0000-\u001f]+/g, '_').slice(0, 80) || 'Compare';
+    const suffix = ` (${safeLabel} ${editDateStamp(date)})${extension}`;
+    return `${base.slice(0, Math.max(1, 180 - suffix.length))}${suffix}`;
   }
 
   function comparisonSummary(stats, filename) {
@@ -3376,6 +3402,25 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     return actions;
   }
 
+  function alignedComparisonPreview(basePrepared, preparedReview) {
+    if (!basePrepared || !preparedReview) return { original: [], revised: [], rows: [] };
+    const basePath = basePrepared.candidate.mainPart;
+    const revisedPath = preparedReview.candidate.mainPart;
+    const baseModels = basePrepared.models.get(basePath) || [];
+    const revisedModels = preparedReview.prepared.models.get(revisedPath) || [];
+    const rows = alignParagraphs(baseModels, revisedModels).map((action) => {
+      if (action.type === 'pair') {
+        const originalModel = baseModels[action.baseIndex];
+        const revisedModel = revisedModels[action.revisedIndex];
+        const equal = originalModel.structuralSignature === revisedModel.structuralSignature;
+        return { type: equal ? 'equal' : 'replace', original: originalModel.text, revised: revisedModel.text, baseIndex: action.baseIndex, revisedIndex: action.revisedIndex };
+      }
+      if (action.type === 'delete') return { type: 'delete', original: baseModels[action.baseIndex].text, revised: '', baseIndex: action.baseIndex, revisedIndex: null };
+      return { type: 'insert', original: '', revised: revisedModels[action.revisedIndex].text, baseIndex: null, revisedIndex: action.revisedIndex };
+    });
+    return { original: rows.map((row) => row.original), revised: rows.map((row) => row.revised), rows };
+  }
+
   function comparisonStoryPaths(candidate) {
     return candidate.storyParts.filter((path) => !candidate.commentParts.includes(path) && !/^word\/comments\d*\.xml$/i.test(path));
   }
@@ -3414,6 +3459,17 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
         if (node.parentNode) { node.parentNode.removeChild(node); changed = true; }
       });
     });
+    findWordElements(doc, 'cellDel', candidate).reverse().forEach((node) => {
+      const cell = closestWordAncestor(node, 'tc', candidate);
+      if (cell && cell.parentNode) { cell.parentNode.removeChild(cell); changed = true; }
+      else if (node.parentNode) { node.parentNode.removeChild(node); changed = true; }
+    });
+    ['cellIns', 'cellMerge', 'moveFromRangeStart', 'moveFromRangeEnd', 'moveToRangeStart', 'moveToRangeEnd',
+      'customXmlInsRangeStart', 'customXmlInsRangeEnd', 'customXmlDelRangeStart', 'customXmlDelRangeEnd',
+      'customXmlMoveFromRangeStart', 'customXmlMoveFromRangeEnd', 'customXmlMoveToRangeStart', 'customXmlMoveToRangeEnd']
+      .forEach((local) => findWordElements(doc, local, candidate).reverse().forEach((node) => {
+        if (node.parentNode) { node.parentNode.removeChild(node); changed = true; }
+      }));
     return changed;
   }
 
@@ -3444,11 +3500,14 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     const containerKey = paragraphContainerKey(paragraph, candidate);
     const simple = isSimpleComparisonParagraph(paragraph, candidate);
     const tokens = simple ? comparisonTokensFromParagraph(paragraph, candidate) : [];
+    const paragraphProperties = Array.from(paragraph.children).find((child) => child.namespaceURI === candidate.wNs && child.localName === 'pPr') || null;
+    const paragraphStyleSignature = canonicalComparisonNode(paragraphProperties);
+    const structuralSignature = canonicalComparisonNode(paragraph);
     if (tokens.length > MAX_COMPARE_TOKENS) throw new Error(`A paragraph in ${partLabel(path)} contains more than ${MAX_COMPARE_TOKENS.toLocaleString()} comparison tokens.`);
     return {
-      node: paragraph, path, index, text, containerKey, simple, tokens,
-      exactKey: `${containerKey}\u0000${collapse(text)}`,
-      tokenSignature: simple ? tokens.map(compareTokenKey).join('\u0001') : ''
+      node: paragraph, path, index, text, containerKey, simple, tokens, paragraphProperties, paragraphStyleSignature, structuralSignature,
+      exactKey: `${containerKey}\u0000${collapse(text)}\u0000${paragraphStyleSignature}`,
+      tokenSignature: simple ? `${paragraphStyleSignature}\u0002${tokens.map(compareTokenKey).join('\u0001')}` : ''
     };
   }
 
@@ -3524,7 +3583,8 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       prepared: prepareComparisonCandidate(review.candidate, false),
       paragraphMap: new Map()
     }));
-    const stats = { changedParagraphs: 0, insertedParagraphs: 0, deletedParagraphs: 0, complexParagraphs: 0, importedComments: 0, skippedComments: 0, skippedParts: 0 };
+    const preview = preparedReviews.length === 1 ? alignedComparisonPreview(base, preparedReviews[0]) : null;
+    const stats = { changedParagraphs: 0, insertedParagraphs: 0, deletedParagraphs: 0, formatChangedParagraphs: 0, complexParagraphs: 0, importedComments: 0, skippedComments: 0, skippedParts: 0 };
     const tracker = { next: nextRevisionIdForCandidate(baseCandidate), date: new Date().toISOString() };
 
     const basePaths = base.paths;
@@ -3539,8 +3599,9 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       const baseModels = base.models.get(basePath) || [];
       const plans = preparedReviews.map((review) => {
         const revisedPath = basePath === baseCandidate.mainPart ? review.candidate.mainPart : basePath;
-        const revisedModels = review.prepared.models.get(revisedPath) || [];
-        return { review, revisedPath, revisedModels, actions: alignParagraphs(baseModels, revisedModels) };
+        const hasMatchingStory = review.prepared.models.has(revisedPath);
+        const revisedModels = hasMatchingStory ? review.prepared.models.get(revisedPath) : [];
+        return { review, revisedPath, revisedModels, actions: hasMatchingStory ? alignParagraphs(baseModels, revisedModels) : [] };
       });
       if (applyCombinedPartChanges(baseCandidate, basePath, baseModels, plans, tracker, stats)) baseCandidate.modifiedParts.add(basePath);
     }
@@ -3548,7 +3609,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     const commentRecords = preparedReviews.flatMap((review) => review.prepared.comments.map((comment) => ({ review, comment })));
     if (commentRecords.length) importComparisonComments(baseCandidate, base, commentRecords, tracker, stats);
     const blob = await buildCandidateOutputBlob(baseCandidate);
-    return { blob, stats };
+    return { blob, stats, preview };
   }
 
   function applyCombinedPartChanges(baseCandidate, path, baseModels, plans, tracker, stats) {
@@ -3565,16 +3626,22 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
           const baseModel = baseModels[action.baseIndex];
           const revisedModel = plan.revisedModels[action.revisedIndex];
           plan.review.paragraphMap.set(revisedModel.node, baseModel.node);
-          if (baseModel.text === revisedModel.text && (!baseModel.simple || !revisedModel.simple || baseModel.tokenSignature === revisedModel.tokenSignature)) return;
+          if (!baseModel.simple || !revisedModel.simple) {
+            if (baseModel.structuralSignature === revisedModel.structuralSignature) return;
+            throw new Error(`A structurally complex paragraph in ${partLabel(path)} changed and cannot be redlined safely. Simplify that paragraph or compare it in Word.`);
+          }
+          if (baseModel.text === revisedModel.text && baseModel.tokenSignature === revisedModel.tokenSignature) return;
           if (!paired.has(action.baseIndex)) paired.set(action.baseIndex, []);
           paired.get(action.baseIndex).push({ plan, revisedModel });
         } else if (action.type === 'delete') {
           if (!deleted.has(action.baseIndex)) deleted.set(action.baseIndex, []);
           deleted.get(action.baseIndex).push(plan.review);
         } else if (action.type === 'insert') {
+          const revisedModel = plan.revisedModels[action.revisedIndex];
+          if (!revisedModel.simple) throw new Error(`A structurally complex paragraph was inserted in ${partLabel(path)} and cannot be redlined safely. Simplify that paragraph or compare it in Word.`);
           const boundary = Math.max(0, lastBaseIndex + 1);
           if (!inserted.has(boundary)) inserted.set(boundary, []);
-          inserted.get(boundary).push({ plan, revisedModel: plan.revisedModels[action.revisedIndex] });
+          inserted.get(boundary).push({ plan, revisedModel });
         }
       });
     });
@@ -3585,17 +3652,29 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       const deletionReviews = deleted.get(index) || [];
       if (!variants.length && !deletionReviews.length) continue;
       changed = true;
-      const complex = !baseModel.simple || variants.some((variant) => !variant.revisedModel.simple) || deletionReviews.length > 0;
+      const paragraphFormattingVariants = variants.filter((variant) => variant.revisedModel.paragraphStyleSignature !== baseModel.paragraphStyleSignature);
+      const formattingGroups = new Map();
+      paragraphFormattingVariants.forEach((variant) => {
+        const signature = variant.revisedModel.paragraphStyleSignature;
+        if (!formattingGroups.has(signature)) formattingGroups.set(signature, []);
+        formattingGroups.get(signature).push(variant);
+      });
+      const complex = !baseModel.simple || variants.some((variant) => !variant.revisedModel.simple) || deletionReviews.length > 0 || formattingGroups.size > 1;
       if (!complex) {
         const scripts = variants.map((variant) => ({
           author: variant.plan.review.author,
           script: tokenDiffScript(baseModel.tokens, variant.revisedModel.tokens),
           revisedModel: variant.revisedModel
         })).filter((entry) => entry.script.deleted.length || entry.script.insertions.length);
+        const formattingGroup = formattingGroups.values().next().value || [];
+        if (formattingGroup.length) {
+          applyParagraphFormattingChange(baseModel, formattingGroup[0].revisedModel, formattingGroup.map((variant) => variant.plan.review.author), baseCandidate, tracker);
+          stats.formatChangedParagraphs += 1;
+        }
         if (scripts.length) {
           rebuildMergedParagraph(baseModel, scripts, baseCandidate, tracker);
-          stats.changedParagraphs += 1;
         }
+        if (scripts.length || paragraphFormattingVariants.length) stats.changedParagraphs += 1;
         continue;
       }
 
@@ -3628,6 +3707,25 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       });
     });
     return changed;
+  }
+
+  function applyParagraphFormattingChange(baseModel, revisedModel, authors, candidate, tracker) {
+    const paragraph = baseModel.node;
+    const owner = paragraph.ownerDocument;
+    const existing = baseModel.paragraphProperties;
+    const previous = existing ? cloneWordNode(existing, owner, candidate.wNs) : owner.createElementNS(candidate.wNs, 'w:pPr');
+    findWordElements(previous, 'pPrChange', candidate).forEach((node) => { if (node.parentNode) node.parentNode.removeChild(node); });
+    const revised = revisedModel.paragraphProperties
+      ? cloneWordNode(revisedModel.paragraphProperties, owner, candidate.wNs)
+      : owner.createElementNS(candidate.wNs, 'w:pPr');
+    findWordElements(revised, 'pPrChange', candidate).forEach((node) => { if (node.parentNode) node.parentNode.removeChild(node); });
+    const change = createRevisionElement('pPrChange', authors, candidate, tracker, owner);
+    change.appendChild(previous);
+    revised.appendChild(change);
+    if (existing && existing.parentNode === paragraph) paragraph.replaceChild(revised, existing);
+    else paragraph.insertBefore(revised, paragraph.firstChild);
+    baseModel.paragraphProperties = revised;
+    baseModel.paragraphStyleSignature = revisedModel.paragraphStyleSignature;
   }
 
   function groupParagraphVariants(entries) {
@@ -3780,6 +3878,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   }
 
   function createInsertedParagraph(model, authors, candidate, tracker, targetDocument) {
+    if (!model.simple) throw new Error(`A structurally complex paragraph in ${partLabel(model.path)} cannot be inserted safely into a comparison output.`);
     const doc = targetDocument || candidate.xmlDocs.get(candidate.mainPart);
     const paragraph = doc.createElementNS(candidate.wNs, 'w:p');
     const sourcePPr = Array.from(model.node.children).find((child) => child.namespaceURI && child.localName === 'pPr');
@@ -3788,27 +3887,11 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       findWordElements(cloned, 'sectPr', candidate).forEach((node) => node.parentNode.removeChild(node));
       paragraph.appendChild(cloned);
     }
-    const tokens = model.simple ? model.tokens : fallbackComparisonTokens(model.node, model.node.ownerDocument.documentElement.namespaceURI);
+    const tokens = model.tokens;
     appendComparisonTokens(paragraph, tokens.length ? tokens : [{ text: model.text, styleKey: '', rPr: null, richStyle: null }], 'ins', authors, candidate, tracker);
     const pPr = ensureParagraphProperties(paragraph, candidate);
     ensureParagraphMarkProperties(pPr, candidate).appendChild(createRevisionElement('ins', authors, candidate, tracker, paragraph.ownerDocument));
     return paragraph;
-  }
-
-  function fallbackComparisonTokens(paragraph, sourceNamespace) {
-    const tokens = [];
-    Array.from(paragraph.getElementsByTagNameNS(sourceNamespace, 'r')).forEach((run) => {
-      const rPr = Array.from(run.children).find((child) => child.localName === 'rPr') || null;
-      const styleKey = canonicalComparisonNode(rPr);
-      let text = '';
-      Array.from(run.getElementsByTagNameNS(sourceNamespace, '*')).forEach((node) => {
-        if (node.localName === 't' || node.localName === 'delText') text += node.textContent || '';
-        else if (node.localName === 'tab') text += '\t';
-        else if (node.localName === 'br' || node.localName === 'cr') text += '\n';
-      });
-      tokenizeCompareText(text).forEach((value) => tokens.push({ text: value, styleKey, rPr, richStyle: null }));
-    });
-    return tokens;
   }
 
   function ensureParagraphProperties(paragraph, candidate) {
@@ -4215,7 +4298,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     zip.file('word/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>');
     zip.file('word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
     zip.file('docProps/core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="${CP_NS}" xmlns:dc="${DC_NS}" xmlns:dcterms="${DCT_NS}" xmlns:xsi="${XSI_NS}"><dc:title>${xml(title)}</dc:title><dc:creator>Comment Master</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`);
-    zip.file('docProps/app.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Comment Master</Application><AppVersion>6.3</AppVersion></Properties>');
+    zip.file('docProps/app.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Comment Master</Application><AppVersion>7.0</AppVersion></Properties>');
     return zip.generateAsync({ type: 'blob', mimeType: docxMime(), compression: 'DEFLATE', compressionOptions: { level: 6 }, platform: 'DOS' });
   }
 
@@ -4494,6 +4577,46 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     } : null;
   }
 
+  window.CommentMasterWord = Object.freeze({
+    version: VERSION,
+    openFile: (file) => loadFile(file),
+    close: () => closeDocument(),
+    clearLocalDocument: () => closeDocument(true),
+    hasDocument: () => Boolean(state.doc),
+    snapshot: () => testSnapshot(),
+    currentDocumentFile: async () => {
+      requireFile();
+      refreshAfterVisibleCommit(commitVisibleEdits());
+      const blob = await buildDocxBlob();
+      return new File([blob], state.doc.fileName, { type: docxMime(), lastModified: Date.now() });
+    },
+    openCompare: (tab = 'documents') => {
+      openCompareDialog();
+      switchCompareTab(tab);
+    },
+    openCompareWithFiles: (original, revised) => {
+      comparisonState.preparedOriginal = original || null;
+      comparisonState.preparedChanged = revised || null;
+      ui.compareOriginalSource.value = 'upload';
+      ui.compareChangedSource.value = 'upload';
+      renderComparisonSources();
+      openCompareDialog();
+      switchCompareTab('documents');
+    },
+    openCombineWithFiles: (base, reviews) => {
+      comparisonState.preparedBase = base || null;
+      ui.combineBaseSource.value = 'upload';
+      comparisonState.reviews = Array.from(reviews || []).slice(0, MAX_COMBINE_REVIEWS).filter((file) => /\.docx$/i.test(file && file.name || '')).map((file) => ({ id: String(comparisonState.nextReviewId++), type: 'file', file, name: file.name, author: '' }));
+      renderCombineReviews();
+      openCompareDialog();
+      switchCompareTab('combine');
+    },
+    clearComparisonState: () => clearComparisonState(),
+    hasComparisonState: () => hasComparisonState(),
+    selectTab: (tab) => switchTab(tab),
+    saveCurrent: () => saveDocx()
+  });
+
   window.CMLinkCheck = Object.freeze({
     isPrivateOrLocalUrl,
     probe: probeExternalUrl,
@@ -4504,24 +4627,35 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
 })();
 
   </script>
+  <script type="module" src="assets/workbench.js"></script>
 </head>
 <body>
-<a class="skip-link" href="#main-content">Skip to document overview</a>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <header class="app-header">
   <div class="brand-block">
     <div class="brand-mark" aria-hidden="true">CM</div>
     <div>
       <h1>Comment Master</h1>
-      <p>Private, browser-local DOCX review editor <span class="version">v6.3.0</span></p>
+      <p>Private document workbench <span class="version">v7.0.0</span></p>
     </div>
   </div>
+  <button id="nav-toggle" class="btn btn-light nav-toggle" data-wb-action="toggle-navigation" type="button" aria-expanded="false" aria-controls="global-navigation">Menu</button>
+  <nav id="global-navigation" class="global-nav" aria-label="Main navigation">
+    <button data-route-target="home" type="button" aria-current="page">Home</button>
+    <button data-route-target="word" type="button">Word</button>
+    <button data-route-target="pdf" type="button">PDF</button>
+    <button data-wb-action="open-compare" type="button">Compare &amp; Combine</button>
+    <button data-route-target="tools" type="button">Tools</button>
+  </nav>
   <div class="header-actions">
-    <span id="privacy-pill" class="privacy-pill" title="Document contents stay in this browser. External website addresses are contacted directly for link checks.">Document local</span>
+    <button id="privacy-pill" class="privacy-pill" data-wb-action="privacy" type="button" title="Files stay on this device">Local processing</button>
     <span id="file-pill" class="file-pill" hidden>No document</span>
-    <button class="btn compare-launch" data-action="openCompare" type="button">Compare &amp; combine</button>
-    <button class="btn btn-light" data-action="open" type="button">Open DOCX</button>
-    <button class="btn btn-light requires-file" data-action="undo" id="btn-undo" type="button" disabled>Undo</button>
-    <button class="btn btn-primary requires-file" data-action="save" type="button" disabled>Save DOCX</button>
+    <button class="btn compare-launch" data-action="openCompare" type="button">Compare</button>
+    <button class="btn btn-light" data-wb-action="open-files" type="button">Open files</button>
+    <span class="header-word-actions" data-route-actions="word" hidden>
+      <button class="btn btn-light requires-file" data-action="undo" id="btn-undo" type="button" disabled>Undo</button>
+      <button class="btn btn-primary requires-file" data-action="save" type="button" disabled>Export DOCX</button>
+    </span>
   </div>
 </header>
 
@@ -4562,7 +4696,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       <p class="compare-note">Ordinary text changes are redlined at word level. Existing tracked changes are treated as accepted text for this new comparison. Unchanged package parts remain untouched.</p>
       <div class="compare-run-row">
         <div class="compare-options"><div class="form-row"><label for="compare-doc-author">Revision author shown in Word</label><input id="compare-doc-author" value="Comparison" maxlength="255"></div><p id="compare-doc-result" class="comparison-result" aria-live="polite"></p></div>
-        <div class="button-row"><button class="btn btn-primary" data-action="compareDocuments" type="button">Compare and download Word redline</button></div>
+        <div class="button-row"><button class="btn btn-primary" data-action="compareDocuments" type="button">Create Word redline</button></div>
       </div>
     </section>
 
@@ -4583,7 +4717,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       <p class="compare-note">Pasted HTML is sanitized locally. Images, scripts, remote links, and unsupported Word-only markup are omitted while readable text and common inline formatting are retained.</p>
       <div class="compare-run-row">
         <div class="compare-options"><div class="form-row"><label for="compare-text-author">Revision author shown in Word</label><input id="compare-text-author" value="Comparison" maxlength="255"></div><p id="compare-text-result" class="comparison-result" aria-live="polite"></p></div>
-        <div class="button-row"><button class="btn btn-primary" data-action="compareText" type="button">Compare text and download Word redline</button></div>
+        <div class="button-row"><button class="btn btn-primary" data-action="compareText" type="button">Create text redline</button></div>
       </div>
     </section>
 
@@ -4611,15 +4745,55 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
 </dialog>
 
 <main id="main-content" class="app-shell">
-  <section id="landing" class="landing-card">
-    <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Open a Microsoft Word DOCX file">
+  <input type="file" id="workbench-file-input" accept=".docx,.pdf,.xlsx,.csv,.pptx,.odt,.rtf,.txt,.md,.markdown,.html,.htm,.png,.jpg,.jpeg,.webp,.gif" multiple hidden>
+
+  <section id="home" class="home-view route-view" data-route-view="home">
+    <div class="home-intro">
+      <div><h2>Your documents, handled locally.</h2><p>Review Word files, work with PDFs, compare versions, create clean copies, convert common formats, and build binders without uploading document contents.</p></div>
+      <button class="privacy-pill local-callout" data-wb-action="privacy" type="button">Files stay on this device</button>
+    </div>
+
+    <div id="home-drop-zone" class="home-drop" aria-describedby="home-drop-help">
+      <div class="home-drop-copy">
+        <div class="home-drop-mark" aria-hidden="true">FILES</div>
+        <div><h3>Drop documents here</h3><p id="home-drop-help">Choose one file for a focused workspace, or several for comparison, binder, and batch tools.</p></div>
+      </div>
+      <div class="home-drop-actions"><button class="btn btn-primary" data-wb-action="open-files" type="button">Choose files</button><button class="btn btn-light" data-wb-action="open-word-file" type="button">Open Word file</button></div>
+    </div>
+
+    <section id="home-selection" class="home-selection" hidden aria-labelledby="home-selection-title">
+      <div class="home-selection-head"><div><h3 id="home-selection-title">Files ready</h3><p id="home-selection-status" role="status" aria-live="polite"></p></div><button class="btn btn-light" data-wb-action="clear-selection" type="button">Clear</button></div>
+      <div id="selected-files" class="selected-files"></div>
+      <div id="suggestion-actions" class="suggestion-actions"></div>
+    </section>
+
+    <div class="home-workspaces">
+      <article class="home-card primary">
+        <p class="home-card-kicker">Word</p><h3>Review &amp; Edit</h3><p>Inspect comments and tracked changes, update authors and dates, run careful edits, and export a faithful DOCX.</p>
+        <ul><li>Overview-first document review</li><li>Create clean copies</li><li>Inspect hidden and review content</li></ul>
+        <div class="button-row"><button class="btn btn-primary" data-wb-action="open-word-file" type="button">Open Word document</button><button class="btn btn-light" data-wb-action="clean-word" type="button">Create Clean Copy</button></div>
+      </article>
+      <article class="home-card primary">
+        <p class="home-card-kicker">PDF</p><h3>Open &amp; Work</h3><p>Read, search, organize, OCR, securely redact, sanitize, fill forms, and export a new working copy.</p>
+        <ul><li>Page tools and local OCR</li><li>Permanent raster redaction</li><li>Health check and sharing cleanup</li></ul>
+        <div class="button-row"><button class="btn btn-primary" data-wb-action="open-pdf-file" type="button">Open PDF</button><button class="btn btn-light" data-wb-action="choose-task" data-task="ocr" type="button">Make Searchable</button></div>
+      </article>
+      <article class="home-card home-tool-card"><p class="home-card-kicker">Compare &amp; Combine</p><h3>Versions and reviewers</h3><p>Compare DOCX files or formatted text, and consolidate commentary from several reviewers.</p><div class="button-row"><button class="btn btn-light" data-wb-action="open-compare" type="button">Compare documents</button></div></article>
+      <article class="home-card home-tool-card"><p class="home-card-kicker">Binder</p><h3>Create one PDF</h3><p>Arrange mixed local files, add dividers and a table of contents, and create a single binder.</p><div class="button-row"><button class="btn btn-light" data-wb-action="choose-task" data-task="binder" type="button">Create Binder</button></div></article>
+      <article class="home-card home-tool-card"><p class="home-card-kicker">Convert &amp; Clean</p><h3>Prepare a useful copy</h3><p>Convert common files, remove metadata and active content, or inspect before external sharing.</p><div class="button-row"><button class="btn btn-light" data-wb-action="choose-task" data-task="convert" type="button">Convert files</button></div></article>
+      <article class="home-card home-tool-card"><p class="home-card-kicker">Batch</p><h3>Process many files</h3><p>Apply a compatible operation to a local queue, monitor progress, and download individual or ZIP results.</p><div class="button-row"><button class="btn btn-light" data-wb-action="choose-task" data-task="batch" type="button">Batch Tools</button></div></article>
+    </div>
+  </section>
+
+  <section id="landing" class="landing-card route-view" data-route-view="word" hidden>
+    <div id="drop-zone" class="drop-zone">
       <div class="drop-icon" aria-hidden="true">DOCX</div>
       <h2>Open a Word document</h2>
       <p>Choose a <strong>.docx</strong> file or drag it here. Processing stays on this device.</p>
       <button id="btn-browse" class="btn btn-primary" type="button">Choose file</button>
     </div>
     <div class="privacy-note">
-      <strong>Private by design.</strong> Your document is read and modified only in this browser tab. After opening it, Comment Master contacts only the external website addresses already present in the document so it can report Live or Dead links.
+      <strong>Private by design.</strong> Your document is read and modified only in this browser tab. External website addresses found in the document are listed locally and are never contacted by Comment Master.
     </div>
     <div class="landing-secondary"><div><strong>Need to compare versions?</strong><span>Create a Word redline, compare formatted text, or combine several reviewers without opening a document first.</span></div><button class="btn btn-primary" data-action="openCompare" type="button">Compare or combine</button></div>
   </section>
@@ -4628,7 +4802,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   <div id="status" class="status" role="status" aria-live="polite">Ready. Open a DOCX to begin.</div>
   <div id="error-log" class="error-log" role="alert" hidden></div>
 
-  <section id="workspace" hidden>
+  <section id="workspace" class="route-view" data-route-view="word" hidden>
     <nav id="tabs" class="tabs" aria-label="Comment Master sections">
       <button class="tab-btn active" data-tab="overview" type="button">Overview</button>
       <button class="tab-btn" data-tab="all" type="button">Review Activity</button>
@@ -4787,7 +4961,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
 
     <div id="view-parts" class="view-section panel" hidden><h2>Document parts</h2><p>Inspect parsed WordprocessingML parts. This view is read-only.</p><div class="grid-2"><div class="form-row"><label for="part-select">Part</label><select id="part-select"></select></div><div class="form-row"><label for="part-filter">Find in part</label><input id="part-filter"></div></div><pre class="part-preview" id="part-preview"></pre></div>
 
-    <div id="view-relationships" class="view-section panel" hidden><div class="section-heading"><div><h2>External website links</h2><p>Internal document links are omitted. Each distinct HTTP or HTTPS address is checked individually as soon as the document opens.</p></div><button class="btn" data-action="checkAllLinks" type="button">Check all again</button></div><div id="links-summary" class="links-summary" role="status" aria-live="polite">Waiting to check links.</div><div class="table-wrap links-table-wrap"><table class="links-table"><colgroup><col class="link-status-col"><col class="link-url-col"><col class="link-source-col"><col class="link-result-col"><col class="link-action-col"></colgroup><thead><tr><th>Status</th><th>External website</th><th>Found in</th><th>Last check</th><th></th></tr></thead><tbody id="rel-body"></tbody></table></div><p class="links-note">Link checks contact each target directly without sending the document or filename. A site that responds but hides its HTTP status from the browser is counted as Live.</p></div>
+    <div id="view-relationships" class="view-section panel" hidden><div class="section-heading"><div><h2>External website links</h2><p>Internal document links are omitted. Each distinct HTTP or HTTPS address is listed from the local package without contacting it.</p></div><button class="btn" data-action="checkAllLinks" type="button">Refresh inventory</button></div><div id="links-summary" class="links-summary" role="status" aria-live="polite">Waiting to inspect links.</div><div class="table-wrap links-table-wrap"><table class="links-table"><colgroup><col class="link-status-col"><col class="link-url-col"><col class="link-source-col"><col class="link-result-col"><col class="link-action-col"></colgroup><thead><tr><th>Status</th><th>External website</th><th>Found in</th><th>Privacy</th><th></th></tr></thead><tbody id="rel-body"></tbody></table></div><p class="links-note">Comment Master does not visit addresses found in a document. This avoids sending document-derived information or making requests to private networks.</p></div>
 
     <div id="view-forensics" class="view-section panel" hidden><h2>Forensic summary</h2><p>Structural indicators only. Presence does not by itself mean a document is malicious or defective.</p><div class="table-wrap compact"><table><thead><tr><th>Check</th><th>Result</th><th>Detail</th></tr></thead><tbody id="forensics-body"></tbody></table></div></div>
 
@@ -4826,9 +5000,161 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       </div>
     </div>
   </section>
+
+  <section id="pdf-workspace" class="pdf-workspace route-view" data-route-view="pdf" hidden>
+    <input id="pdf-file-input" type="file" accept=".pdf,application/pdf" hidden>
+    <div id="pdf-empty" class="pdf-empty">
+      <h2>PDF workspace</h2>
+      <p>Open a PDF to read, search, organize pages, make scans searchable, redact content permanently, sanitize, inspect, and export a new copy.</p>
+      <div class="button-row" style="justify-content:center"><button class="btn btn-primary" data-wb-action="open-pdf-file" type="button">Choose PDF</button><button class="btn btn-light" data-route-target="home" type="button">Back to Home</button></div>
+    </div>
+    <div id="pdf-loaded" hidden>
+      <div class="route-heading"><div><p class="eyebrow">PDF workspace</p><h2 id="pdf-title">PDF ready</h2><p id="pdf-summary">Working copy loaded. The original file remains untouched.</p></div><div class="route-heading-actions"><span id="pdf-file-pill" class="route-file-pill"></span><button class="btn btn-light" data-wb-action="open-pdf-file" type="button">Open another</button><button class="btn btn-primary" data-wb-action="export-pdf" type="button">Export PDF</button></div></div>
+      <nav class="pdf-tabs" aria-label="PDF tools">
+        <button class="pdf-tab active" data-pdf-tab="review" type="button">Review</button>
+        <button class="pdf-tab" data-pdf-tab="pages" type="button">Pages</button>
+        <button class="pdf-tab" data-pdf-tab="ocr" type="button">OCR</button>
+        <button class="pdf-tab" data-pdf-tab="redact" type="button">Redact</button>
+        <button class="pdf-tab" data-pdf-tab="clean" type="button">Clean &amp; Inspect</button>
+        <button class="pdf-tab" data-pdf-tab="forms" type="button">Forms</button>
+        <button class="pdf-tab tab-export" data-pdf-tab="export" type="button">Export</button>
+      </nav>
+      <div class="pdf-shell">
+        <aside id="pdf-thumbnails" class="pdf-thumbnails" aria-label="Page thumbnails"></aside>
+        <section class="pdf-stage-wrap" aria-label="PDF page viewer">
+          <div class="pdf-stage-toolbar">
+            <div><button class="btn btn-light" data-wb-action="pdf-prev" type="button" aria-label="Previous page">Previous</button><span id="pdf-page-number" class="pdf-page-number">Page 1 of 1</span><button class="btn btn-light" data-wb-action="pdf-next" type="button" aria-label="Next page">Next</button></div>
+            <div><label for="pdf-zoom" class="sr-only">Zoom</label><select id="pdf-zoom" aria-label="PDF zoom"><option value="fit-width">Fit width</option><option value="fit-page">Fit page</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option></select></div>
+          </div>
+          <div id="pdf-page-container" class="pdf-page-container">
+            <canvas id="pdf-canvas" aria-label="Rendered PDF page"></canvas>
+            <div id="pdf-text-layer" class="pdf-text-layer" aria-label="Selectable PDF text"></div>
+            <div id="redaction-layer" class="redaction-layer" hidden aria-label="Pending redactions"></div>
+          </div>
+        </section>
+        <aside class="pdf-side-panel">
+          <p id="pdf-action-status" class="sr-only" role="status" aria-live="polite"></p>
+          <section class="pdf-tool-pane" data-pdf-pane="review">
+            <h3>Review</h3><p>Navigate the PDF, search its text, and inspect the current page.</p>
+            <div class="form-row"><label for="pdf-search">Search document</label><div class="input-action"><input id="pdf-search" type="search" autocomplete="off" placeholder="Word or phrase"><button class="btn" data-wb-action="pdf-search" type="button">Search</button></div></div>
+            <div id="pdf-search-results" class="pdf-search-results"></div>
+            <div id="pdf-scan-suggestion" class="operation-note" hidden><strong>This PDF appears to be scanned.</strong><br><button class="btn btn-light" data-wb-action="pdf-go-ocr" type="button">Make searchable</button></div>
+            <div id="pdf-page-accessible-text" class="result-box" tabindex="0">Text for the current page will appear here.</div>
+          </section>
+          <section class="pdf-tool-pane" data-pdf-pane="pages" hidden>
+            <h3>Organize pages</h3><p>Drag page rows or use their move buttons to reorder. Rotations, duplicates, and deletions apply to the working copy only.</p>
+            <div class="button-row"><button class="btn btn-light" data-wb-action="pdf-rotate-left" type="button">Rotate left</button><button class="btn btn-light" data-wb-action="pdf-rotate-right" type="button">Rotate right</button><button class="btn btn-light" data-wb-action="pdf-duplicate" type="button">Duplicate</button><button class="btn btn-danger" data-wb-action="pdf-delete" type="button">Delete</button></div>
+            <div class="button-row" style="margin-top:8px"><button class="btn btn-light" data-wb-action="pdf-reverse" type="button">Reverse order</button><button class="btn btn-light" data-wb-action="pdf-undo" type="button">Undo page change</button></div>
+            <div id="pdf-page-list" class="pdf-page-list" style="margin-top:12px"></div>
+            <hr>
+            <div class="form-row"><label for="pdf-page-range">Pages to extract or split</label><input id="pdf-page-range" placeholder="1-3, 7, 9-11"></div>
+            <div class="button-row"><button class="btn" data-wb-action="pdf-extract" type="button">Extract pages</button><button class="btn btn-light" data-wb-action="pdf-split" type="button">Split every page</button></div>
+            <details style="margin-top:12px"><summary>Page labels and watermark</summary><div class="form-row"><label for="pdf-watermark">Watermark text</label><input id="pdf-watermark" maxlength="120"></div><div class="form-row"><label for="pdf-header">Header</label><input id="pdf-header" maxlength="180"></div><div class="form-row"><label for="pdf-footer">Footer</label><input id="pdf-footer" maxlength="180"></div><label class="check-row"><input id="pdf-page-numbers" type="checkbox"> Add continuous page numbers</label><button class="btn" data-wb-action="pdf-add-marks" type="button">Apply to working copy</button></details>
+          </section>
+          <section class="pdf-tool-pane" data-pdf-pane="ocr" hidden>
+            <h3>Make searchable</h3><p>OCR runs page by page on this device. The visual pages are preserved and recognized text is added to a new copy.</p>
+            <div class="form-row"><label for="ocr-pages">Pages</label><select id="ocr-pages"><option value="all">Whole document</option><option value="current">Current page</option><option value="range">Page range</option></select></div>
+            <div class="form-row"><label for="ocr-range">Page range</label><input id="ocr-range" placeholder="1-5, 8"></div>
+            <div class="form-row"><label for="ocr-language">Language</label><select id="ocr-language"><option value="eng">English</option></select></div>
+            <label class="check-row"><input id="ocr-auto-orient" type="checkbox" checked> Correct reliable page orientation</label>
+            <p class="operation-note">The English OCR engine is prepared once, then cached locally for later offline use.</p>
+            <button class="btn btn-primary" data-wb-action="pdf-ocr" type="button">Make searchable</button>
+          </section>
+          <section class="pdf-tool-pane" data-pdf-pane="redact" hidden>
+            <h3>Secure Redaction</h3><p>Mark boxes or search matches, review them, then rebuild affected pages so the selected content is permanently removed.</p>
+            <p class="operation-note secure-note">Secure Redaction removes underlying page content from the exported PDF. It does not merely cover text with a rectangle.</p>
+            <button id="redaction-draw-toggle" class="btn btn-primary" data-wb-action="redaction-draw" type="button" aria-pressed="false">Draw redaction boxes</button>
+            <div class="form-row" style="margin-top:12px"><label for="redaction-search">Find text to redact</label><div class="input-action"><input id="redaction-search" type="search"><button class="btn" data-wb-action="redaction-find" type="button">Find</button></div></div>
+            <label class="check-row"><input id="redaction-regex" type="checkbox"> Treat search as a regular expression</label>
+            <div id="redaction-list" class="redaction-list"></div>
+            <div class="button-row" style="margin-top:12px"><button class="btn btn-light" data-wb-action="redaction-clear" type="button">Clear marks</button><button class="btn btn-danger" data-wb-action="redaction-apply" type="button">Apply permanently</button></div>
+          </section>
+          <section class="pdf-tool-pane" data-pdf-pane="clean" hidden>
+            <h3>Clean &amp; Inspect</h3><p>Review meaningful structural and privacy indicators, then remove only the categories you choose.</p>
+            <div class="form-row"><label for="sanitize-preset">Preset</label><select id="sanitize-preset"><option value="custom">Custom</option><option value="metadata">Clean Metadata</option><option value="comments">Remove Comments</option><option value="sharing">Prepare for External Sharing</option><option value="maximum">Maximum Sanitize</option></select></div>
+            <fieldset class="flags"><legend>Remove</legend><label><input id="sanitize-metadata" type="checkbox"> Metadata</label><label><input id="sanitize-comments" type="checkbox"> Comments</label><label><input id="sanitize-attachments" type="checkbox"> Attachments</label><label><input id="sanitize-javascript" type="checkbox"> JavaScript/actions</label><label><input id="sanitize-links" type="checkbox"> External links</label><label><input id="sanitize-form-values" type="checkbox"> Form values</label></fieldset>
+            <p class="operation-note">Sanitized copies are structurally rebuilt so removed objects are not left behind. Interactive forms, bookmarks, tags, signatures, and document navigation can be removed; visible form values may be flattened unless you also select Form values.</p>
+            <div class="button-row"><button class="btn btn-primary" data-wb-action="pdf-sanitize" type="button">Create sanitized copy</button><button class="btn btn-light" data-wb-action="pdf-inspect" type="button">Run health check</button></div>
+            <details style="margin-top:12px"><summary>Repair and optimize</summary>
+              <p class="operation-note">Lossless keeps page content intact. Balanced and Smaller File rebuild pages as images, which can help image-heavy PDFs but removes forms, links, tags, bookmarks, and signatures. Searchable text is rebuilt where extraction succeeds.</p>
+              <div class="form-row"><label for="pdf-optimize-mode">Optimization</label><select id="pdf-optimize-mode"><option value="lossless">Lossless Optimize</option><option value="balanced">Balanced</option><option value="smaller">Smaller File</option></select></div>
+              <div class="button-row"><button class="btn btn-light" data-wb-action="pdf-normalize" type="button">Normalize PDF</button><button class="btn btn-light" data-wb-action="pdf-optimize" type="button">Create optimized copy</button></div>
+            </details>
+            <div id="pdf-health-results" class="inspector-results" style="margin-top:12px"></div>
+          </section>
+          <section class="pdf-tool-pane" data-pdf-pane="forms" hidden>
+            <h3>PDF forms</h3><p>Fill standard PDF form fields or flatten the visible values into a completed copy. XFA forms are reported but not edited.</p>
+            <div id="pdf-form-fields" class="queue-list"></div>
+            <div class="button-row"><button class="btn" data-wb-action="pdf-save-form" type="button">Create completed copy</button><button class="btn btn-primary" data-wb-action="pdf-flatten-form" type="button">Flatten completed copy</button><button class="btn btn-light" data-wb-action="pdf-reset-form" type="button">Reset fields</button></div>
+          </section>
+          <section class="pdf-tool-pane" data-pdf-pane="export" hidden>
+            <h3>Export working copy</h3><p>Export always creates a new file. The original PDF is never overwritten automatically.</p>
+            <dl class="info-grid"><div><dt>Pages</dt><dd id="pdf-export-pages">0</dd></div><div><dt>Working size</dt><dd id="pdf-export-size">0 B</dd></div><div class="wide"><dt>Pending page changes</dt><dd id="pdf-export-changes">None</dd></div></dl>
+            <button class="btn btn-primary" data-wb-action="export-pdf" type="button" style="margin-top:14px">Export PDF</button>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section id="tools-workspace" class="route-view" data-route-view="tools" hidden>
+    <div class="route-heading"><div><p class="eyebrow">Document tools</p><h2>Convert, combine, clean, and inspect</h2><p>Choose a focused workflow. Files remain in memory for the current task and are not archived.</p></div><div class="route-heading-actions"><button class="btn btn-light" data-wb-action="clear-workspace" type="button">Clear Local Workspace</button></div></div>
+    <nav class="tool-tabs" aria-label="Document tools"><button class="tool-tab active" data-tool-tab="binder" type="button" aria-current="page">Create Binder</button><button class="tool-tab" data-tool-tab="convert" type="button">Convert</button><button class="tool-tab" data-tool-tab="batch" type="button">Batch</button><button class="tool-tab" data-tool-tab="inspect" type="button">Inspect</button><button class="tool-tab" data-tool-tab="clean-word" type="button">Clean Word</button></nav>
+    <div class="tools-layout">
+      <div>
+        <section class="tool-panel" data-tool-pane="binder">
+          <h2>Create Binder</h2><p>Arrange supported files, add dividers or a table of contents, and create one local PDF.</p>
+          <input id="binder-files" type="file" accept=".docx,.pdf,.xlsx,.csv,.pptx,.odt,.rtf,.txt,.md,.markdown,.html,.htm,.png,.jpg,.jpeg,.webp,.gif" multiple hidden>
+          <div class="tool-source-zone"><p>Drop or choose PDF, Word, text, Markdown, HTML, spreadsheet, or image files.</p><button class="btn btn-primary" data-wb-action="binder-add" type="button">Add files</button></div>
+          <div id="binder-queue" class="queue-list"></div>
+          <fieldset class="flags"><legend>Binder options</legend><label><input id="binder-dividers" type="checkbox"> Divider pages</label><label><input id="binder-labels" type="checkbox"> Source filename labels</label><label><input id="binder-page-numbers" type="checkbox" checked> Continuous page numbers</label><label><input id="binder-toc" type="checkbox" checked> Table of contents</label></fieldset>
+          <button class="btn btn-primary" data-wb-action="binder-build" type="button">Build binder</button>
+        </section>
+        <section class="tool-panel" data-tool-pane="convert" hidden>
+          <h2>Convert files</h2><p>Choose an output that can be produced reliably in the browser. Complex Office layout may differ from the original.</p>
+          <input id="convert-files" type="file" accept=".docx,.pdf,.xlsx,.csv,.pptx,.odt,.rtf,.txt,.md,.markdown,.html,.htm,.png,.jpg,.jpeg,.webp,.gif" multiple hidden>
+          <div class="tool-source-zone"><p id="convert-source-label">Choose one or more compatible files.</p><button class="btn btn-primary" data-wb-action="convert-add" type="button">Choose files</button></div>
+          <div id="convert-queue" class="queue-list"></div>
+          <div class="form-row"><label for="convert-output">Output</label><select id="convert-output"><option value="pdf">PDF</option><option value="txt">Plain text</option><option value="html">Clean HTML</option><option value="md">Markdown</option><option value="docx">Word DOCX</option><option value="images">PDF pages as PNG images</option></select></div>
+          <p id="conversion-note" class="operation-note">Text, Markdown, HTML, CSV, common images, and semantic DOCX conversion run locally.</p>
+          <button class="btn btn-primary" data-wb-action="convert-run" type="button">Convert</button>
+        </section>
+        <section class="tool-panel" data-tool-pane="batch" hidden>
+          <h2>Batch Tools</h2><p>Apply one compatible operation at a time with conservative local concurrency.</p>
+          <input id="batch-files" type="file" accept=".docx,.pdf,.xlsx,.csv,.pptx,.odt,.rtf,.txt,.md,.markdown,.html,.htm,.png,.jpg,.jpeg,.webp,.gif" multiple hidden>
+          <div class="tool-source-zone"><p>Add files to the local queue.</p><button class="btn btn-primary" data-wb-action="batch-add" type="button">Choose files</button></div>
+          <div class="form-row"><label for="batch-operation">Operation</label><select id="batch-operation"><option value="inspect">Inspect</option><option value="convert-pdf">Convert to PDF</option><option value="remove-metadata">Remove metadata</option><option value="page-numbers">Add page numbers</option><option value="watermark">Add watermark</option><option value="optimize">Lossless optimize PDF</option></select></div>
+          <div class="form-row"><label for="batch-watermark">Watermark, when selected</label><input id="batch-watermark"></div>
+          <div id="batch-queue" class="queue-list"></div>
+          <div class="button-row"><button class="btn btn-primary" data-wb-action="batch-run" type="button">Process files</button><button class="btn btn-light" data-wb-action="batch-download-zip" type="button" disabled>Download results ZIP</button></div>
+        </section>
+        <section class="tool-panel" data-tool-pane="inspect" hidden>
+          <h2>Document Health Check</h2><p>Answer the practical questions: what is inside, whether review or hidden content remains, and what deserves attention.</p>
+          <input id="inspect-files" type="file" accept=".docx,.pdf,.xlsx,.csv,.pptx,.odt,.rtf,.txt,.md,.markdown,.html,.htm,.png,.jpg,.jpeg,.webp,.gif" multiple hidden>
+          <div class="tool-source-zone"><p>Choose one or more files to inspect locally.</p><button class="btn btn-primary" data-wb-action="inspect-add" type="button">Choose files</button></div>
+          <div id="inspector-results" class="inspector-results" style="margin-top:12px"></div>
+        </section>
+        <section class="tool-panel" data-tool-pane="clean-word" hidden>
+          <h2>Create Clean Word Copy</h2><p>Choose exactly what to remove. Comment Master previews the plan and does not change visible substantive language silently.</p>
+          <input id="clean-word-file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+          <div class="tool-source-zone"><p id="clean-word-source">Use the loaded Word document or choose another DOCX.</p><div class="button-row" style="justify-content:center"><button class="btn btn-primary" data-wb-action="clean-word-choose" type="button">Choose DOCX</button><button class="btn btn-light" data-wb-action="clean-word-current" type="button">Use loaded document</button></div></div>
+          <fieldset class="flags"><legend>Cleanup operations</legend><label><input id="clean-accept-changes" type="checkbox" checked> Accept tracked changes</label><label><input id="clean-remove-comments" type="checkbox" checked> Remove comments</label><label><input id="clean-review-metadata" type="checkbox" checked> Remove review metadata</label><label><input id="clean-personal-metadata" type="checkbox" checked> Remove personal metadata</label><label><input id="clean-hidden-text" type="checkbox"> Remove hidden text</label><label><input id="clean-custom-properties" type="checkbox" checked> Remove custom properties</label><label><input id="clean-external-relationships" type="checkbox"> Remove external relationships</label><label><input id="clean-embedded-content" type="checkbox"> Remove embedded and active content</label></fieldset>
+          <div id="clean-word-preview" class="operation-note">Choose a document to preview the cleanup.</div>
+          <button class="btn btn-primary" data-wb-action="clean-word-run" type="button">Create clean copy</button>
+        </section>
+      </div>
+      <aside class="tool-panel"><h3>Local workspace</h3><p>Files are held only for the current browser session. Completed outputs are offered for saving and are not placed in an implicit archive.</p><div id="workspace-resource-summary" class="inspector-results"><div class="health-card good"><h4>No documents stored by default</h4><p>Application assets may be cached for offline use. Document bytes are not placed in the service-worker cache.</p></div></div><button class="btn btn-light" data-wb-action="clear-optional-cache" type="button">Clear cached optional engines</button></aside>
+    </div>
+  </section>
 </main>
 
-<footer class="app-footer">Comment Master v6.3.0 · Document processing stays in your browser</footer>
+<dialog id="privacy-dialog" class="workbench-dialog privacy-dialog" aria-labelledby="privacy-title"><div class="dialog-heading"><div><h2 id="privacy-title">Local processing</h2><p>Files stay on this device.</p></div><button class="icon-btn" data-wb-action="close-dialog" type="button" aria-label="Close">×</button></div><div class="dialog-body"><ul class="privacy-points"><li>Document contents are processed in this browser and are not uploaded to Comment Master or a third-party document service.</li><li>Filenames, extracted text, metadata, and document hashes are not transmitted.</li><li>External links found inside documents are listed without being contacted.</li><li>Offline caching stores application code and optional engines, not the documents you open.</li></ul><div class="button-row" style="justify-content:flex-end;margin-top:18px"><button class="btn btn-primary" data-wb-action="close-dialog" type="button">Done</button></div></div></dialog>
+
+<dialog id="result-dialog" class="workbench-dialog" aria-labelledby="result-title"><div class="dialog-heading"><div><h2 id="result-title">Result ready</h2><p id="result-subtitle">Review the result and save a new copy.</p></div><button class="icon-btn" data-wb-action="close-dialog" type="button" aria-label="Close">×</button></div><div class="dialog-body"><div id="result-tabs" class="result-tabs" hidden></div><div id="result-navigation" class="button-row result-navigation" hidden><button id="result-prev-change" class="btn btn-light" data-wb-action="result-prev-change" type="button">Previous change</button><output id="result-change-position" aria-live="polite">No textual changes</output><button id="result-next-change" class="btn btn-light" data-wb-action="result-next-change" type="button">Next change</button></div><div id="result-content" class="comparison-preview"></div><div class="button-row" style="justify-content:flex-end;margin-top:14px"><button id="result-secondary-action" class="btn btn-light" type="button" hidden></button><button id="result-download" class="btn btn-primary" type="button">Save result</button></div></div></dialog>
+
+<dialog id="progress-dialog" class="workbench-dialog privacy-dialog" aria-labelledby="progress-title"><div class="dialog-heading"><div><h2 id="progress-title">Working locally</h2><p id="progress-subtitle">Preparing the operation.</p></div></div><div class="dialog-body"><div class="job-progress"><progress id="job-progress" max="100" value="0"></progress><div class="job-progress-row"><span id="job-progress-label">Starting…</span><span id="job-progress-value">0%</span></div></div><div class="button-row" style="justify-content:flex-end;margin-top:16px"><button id="job-cancel" class="btn btn-danger" data-wb-action="cancel-job" type="button">Cancel</button></div></div></dialog>
+
+<footer class="app-footer">Comment Master v7.0.0 · Document processing stays in your browser · <button class="btn btn-light" data-wb-action="privacy" type="button">Privacy</button> · <a href="THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">Third-party notices</a></footer>
 
 </body>
 </html>

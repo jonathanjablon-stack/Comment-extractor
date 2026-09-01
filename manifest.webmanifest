@@ -1,0 +1,11 @@
+{
+  "name": "Comment Master",
+  "short_name": "Comment Master",
+  "description": "A private browser-local workbench for Word documents, PDFs, comparison, conversion, and cleanup.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#243f77",
+  "categories": ["productivity", "utilities"]
+}

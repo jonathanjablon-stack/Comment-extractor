@@ -1,11 +1,30 @@
 {
   "name": "comment-master",
   "private": true,
-  "version": "6.3.0",
+  "version": "7.0.0",
   "scripts": {
-    "test": "node tests/comment_master_exports.test.js && node tests/comment_master_v6_3.test.js"
+    "build": "node tools/build.mjs",
+    "test:legacy": "node tests/comment_master_exports.test.js && node tests/comment_master_v6_3.test.js",
+    "test:unit": "node --test \"tests/unit/!(privacy-offline).test.mjs\"",
+    "test:privacy": "node --test tests/unit/privacy-offline.test.mjs",
+    "test:e2e": "playwright test --browser=chromium --forbid-only --fail-on-flaky-tests",
+    "serve:test": "node tools/serve.mjs",
+    "qa": "npm run build && npm run test:legacy && npm run test:unit && npm run test:privacy && npm run test:e2e",
+    "test": "npm run qa"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@xmldom/xmldom": "0.9.12"
+  },
+  "dependencies": {
+    "@tesseract.js-data/eng": "1.0.0",
+    "dompurify": "3.4.14",
+    "jszip": "3.10.1",
+    "mammoth": "1.12.2",
+    "marked": "18.0.11",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.3.289",
+    "tesseract.js": "7.0.0",
+    "tesseract.js-core": "7.0.0"
   }
 }

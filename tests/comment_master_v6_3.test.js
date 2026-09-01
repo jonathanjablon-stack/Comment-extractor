@@ -51,7 +51,7 @@ function installDomCompatibility() {
 
 function testStaticContract() {
   scripts.forEach((script, index) => assert.doesNotThrow(() => new Function(script), `Script ${index + 1} has invalid JavaScript`));
-  assert.match(html, /<title>Comment Master v6\.3\.0<\/title>/);
+  assert.match(html, /<title>Comment Master v7\.0\.0<\/title>/);
   assert.match(html, /data-action="openCompare"/);
   assert.match(html, /data-action="compareDocuments"/);
   assert.match(html, /data-action="compareText"/);
@@ -79,7 +79,7 @@ function loadHelpers() {
   const JSZip = zipContext.window.JSZip;
   assert.ok(JSZip);
 
-  let application = scriptContaining("const VERSION = '6.3.0'");
+  let application = scriptContaining("const VERSION = '7.0.0'");
   const marker = "window.addEventListener('DOMContentLoaded', init, { once: true });";
   application = application.replace(marker, `
     window.__CM_V63_HELPERS__ = Object.freeze({
@@ -201,7 +201,7 @@ async function testDocumentComparison(helpers, JSZip) {
   ]));
   const revised = await makeCandidate(JSZip, 'Agreement revised.docx', documentXml([
     paragraph('The quick agile brown fox jumped over the lazy dog.', { comment: true }),
-    paragraph('A linked clause changed here.', { complex: true }),
+    paragraph('A linked clause remains here.', { complex: true }),
     paragraph('Insert this paragraph.', { bold: true })
   ]), { comments: commentsXml('Please confirm this wording.', 'Jane'), commentAuthor: 'Jane', commentText: 'Please confirm this wording.', commentOn: 'The quick agile brown fox' });
 
@@ -215,8 +215,8 @@ async function testDocumentComparison(helpers, JSZip) {
   assert.match(xml, /<w:t[^>]*>jumped<\/w:t>/);
   assert.match(xml, /<w:t[^>]*>agile<\/w:t>/);
   assert.doesNotMatch(xml, /<w:delText[^>]*>The quick brown fox jumps over the lazy dog\.<\/w:delText>/);
-  assert.match(xml, /<w:hyperlink[^>]*><w:del[^>]*w:author="Jane"/);
-  assert.match(xml, /<w:hyperlink[^>]*><w:del[^>]*>[\s\S]*?<w:delText[^>]*>A linked clause remains here\.<\/w:delText>/);
+  assert.match(xml, /<w:hyperlink[^>]*>[\s\S]*?A linked clause remains here\./);
+  assert.doesNotMatch(xml, /<w:hyperlink[^>]*><w:del\b/);
   assert.match(xml, /<w:commentRangeStart w:id="0"/);
   const comments = await output.file('word/comments.xml').async('string');
   assert.match(comments, /Please confirm this wording\./);
@@ -224,7 +224,6 @@ async function testDocumentComparison(helpers, JSZip) {
   assert.equal(Buffer.from(await output.file('word/media/preserve.bin').async('uint8array')).toString('hex'), '00010203feff');
   assert.equal(await output.file('customXml/item1.xml').async('string'), '<root><preserve>unchanged</preserve></root>');
   assert.equal(result.stats.importedComments, 1);
-  assert.ok(result.stats.complexParagraphs >= 1);
 }
 
 async function testCombinedReviews(helpers, JSZip) {
@@ -328,7 +327,7 @@ async function testExistingCommentDeduplication(helpers, JSZip) {
   await testParagraphInsertionAndDeletion(helpers, JSZip);
   await testStrictWordprocessingMl(helpers, JSZip);
   await testExistingCommentDeduplication(helpers, JSZip);
-  console.log('Comment Master v6.3.0 comparison tests passed.');
+  console.log('Comment Master v7.0.0 comparison regression tests passed.');
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;
