@@ -1,0 +1,11 @@
+{
+  "name": "comment-master",
+  "private": true,
+  "version": "6.3.0",
+  "scripts": {
+    "test": "node tests/comment_master_exports.test.js && node tests/comment_master_v6_3.test.js"
+  },
+  "devDependencies": {
+    "@xmldom/xmldom": "0.9.12"
+  }
+}

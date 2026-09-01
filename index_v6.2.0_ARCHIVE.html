@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src http: https:; object-src 'none'; base-uri 'none'; form-action 'none'; worker-src 'none'">
-  <title>Comment Master v6.3.0</title>
+  <title>Comment Master v6.2.0</title>
   <style>
 :root {
   color-scheme: light;
@@ -65,7 +65,6 @@ button { touch-action: manipulation; }
 .tab-export { color: var(--danger); background: #fff4f3; box-shadow: inset 0 0 0 1px #f1c4c0; }
 .tab-export:hover { color: #8f1f17; background: #ffe9e7; }
 .tab-export.active { color: #fff; background: var(--danger); box-shadow: none; }
-.compare-launch { color: #fff; border-color: rgba(255,255,255,.38); background: rgba(255,255,255,.16); }
 .tab-more { margin-left: auto; color: var(--brand-dark); background: var(--accent); }
 .tab-more[aria-expanded="true"] { box-shadow: inset 0 0 0 1px #aabce5; }
 .advanced-tabs { display: contents; }
@@ -124,7 +123,6 @@ button { touch-action: manipulation; }
 .btn-primary { color: #fff; border-color: var(--brand); background: var(--brand); }
 .btn-light { color: #344054; border-color: var(--line); background: #fff; }
 .app-header .btn-light { color: #fff; border-color: rgba(255,255,255,.32); background: rgba(255,255,255,.11); }
-.app-header .compare-launch { color: #fff; border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.17); }
 .btn-danger { color: #fff; border-color: var(--danger); background: var(--danger); }
 .btn-warning { color: #fff; border-color: var(--warning); background: var(--warning); }
 .icon-btn { display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 10px; background: #eef1f6; cursor: pointer; font-size: 24px; }
@@ -140,46 +138,6 @@ button { touch-action: manipulation; }
 .review-panel h3 { font-size: 15px; }
 .panel-title { display: flex; align-items: center; justify-content: space-between; }
 .panel-scrim { position: fixed; z-index: 55; inset: 0; background: rgba(14,23,40,.4); }
-
-.compare-dialog { width: min(1180px, calc(100vw - 28px)); max-height: min(900px, calc(100dvh - 28px)); padding: 0; overflow: hidden; color: var(--ink); border: 1px solid #cbd4e2; border-radius: 18px; background: #f7f9fc; box-shadow: 0 25px 70px rgba(12,24,48,.32); }
-.compare-dialog::backdrop { background: rgba(10,20,38,.62); backdrop-filter: blur(2px); }
-.compare-dialog.fallback-open { position: fixed; z-index: 90; inset: 14px; display: block; margin: auto; }
-.compare-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 20px 22px 16px; color: #fff; background: linear-gradient(115deg, #172c59, #3156a6 70%, #4b73c8); }
-.compare-header h2 { margin: 0 0 4px; font-size: 24px; }
-.compare-header p { margin: 0; color: rgba(255,255,255,.8); font-size: 13px; }
-.compare-header .icon-btn { flex: 0 0 auto; color: #fff; background: rgba(255,255,255,.16); }
-.compare-tabs { display: flex; gap: 6px; padding: 10px 14px; overflow-x: auto; border-bottom: 1px solid var(--line); background: #fff; }
-.compare-tab { flex: 0 0 auto; min-height: 38px; padding: 8px 13px; color: #44516a; border: 0; border-radius: 9px; background: transparent; cursor: pointer; font-size: 13px; font-weight: 800; }
-.compare-tab.active { color: #fff; background: var(--brand); }
-.compare-body { max-height: calc(100dvh - 185px); padding: 18px; overflow-y: auto; }
-.compare-panel { display: grid; gap: 14px; }
-.compare-panel > .section-heading { margin-bottom: 0; }
-.source-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
-.source-card, .compare-options, .review-list-card { min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 13px; background: #fff; }
-.source-card legend { padding: 0 5px; color: #243b70; font-weight: 850; }
-.source-card .form-row:last-child { margin-bottom: 0; }
-.source-file-note { min-height: 18px; margin: 7px 0 0; color: var(--muted); overflow-wrap: anywhere; font-size: 12px; }
-.compare-run-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.compare-run-row .compare-options { flex: 1 1 auto; }
-.compare-run-row .button-row { flex: 0 0 auto; padding-bottom: 1px; }
-.rich-compare-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
-.rich-card { min-width: 0; border: 1px solid var(--line); border-radius: 13px; background: #fff; overflow: hidden; }
-.rich-card > label { display: block; padding: 11px 13px 8px; color: #243b70; font-size: 13px; font-weight: 850; }
-.rich-toolbar { display: flex; gap: 4px; padding: 7px 9px; border-top: 1px solid #edf0f5; border-bottom: 1px solid var(--line); background: #f8faff; }
-.rich-tool { min-width: 34px; min-height: 32px; padding: 5px 8px; color: #344054; border: 1px solid #c8d0de; border-radius: 7px; background: #fff; cursor: pointer; font-weight: 800; }
-.rich-editor { min-height: 250px; max-height: 430px; padding: 13px 14px; overflow: auto; outline: none; line-height: 1.55; white-space: normal; }
-.rich-editor:empty::before { content: attr(data-placeholder); color: #98a2b3; pointer-events: none; }
-.rich-editor p, .rich-editor div { margin: 0 0 .7em; }
-.compare-note { margin: 0; padding: 10px 12px; color: #4b5870; border-radius: 9px; background: #edf3ff; line-height: 1.45; font-size: 12px; }
-.review-list { display: grid; gap: 8px; margin-top: 10px; }
-.review-row { display: grid; grid-template-columns: minmax(170px,1.2fr) minmax(180px,.8fr) auto; align-items: end; gap: 9px; padding: 10px; border: 1px solid #e2e7f0; border-radius: 10px; background: #fafbfe; }
-.review-row-name { align-self: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 750; }
-.review-row .form-row { margin: 0; }
-.empty-review-list { padding: 16px; color: var(--muted); text-align: center; border: 1px dashed #c7d0df; border-radius: 10px; font-size: 13px; }
-.comparison-result { min-height: 20px; margin: 0; color: #46546c; font-size: 12px; }
-.landing-secondary { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 14px 8px 0; padding: 14px 16px; border: 1px solid #cbd7ef; border-radius: 12px; background: #f4f7ff; }
-.landing-secondary strong { display: block; margin-bottom: 3px; }
-.landing-secondary span { color: var(--muted); font-size: 12px; }
 
 .form-row { margin-bottom: 12px; }
 .form-row > label, .pagination label { display: block; margin-bottom: 5px; color: #46546c; font-size: 12px; font-weight: 750; }
@@ -277,9 +235,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   .overview-heading-actions { width: 100%; flex-wrap: wrap; }
   .start-card > p { min-height: 0; }
   .table-wrap { max-height: 64vh; }
-  .source-grid, .rich-compare-grid { grid-template-columns: 1fr; }
-  .compare-run-row { align-items: stretch; flex-direction: column; }
-  .compare-run-row .button-row { justify-content: flex-end; }
 }
 
 @media (min-width: 901px) and (min-height: 720px) {
@@ -300,11 +255,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   .activity-table .check-cell { grid-column: 1; grid-row: 1 / span 5; width: auto; padding: 9px 3px; }
   .activity-table .empty { grid-column: 1 / -1; padding: 28px 12px; }
   .activity-table .empty::before { display: none !important; }
-  .compare-dialog { width: 100vw; max-width: none; max-height: 100dvh; height: 100dvh; border: 0; border-radius: 0; }
-  .compare-body { max-height: calc(100dvh - 168px); padding: 12px; }
-  .compare-header { padding: 16px; }
-  .review-row { grid-template-columns: 1fr auto; }
-  .review-row .form-row { grid-column: 1 / -1; grid-row: 2; }
 }
 
 @media (max-width: 620px) {
@@ -333,7 +283,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   .start-card { padding: 17px; }
   .card-action-row { align-items: stretch; flex-direction: column; }
   .section-heading { align-items: stretch; flex-direction: column; }
-  .landing-secondary { align-items: stretch; flex-direction: column; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -483,7 +432,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   }
 
   function appProperties(sheets) {
-    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>${sheets.length}</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector size="${sheets.length}" baseType="lpstr">${sheets.map((sheet) => `<vt:lpstr>${xml(sheet.name)}</vt:lpstr>`).join('')}</vt:vector></TitlesOfParts><Company></Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>6.3</AppVersion></Properties>`;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>${sheets.length}</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector size="${sheets.length}" baseType="lpstr">${sheets.map((sheet) => `<vt:lpstr>${xml(sheet.name)}</vt:lpstr>`).join('')}</vt:vector></TitlesOfParts><Company></Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>6.2</AppVersion></Properties>`;
   }
 
   async function build(sheets, progress) {
@@ -604,7 +553,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   }
 
   function appProperties() {
-    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><Company></Company><AppVersion>6.3</AppVersion></Properties>';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Comment Master</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><Company></Company><AppVersion>6.2</AppVersion></Properties>';
   }
 
   function validate(headers, rows, settings) {
@@ -652,7 +601,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
 (function () {
   'use strict';
 
-  const VERSION = '6.3.0';
+  const VERSION = '6.2.0';
   const WML_TRANSITIONAL = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
   const WML_STRICT = 'http://purl.oclc.org/ooxml/wordprocessingml/main';
   const WML_NAMESPACES = new Set([WML_TRANSITIONAL, WML_STRICT]);
@@ -675,9 +624,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   const LINK_CHECK_CONCURRENCY = 4;
   const LINK_CHECK_TIMEOUT_MS = 10000;
   const COMMENT_CONTEXT_LIMIT = 140;
-  const MAX_COMBINE_REVIEWS = 12;
-  const MAX_COMPARE_PARAGRAPHS = 30000;
-  const MAX_COMPARE_TOKENS = 50000;
 
   const REVISION_DEFS = [
     { local: 'ins', type: 'ins', label: 'Insertion', short: 'INS', textKind: 'insert' },
@@ -736,19 +682,12 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     statusTimer: null
   };
 
-  const comparisonState = {
-    tab: 'documents',
-    reviews: [],
-    nextReviewId: 1
-  };
-
   let ui = {};
 
   function init() {
     ui = collectUi();
     initializeSelects();
     bindEvents();
-    renderCombineReviews();
     switchTab('overview');
     setStatus('Ready. Open a DOCX to begin.', true);
     updateDocumentButtons();
@@ -782,17 +721,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       ghostAuthor: id('ghost-author'), ghostDate: id('ghost-date'), exportFormat: id('export-format'),
       exportSummary: id('export-summary'), undoButton: id('btn-undo'),
       homeTargetAuthor: id('home-target-author'), homeAuthor: id('home-author'),
-      homeCount: id('home-count'), linksSummary: id('links-summary'),
-      compareDialog: id('compare-dialog'), compareOriginalSource: id('compare-original-source'),
-      compareOriginalFile: id('compare-original-file'), compareOriginalNote: id('compare-original-note'),
-      compareChangedSource: id('compare-changed-source'), compareChangedFile: id('compare-changed-file'),
-      compareChangedNote: id('compare-changed-note'), compareDocAuthor: id('compare-doc-author'),
-      compareDocResult: id('compare-doc-result'), compareTextOriginal: id('compare-text-original'),
-      compareTextChanged: id('compare-text-changed'), compareTextAuthor: id('compare-text-author'),
-      compareTextResult: id('compare-text-result'), combineBaseSource: id('combine-base-source'),
-      combineBaseFile: id('combine-base-file'), combineBaseNote: id('combine-base-note'),
-      combineReviewFiles: id('combine-review-files'), combineAddCurrent: id('combine-add-current'),
-      combineReviewList: id('combine-review-list'), combineResult: id('combine-result')
+      homeCount: id('home-count'), linksSummary: id('links-summary')
     };
   }
 
@@ -828,17 +757,12 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       if (file) void loadFile(file);
     });
     document.addEventListener('click', (event) => {
-      const compareTab = event.target.closest('[data-compare-tab]');
-      if (compareTab) { switchCompareTab(compareTab.dataset.compareTab); return; }
-      const richTool = event.target.closest('[data-rich-command]');
-      if (richTool) { applyRichTextCommand(richTool); return; }
       const tab = event.target.closest('[data-tab]');
       if (tab) { switchTab(tab.dataset.tab); return; }
       const action = event.target.closest('[data-action]');
       if (action) void runAction(action.dataset.action, action);
     });
     ui.tabs.addEventListener('keydown', tabKeydown);
-    ui.compareDialog.querySelector('.compare-tabs').addEventListener('keydown', compareTabKeydown);
     [ui.filterSearch, ui.filterFrom, ui.filterTo].forEach((element) => element.addEventListener('input', filterChanged));
     [ui.filterTypes, ui.filterAuthors, ui.filterParts, ui.filterUndated, ui.sort1, ui.sort1Dir, ui.sort2, ui.sort2Dir, ui.sort3, ui.sort3Dir].forEach((element) => element.addEventListener('change', filterChanged));
     ui.tableHead.addEventListener('click', headerClick);
@@ -854,12 +778,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     ui.ghostList.addEventListener('change', renderGhostSelection);
     [ui.quickScope, ui.quickTargetAuthor].forEach((element) => element.addEventListener('change', renderQuickCount));
     ui.homeTargetAuthor.addEventListener('change', renderHomeCount);
-    [ui.compareOriginalSource, ui.compareChangedSource, ui.combineBaseSource].forEach((element) => element.addEventListener('change', renderComparisonSources));
-    [ui.compareOriginalFile, ui.compareChangedFile, ui.combineBaseFile].forEach((element) => element.addEventListener('change', renderComparisonSources));
-    [ui.compareTextOriginal, ui.compareTextChanged].forEach((element) => element.addEventListener('paste', richTextPaste));
-    ui.combineReviewFiles.addEventListener('change', addCombineReviewFiles);
-    ui.combineReviewList.addEventListener('input', updateCombineReviewAuthor);
-    ui.compareDialog.addEventListener('cancel', (event) => { if (state.busy) event.preventDefault(); });
     ui.pageSize.addEventListener('change', () => { state.pageSize = Number(ui.pageSize.value) || 250; state.page = 1; renderMainTable(); });
     document.addEventListener('keydown', globalKeydown);
     window.addEventListener('beforeunload', (event) => {
@@ -879,18 +797,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     event.preventDefault();
     tabs[index].focus();
     switchTab(tabs[index].dataset.tab);
-  }
-
-  function compareTabKeydown(event) {
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-    const tabs = Array.from(ui.compareDialog.querySelectorAll('[data-compare-tab]'));
-    let index = tabs.indexOf(document.activeElement);
-    if (event.key === 'Home') index = 0;
-    else if (event.key === 'End') index = tabs.length - 1;
-    else index = (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-    event.preventDefault();
-    tabs[index].focus();
-    switchCompareTab(tabs[index].dataset.compareTab);
   }
 
   function globalKeydown(event) {
@@ -927,9 +833,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
       exportCommentsWord, copy: copyCurrent, homeRename, homeStripMetadata: wipeMeta, homeExportComments: exportCommentsWord,
       checkAllLinks: () => startExternalLinkChecks(), retryLink: () => retryExternalLink(source && source.dataset.linkKey),
       goReview: () => switchTab('all'), goLinks: () => switchTab('relationships'),
-      toggleAdvanced: toggleAdvancedTabs, openCompare: openCompareDialog, closeCompare: closeCompareDialog,
-      compareDocuments, compareText, combineAddCurrent, combineCommentary,
-      removeCombineReview: () => removeCombineReview(source && source.dataset.reviewId)
+      toggleAdvanced: toggleAdvancedTabs
     };
     try {
       clearError();
@@ -999,193 +903,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     const message = error && error.message ? error.message : String(error);
     if (/zip|central directory|signature|corrupt/i.test(message)) return `This file is not a readable DOCX package. It may be corrupted, encrypted, password-protected, or merely renamed with a .docx extension. (${message})`;
     return message;
-  }
-
-  function openCompareDialog() {
-    renderComparisonSources();
-    renderCombineReviews();
-    switchCompareTab(comparisonState.tab);
-    if (typeof ui.compareDialog.showModal === 'function') {
-      if (!ui.compareDialog.open) ui.compareDialog.showModal();
-    } else {
-      ui.compareDialog.classList.add('fallback-open');
-      ui.compareDialog.setAttribute('open', '');
-    }
-    const active = ui.compareDialog.querySelector('[data-compare-tab].active');
-    if (active) active.focus();
-  }
-
-  function closeCompareDialog() {
-    if (state.busy) return;
-    if (typeof ui.compareDialog.close === 'function' && ui.compareDialog.open) ui.compareDialog.close();
-    else {
-      ui.compareDialog.classList.remove('fallback-open');
-      ui.compareDialog.removeAttribute('open');
-    }
-  }
-
-  function switchCompareTab(tab) {
-    if (!['documents', 'text', 'combine'].includes(tab)) tab = 'documents';
-    comparisonState.tab = tab;
-    ui.compareDialog.querySelectorAll('[data-compare-tab]').forEach((button) => {
-      const active = button.dataset.compareTab === tab;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-selected', String(active));
-      button.tabIndex = active ? 0 : -1;
-    });
-    ui.compareDialog.querySelectorAll('[data-compare-panel]').forEach((panel) => { panel.hidden = panel.dataset.comparePanel !== tab; });
-  }
-
-  function renderComparisonSources() {
-    const available = Boolean(state.doc);
-    [ui.compareOriginalSource, ui.compareChangedSource, ui.combineBaseSource].forEach((select) => {
-      const current = select.querySelector('option[value="current"]');
-      if (current) {
-        current.disabled = !available;
-        current.textContent = available ? `Currently loaded: ${state.doc.fileName}` : 'Currently loaded document';
-      }
-      if (!available && select.value === 'current') select.value = 'upload';
-      const card = select.closest('.source-card');
-      const uploadRow = card && card.querySelector('.compare-upload-row');
-      if (uploadRow) uploadRow.hidden = select.value === 'current';
-    });
-    renderSourceNote(ui.compareOriginalSource, ui.compareOriginalFile, ui.compareOriginalNote, 'original');
-    renderSourceNote(ui.compareChangedSource, ui.compareChangedFile, ui.compareChangedNote, 'changed document');
-    renderSourceNote(ui.combineBaseSource, ui.combineBaseFile, ui.combineBaseNote, 'base document');
-    const hasCurrentReview = comparisonState.reviews.some((entry) => entry.type === 'current');
-    ui.combineAddCurrent.disabled = !available || hasCurrentReview;
-    ui.combineAddCurrent.textContent = available ? `Add current: ${state.doc.fileName}` : 'Add current document';
-  }
-
-  function renderSourceNote(select, input, note, label) {
-    if (select.value === 'current') note.textContent = state.doc ? `Using currently loaded ${state.doc.fileName}, including unsaved in-memory edits.` : `No current ${label} is available.`;
-    else {
-      const file = input.files && input.files[0];
-      note.textContent = file ? `${file.name} · ${formatBytes(file.size)}` : `No ${label} selected.`;
-    }
-  }
-
-  function addCombineReviewFiles() {
-    const incoming = Array.from(ui.combineReviewFiles.files || []);
-    ui.combineReviewFiles.value = '';
-    incoming.forEach((file) => {
-      if (comparisonState.reviews.length >= MAX_COMBINE_REVIEWS) return;
-      if (!/\.docx$/i.test(file.name || '')) return;
-      const duplicate = comparisonState.reviews.some((entry) => entry.type === 'file' && entry.file && entry.file.name === file.name && entry.file.size === file.size && entry.file.lastModified === file.lastModified);
-      if (!duplicate) comparisonState.reviews.push({ id: String(comparisonState.nextReviewId++), type: 'file', file, name: file.name, author: '' });
-    });
-    renderCombineReviews();
-  }
-
-  function combineAddCurrent() {
-    if (!state.doc) throw new Error('Open a document before adding the current document as a reviewed version.');
-    if (comparisonState.reviews.some((entry) => entry.type === 'current')) return;
-    if (comparisonState.reviews.length >= MAX_COMBINE_REVIEWS) throw new Error(`Combine commentary accepts at most ${MAX_COMBINE_REVIEWS} reviewed versions at once.`);
-    comparisonState.reviews.push({ id: String(comparisonState.nextReviewId++), type: 'current', file: null, name: state.doc.fileName, author: '' });
-    renderCombineReviews();
-  }
-
-  function removeCombineReview(id) {
-    comparisonState.reviews = comparisonState.reviews.filter((entry) => entry.id !== String(id || ''));
-    renderCombineReviews();
-  }
-
-  function updateCombineReviewAuthor(event) {
-    const input = event.target.closest('[data-review-author]');
-    if (!input) return;
-    const entry = comparisonState.reviews.find((candidate) => candidate.id === input.dataset.reviewAuthor);
-    if (entry) entry.author = input.value.slice(0, 255);
-  }
-
-  function renderCombineReviews() {
-    if (!comparisonState.reviews.length) ui.combineReviewList.innerHTML = '<div class="empty-review-list">No reviewed versions added yet.</div>';
-    else ui.combineReviewList.innerHTML = comparisonState.reviews.map((entry, index) => `
-      <div class="review-row">
-        <div class="review-row-name" title="${escAttr(entry.name)}">${index + 1}. ${esc(entry.name)}${entry.type === 'current' ? ' (current document)' : ''}</div>
-        <div class="form-row"><label for="review-author-${escAttr(entry.id)}">Reviewer name</label><input id="review-author-${escAttr(entry.id)}" data-review-author="${escAttr(entry.id)}" value="${escAttr(entry.author)}" maxlength="255" placeholder="Auto-detect"></div>
-        <button class="btn btn-light" data-action="removeCombineReview" data-review-id="${escAttr(entry.id)}" type="button">Remove</button>
-      </div>`).join('');
-    ui.combineResult.textContent = comparisonState.reviews.length < 2
-      ? `Add ${2 - comparisonState.reviews.length} more reviewed version${comparisonState.reviews.length === 1 ? '' : 's'}.`
-      : `${comparisonState.reviews.length} reviewed versions ready to combine.`;
-    renderComparisonSources();
-  }
-
-  function applyRichTextCommand(button) {
-    const editor = document.getElementById(button.dataset.richEditor || '');
-    if (!editor) return;
-    editor.focus();
-    document.execCommand(button.dataset.richCommand, false, null);
-  }
-
-  function richTextPaste(event) {
-    const editor = event.currentTarget;
-    const clipboard = event.clipboardData;
-    if (!clipboard) return;
-    event.preventDefault();
-    const html = clipboard.getData('text/html');
-    const plain = clipboard.getData('text/plain');
-    const safe = html ? sanitizeRichHtml(html) : esc(plain).replace(/\r\n|\r|\n/g, '<br>');
-    insertSanitizedHtml(editor, safe);
-  }
-
-  function sanitizeRichHtml(html) {
-    const parsed = new DOMParser().parseFromString(`<div>${String(html || '')}</div>`, 'text/html');
-    const source = parsed.body.firstElementChild || parsed.body;
-    const output = document.createElement('div');
-    const allowed = new Set(['P', 'DIV', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'STRIKE', 'SPAN', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'TABLE', 'TBODY', 'THEAD', 'TFOOT', 'TR', 'TD', 'TH', 'BLOCKQUOTE', 'SUB', 'SUP']);
-    const blocked = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH', 'IMG', 'VIDEO', 'AUDIO', 'LINK', 'META']);
-
-    function clean(node, target) {
-      if (node.nodeType === 3) { target.appendChild(document.createTextNode(node.nodeValue || '')); return; }
-      if (node.nodeType !== 1 || blocked.has(node.tagName)) return;
-      if (!allowed.has(node.tagName)) { Array.from(node.childNodes).forEach((child) => clean(child, target)); return; }
-      const element = document.createElement(node.tagName.toLowerCase());
-      const style = safeRichStyle(node);
-      if (style) element.setAttribute('style', style);
-      target.appendChild(element);
-      Array.from(node.childNodes).forEach((child) => clean(child, element));
-    }
-    Array.from(source.childNodes).forEach((node) => clean(node, output));
-    return output.innerHTML;
-  }
-
-  function safeRichStyle(element) {
-    const values = [];
-    const color = element.style && element.style.color;
-    const background = element.style && element.style.backgroundColor;
-    const weight = element.style && element.style.fontWeight;
-    const fontStyle = element.style && element.style.fontStyle;
-    const decoration = element.style && (element.style.textDecorationLine || element.style.textDecoration);
-    const family = element.style && element.style.fontFamily;
-    const size = element.style && element.style.fontSize;
-    const align = element.style && element.style.textAlign;
-    const safeColor = (value) => /^(?:#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\)|[a-z]{1,20})$/i.test(value || '');
-    if (safeColor(color)) values.push(`color:${color}`);
-    if (safeColor(background)) values.push(`background-color:${background}`);
-    if (/^(?:normal|bold|[1-9]00)$/i.test(weight || '')) values.push(`font-weight:${weight}`);
-    if (/^(?:normal|italic|oblique)$/i.test(fontStyle || '')) values.push(`font-style:${fontStyle}`);
-    if (/^(?:none|underline|line-through|underline line-through)$/i.test(decoration || '')) values.push(`text-decoration:${decoration}`);
-    if (/^[\w\s,"'\-]{1,100}$/.test(family || '')) values.push(`font-family:${family}`);
-    if (/^(?:\d+(?:\.\d+)?)(?:px|pt|em|rem|%)$/i.test(size || '')) values.push(`font-size:${size}`);
-    if (/^(?:left|right|center|justify)$/i.test(align || '')) values.push(`text-align:${align}`);
-    return values.join(';');
-  }
-
-  function insertSanitizedHtml(editor, html) {
-    const template = document.createElement('template');
-    template.innerHTML = html;
-    const fragment = template.content.cloneNode(true);
-    const selection = window.getSelection();
-    if (!selection || !selection.rangeCount || !editor.contains(selection.anchorNode)) { editor.appendChild(fragment); return; }
-    const range = selection.getRangeAt(0);
-    range.deleteContents();
-    const marker = document.createTextNode('');
-    fragment.appendChild(marker);
-    range.insertNode(fragment);
-    range.setStartAfter(marker); range.collapse(true);
-    selection.removeAllRanges(); selection.addRange(range);
-    marker.remove();
   }
 
   async function loadFile(file) {
@@ -1348,8 +1065,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     renderMainTable();
     renderOverview();
     updateDirtyUi();
-    comparisonState.reviews.filter((entry) => entry.type === 'current').forEach((entry) => { entry.name = candidate.fileName; });
-    renderComparisonSources();
   }
 
   function resetPerDocumentControls() {
@@ -1388,7 +1103,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     state.lastSavedBlob = null;
     state.lastRegexRows = [];
     state.textEditOriginals.clear();
-    comparisonState.reviews = comparisonState.reviews.filter((entry) => entry.type !== 'current');
     ui.workspace.hidden = true;
     ui.landing.hidden = false;
     ui.filePill.hidden = true;
@@ -1396,8 +1110,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     clearError();
     setStatus('Ready. Open a DOCX to begin.', true);
     updateDocumentButtons();
-    renderComparisonSources();
-    renderCombineReviews();
     ui.drop.focus();
   }
 
@@ -3100,1125 +2812,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     return maximum + 1;
   }
 
-  async function compareDocuments() {
-    ui.compareDocResult.textContent = 'Preparing documents…';
-    await withComparisonBusy('Preparing document comparison…', async () => {
-      refreshAfterVisibleCommit(commitVisibleEdits());
-      const original = await resolveComparisonSource(ui.compareOriginalSource, ui.compareOriginalFile, 'original document');
-      const changed = await resolveComparisonSource(ui.compareChangedSource, ui.compareChangedFile, 'changed document');
-      const author = cleanRevisionAuthor(ui.compareDocAuthor.value || 'Comparison');
-      const result = await buildComparisonOutput(original, [{ candidate: changed, author, sourceName: changed.fileName }]);
-      const filename = comparisonFilename(original.fileName, 'Compare');
-      saveAs(result.blob, filename);
-      ui.compareDocResult.textContent = comparisonSummary(result.stats, filename);
-      setStatus(`Created ${filename}.`, true);
-    });
-  }
-
-  async function compareText() {
-    ui.compareTextResult.textContent = 'Preparing formatted text…';
-    await withComparisonBusy('Preparing formatted text comparison…', async () => {
-      const originalModels = richEditorModels(ui.compareTextOriginal);
-      const changedModels = richEditorModels(ui.compareTextChanged);
-      const originalText = originalModels.map((model) => model.text).join('\n').trim();
-      const changedText = changedModels.map((model) => model.text).join('\n').trim();
-      if (!originalText && !changedText) throw new Error('Enter or paste text in at least one comparison box.');
-      const originalBlob = await buildRichTextDocx(originalModels, 'Original text');
-      const changedBlob = await buildRichTextDocx(changedModels, 'Changed text');
-      const token = state.loadToken;
-      const original = await buildCandidate(new File([originalBlob], 'Original text.docx', { type: docxMime() }), token);
-      const changed = await buildCandidate(new File([changedBlob], 'Changed text.docx', { type: docxMime() }), token);
-      const author = cleanRevisionAuthor(ui.compareTextAuthor.value || 'Comparison');
-      const result = await buildComparisonOutput(original, [{ candidate: changed, author, sourceName: 'Changed text' }]);
-      const filename = `Text Comparison (${editDateStamp(new Date())}).docx`;
-      saveAs(result.blob, filename);
-      ui.compareTextResult.textContent = comparisonSummary(result.stats, filename);
-      setStatus(`Created ${filename}.`, true);
-    });
-  }
-
-  async function combineCommentary() {
-    if (comparisonState.reviews.length < 2) throw new Error('Add at least two reviewed versions. Use Compare Documents for a single changed version.');
-    ui.combineResult.textContent = 'Preparing reviewed versions…';
-    await withComparisonBusy('Preparing combined commentary…', async () => {
-      refreshAfterVisibleCommit(commitVisibleEdits());
-      const base = await resolveComparisonSource(ui.combineBaseSource, ui.combineBaseFile, 'base document');
-      const reviews = [];
-      for (let index = 0; index < comparisonState.reviews.length; index += 1) {
-        const entry = comparisonState.reviews[index];
-        setBusy(true, `Reading reviewed version ${index + 1} of ${comparisonState.reviews.length}…`);
-        let candidate;
-        if (entry.type === 'current') candidate = await candidateFromCurrentDocument();
-        else candidate = await buildCandidate(entry.file, state.loadToken);
-        reviews.push({ candidate, author: cleanRevisionAuthor(entry.author || guessReviewer(candidate, index)), sourceName: entry.name });
-      }
-      setBusy(true, 'Merging independent revisions and comments…');
-      const result = await buildComparisonOutput(base, reviews);
-      const filename = comparisonFilename(base.fileName, 'Combined Commentary');
-      saveAs(result.blob, filename);
-      ui.combineResult.textContent = comparisonSummary(result.stats, filename);
-      setStatus(`Created ${filename}.`, true);
-    });
-  }
-
-  async function withComparisonBusy(label, callback) {
-    setBusy(true, label);
-    clearError();
-    try { return await callback(); }
-    catch (error) {
-      const target = comparisonState.tab === 'text' ? ui.compareTextResult : (comparisonState.tab === 'combine' ? ui.combineResult : ui.compareDocResult);
-      if (target) target.textContent = friendlyError(error);
-      throw error;
-    } finally { setBusy(false); }
-  }
-
-  async function resolveComparisonSource(select, input, label) {
-    if (select.value === 'current') return candidateFromCurrentDocument();
-    const file = input.files && input.files[0];
-    if (!file) throw new Error(`Choose the ${label}, or select the currently loaded document.`);
-    return buildCandidate(file, state.loadToken);
-  }
-
-  async function candidateFromCurrentDocument() {
-    if (!state.doc) throw new Error('There is no currently loaded document to use.');
-    const blob = await buildDocxBlob();
-    return buildCandidate(new File([blob], state.doc.fileName, { type: docxMime() }), state.loadToken);
-  }
-
-  function cleanRevisionAuthor(value) {
-    return collapse(value || 'Comparison').replace(/[\u0000-\u001f]+/g, ' ').slice(0, 255) || 'Comparison';
-  }
-
-  function guessReviewer(candidate, index) {
-    const authors = unique(candidate.items.map((item) => collapse(item.author)).filter(Boolean));
-    if (authors.length === 1) return authors[0];
-    const metadata = candidate.metadata || {};
-    return collapse(metadata.lastModifiedBy || metadata.creator || '') || `Reviewer ${index + 1}`;
-  }
-
-  function comparisonFilename(fileName, label, date = new Date()) {
-    const original = String(fileName || 'document.docx');
-    const extension = (original.match(/\.docx$/i) || ['.docx'])[0];
-    const base = original.slice(0, original.length - (original.toLowerCase().endsWith('.docx') ? extension.length : 0));
-    return `${base} (${label} ${editDateStamp(date)})${extension}`;
-  }
-
-  function comparisonSummary(stats, filename) {
-    const parts = [
-      `${stats.changedParagraphs.toLocaleString()} changed paragraph${plural(stats.changedParagraphs)}`,
-      `${stats.insertedParagraphs.toLocaleString()} inserted`,
-      `${stats.deletedParagraphs.toLocaleString()} deleted`,
-      `${stats.importedComments.toLocaleString()} imported comment${plural(stats.importedComments)}`
-    ];
-    if (stats.complexParagraphs) parts.push(`${stats.complexParagraphs.toLocaleString()} complex paragraph${plural(stats.complexParagraphs)} represented as whole-paragraph redlines`);
-    if (stats.skippedParts) parts.push(`${stats.skippedParts.toLocaleString()} unsupported new story part${plural(stats.skippedParts)} omitted`);
-    return `${filename}: ${parts.join('; ')}.`;
-  }
-
-  function sequenceOpcodes(left, right, keyOf) {
-    const a = left.map((value, index) => String(keyOf ? keyOf(value, index) : value));
-    const b = right.map((value, index) => String(keyOf ? keyOf(value, index) : value));
-    const positions = new Map();
-    b.forEach((key, index) => {
-      if (!positions.has(key)) positions.set(key, []);
-      positions.get(key).push(index);
-    });
-    if (b.length >= 200) {
-      const popular = Math.floor(b.length / 100) + 1;
-      positions.forEach((indexes, key) => { if (indexes.length > popular) positions.delete(key); });
-    }
-
-    function longest(alo, ahi, blo, bhi) {
-      let bestA = alo; let bestB = blo; let bestSize = 0;
-      let previous = new Map();
-      for (let i = alo; i < ahi; i += 1) {
-        const current = new Map();
-        const indexes = positions.get(a[i]) || [];
-        for (const j of indexes) {
-          if (j < blo) continue;
-          if (j >= bhi) break;
-          const size = (previous.get(j - 1) || 0) + 1;
-          current.set(j, size);
-          if (size > bestSize) { bestA = i - size + 1; bestB = j - size + 1; bestSize = size; }
-        }
-        previous = current;
-      }
-      return { a: bestA, b: bestB, size: bestSize };
-    }
-
-    const matches = [];
-    const queue = [[0, a.length, 0, b.length]];
-    while (queue.length) {
-      const [alo, ahi, blo, bhi] = queue.pop();
-      const match = longest(alo, ahi, blo, bhi);
-      if (!match.size) continue;
-      matches.push(match);
-      if (alo < match.a && blo < match.b) queue.push([alo, match.a, blo, match.b]);
-      if (match.a + match.size < ahi && match.b + match.size < bhi) queue.push([match.a + match.size, ahi, match.b + match.size, bhi]);
-    }
-    matches.sort((x, y) => x.a - y.a || x.b - y.b);
-    const merged = [];
-    matches.forEach((match) => {
-      const prior = merged[merged.length - 1];
-      if (prior && prior.a + prior.size === match.a && prior.b + prior.size === match.b) prior.size += match.size;
-      else merged.push(Object.assign({}, match));
-    });
-    merged.push({ a: a.length, b: b.length, size: 0 });
-
-    const opcodes = [];
-    let ai = 0; let bi = 0;
-    merged.forEach((match) => {
-      if (ai < match.a || bi < match.b) {
-        const tag = ai < match.a && bi < match.b ? 'replace' : (ai < match.a ? 'delete' : 'insert');
-        opcodes.push({ tag, a1: ai, a2: match.a, b1: bi, b2: match.b });
-      }
-      if (match.size) opcodes.push({ tag: 'equal', a1: match.a, a2: match.a + match.size, b1: match.b, b2: match.b + match.size });
-      ai = match.a + match.size;
-      bi = match.b + match.size;
-    });
-    return opcodes;
-  }
-
-  function tokenizeCompareText(value) {
-    const text = String(value == null ? '' : value);
-    if (!text) return [];
-    return text.match(/\s+|[\p{L}\p{N}\p{M}]+(?:['’][\p{L}\p{N}\p{M}]+)*|[^\s]/gu) || [];
-  }
-
-  function compareTokenKey(token) {
-    return /^\s+$/.test(token.text) ? `space:${token.text}` : `${token.text}\u0000${token.styleKey || ''}`;
-  }
-
-  function tokenDiffScript(baseTokens, revisedTokens) {
-    const deleted = [];
-    const insertions = [];
-    sequenceOpcodes(baseTokens, revisedTokens, compareTokenKey).forEach((opcode) => {
-      if (opcode.tag === 'delete' || opcode.tag === 'replace') deleted.push({ start: opcode.a1, end: opcode.a2 });
-      if (opcode.tag === 'insert') insertions.push({ at: opcode.a1, tokens: revisedTokens.slice(opcode.b1, opcode.b2) });
-      else if (opcode.tag === 'replace') insertions.push({ at: opcode.a2, tokens: revisedTokens.slice(opcode.b1, opcode.b2) });
-    });
-    return { deleted, insertions };
-  }
-
-  function paragraphSimilarity(left, right) {
-    const leftWords = tokenizeCompareText(String(left.text || '').toLocaleLowerCase()).filter((token) => !/^\s+$/.test(token));
-    const rightWords = tokenizeCompareText(String(right.text || '').toLocaleLowerCase()).filter((token) => !/^\s+$/.test(token));
-    if (!leftWords.length && !rightWords.length) return left.containerKey === right.containerKey ? 1 : .5;
-    if (!leftWords.length || !rightWords.length) return 0;
-    const counts = new Map();
-    leftWords.forEach((word) => counts.set(word, (counts.get(word) || 0) + 1));
-    let shared = 0;
-    rightWords.forEach((word) => {
-      const count = counts.get(word) || 0;
-      if (count) { shared += 1; counts.set(word, count - 1); }
-    });
-    let score = (2 * shared) / (leftWords.length + rightWords.length);
-    if (left.containerKey !== right.containerKey) score *= .35;
-    return score;
-  }
-
-  function alignReplacementBlock(base, revised, a1, a2, b1, b2) {
-    const left = base.slice(a1, a2);
-    const right = revised.slice(b1, b2);
-    if (!left.length) return right.map((_, index) => ({ type: 'insert', revisedIndex: b1 + index }));
-    if (!right.length) return left.map((_, index) => ({ type: 'delete', baseIndex: a1 + index }));
-    if (left.length * right.length > 4096) {
-      const actions = [];
-      const paired = Math.min(left.length, right.length);
-      for (let index = 0; index < paired; index += 1) {
-        if (paragraphSimilarity(left[index], right[index]) >= .18) actions.push({ type: 'pair', baseIndex: a1 + index, revisedIndex: b1 + index });
-        else { actions.push({ type: 'delete', baseIndex: a1 + index }); actions.push({ type: 'insert', revisedIndex: b1 + index }); }
-      }
-      for (let index = paired; index < left.length; index += 1) actions.push({ type: 'delete', baseIndex: a1 + index });
-      for (let index = paired; index < right.length; index += 1) actions.push({ type: 'insert', revisedIndex: b1 + index });
-      return actions;
-    }
-
-    const rows = left.length + 1;
-    const cols = right.length + 1;
-    const cost = Array.from({ length: rows }, () => new Float64Array(cols));
-    const choice = Array.from({ length: rows }, () => new Uint8Array(cols));
-    for (let i = 1; i < rows; i += 1) { cost[i][0] = i; choice[i][0] = 1; }
-    for (let j = 1; j < cols; j += 1) { cost[0][j] = j; choice[0][j] = 2; }
-    for (let i = 1; i < rows; i += 1) {
-      for (let j = 1; j < cols; j += 1) {
-        const similarity = paragraphSimilarity(left[i - 1], right[j - 1]);
-        const pair = similarity >= .18 ? cost[i - 1][j - 1] + 1.9 * (1 - similarity) : Infinity;
-        const deletion = cost[i - 1][j] + 1;
-        const insertion = cost[i][j - 1] + 1;
-        if (pair <= deletion && pair <= insertion) { cost[i][j] = pair; choice[i][j] = 3; }
-        else if (deletion <= insertion) { cost[i][j] = deletion; choice[i][j] = 1; }
-        else { cost[i][j] = insertion; choice[i][j] = 2; }
-      }
-    }
-    const reversed = [];
-    let i = left.length; let j = right.length;
-    while (i || j) {
-      const selected = choice[i][j];
-      if (selected === 3) { reversed.push({ type: 'pair', baseIndex: a1 + i - 1, revisedIndex: b1 + j - 1 }); i -= 1; j -= 1; }
-      else if (selected === 1) { reversed.push({ type: 'delete', baseIndex: a1 + i - 1 }); i -= 1; }
-      else { reversed.push({ type: 'insert', revisedIndex: b1 + j - 1 }); j -= 1; }
-    }
-    return reversed.reverse();
-  }
-
-  function alignParagraphs(base, revised) {
-    const actions = [];
-    sequenceOpcodes(base, revised, (model) => model.exactKey).forEach((opcode) => {
-      if (opcode.tag === 'equal') {
-        for (let offset = 0; offset < opcode.a2 - opcode.a1; offset += 1) actions.push({ type: 'pair', baseIndex: opcode.a1 + offset, revisedIndex: opcode.b1 + offset });
-      } else if (opcode.tag === 'delete') {
-        for (let index = opcode.a1; index < opcode.a2; index += 1) actions.push({ type: 'delete', baseIndex: index });
-      } else if (opcode.tag === 'insert') {
-        for (let index = opcode.b1; index < opcode.b2; index += 1) actions.push({ type: 'insert', revisedIndex: index });
-      } else actions.push(...alignReplacementBlock(base, revised, opcode.a1, opcode.a2, opcode.b1, opcode.b2));
-    });
-    return actions;
-  }
-
-  function comparisonStoryPaths(candidate) {
-    return candidate.storyParts.filter((path) => !candidate.commentParts.includes(path) && !/^word\/comments\d*\.xml$/i.test(path));
-  }
-
-  function prepareComparisonCandidate(candidate, output) {
-    candidate.comparisonOutput = Boolean(output);
-    const comments = extractComparisonComments(candidate);
-    const paths = comparisonStoryPaths(candidate);
-    paths.forEach((path) => {
-      if (acceptTrackedChanges(candidate.xmlDocs.get(path), candidate) && output) candidate.modifiedParts.add(path);
-    });
-    const models = new Map();
-    paths.forEach((path) => models.set(path, comparisonParagraphModels(candidate.xmlDocs.get(path), candidate, path)));
-    return { candidate, comments, paths, models };
-  }
-
-  function acceptTrackedChanges(doc, candidate) {
-    if (!doc) return false;
-    let changed = false;
-    ['del', 'moveFrom'].forEach((local) => {
-      findWordElements(doc, local, candidate).reverse().forEach((node) => {
-        if (node.parentNode) { node.parentNode.removeChild(node); changed = true; }
-      });
-    });
-    ['ins', 'moveTo'].forEach((local) => {
-      findWordElements(doc, local, candidate).reverse().forEach((node) => {
-        const parent = node.parentNode;
-        if (!parent) return;
-        while (node.firstChild) parent.insertBefore(node.firstChild, node);
-        parent.removeChild(node);
-        changed = true;
-      });
-    });
-    REVISION_DEFS.filter((definition) => /Change$/.test(definition.local)).forEach((definition) => {
-      findWordElements(doc, definition.local, candidate).reverse().forEach((node) => {
-        if (node.parentNode) { node.parentNode.removeChild(node); changed = true; }
-      });
-    });
-    return changed;
-  }
-
-  function extractComparisonComments(candidate) {
-    return candidate.items.filter((item) => item.type === 'com').map((item) => {
-      const story = candidate.xmlDocs.get(item.part);
-      let anchor = null;
-      if (story) {
-        const starts = findWordElements(story, 'commentRangeStart', candidate).filter((node) => readWAttribute(node, 'id', candidate).value === item.id);
-        const references = findWordElements(story, 'commentReference', candidate).filter((node) => readWAttribute(node, 'id', candidate).value === item.id);
-        anchor = closestWordAncestor(starts[0] || references[0], 'p', candidate);
-      }
-      return {
-        id: item.id, author: item.author, date: item.date, text: item.text, on: item.on,
-        part: item.part, anchor, replyToId: item.replyToId || '', sourceNode: item.node
-      };
-    });
-  }
-
-  function comparisonParagraphModels(doc, candidate, path) {
-    const paragraphs = findWordElements(doc, 'p', candidate);
-    if (paragraphs.length > MAX_COMPARE_PARAGRAPHS) throw new Error(`${partLabel(path)} contains more than ${MAX_COMPARE_PARAGRAPHS.toLocaleString()} paragraphs, exceeding the comparison safety limit.`);
-    return paragraphs.map((paragraph, index) => comparisonParagraphModel(paragraph, candidate, path, index));
-  }
-
-  function comparisonParagraphModel(paragraph, candidate, path, index) {
-    const text = nodeTextInOrder(paragraph, candidate);
-    const containerKey = paragraphContainerKey(paragraph, candidate);
-    const simple = isSimpleComparisonParagraph(paragraph, candidate);
-    const tokens = simple ? comparisonTokensFromParagraph(paragraph, candidate) : [];
-    if (tokens.length > MAX_COMPARE_TOKENS) throw new Error(`A paragraph in ${partLabel(path)} contains more than ${MAX_COMPARE_TOKENS.toLocaleString()} comparison tokens.`);
-    return {
-      node: paragraph, path, index, text, containerKey, simple, tokens,
-      exactKey: `${containerKey}\u0000${collapse(text)}`,
-      tokenSignature: simple ? tokens.map(compareTokenKey).join('\u0001') : ''
-    };
-  }
-
-  function paragraphContainerKey(paragraph, candidate) {
-    const components = [];
-    let node = paragraph.parentElement;
-    while (node && node !== paragraph.ownerDocument.documentElement) {
-      if (node.namespaceURI === candidate.wNs) {
-        let component = node.localName;
-        if (['tbl', 'tr', 'tc', 'txbxContent'].includes(node.localName)) {
-          const siblings = node.parentElement ? Array.from(node.parentElement.children).filter((sibling) => sibling.namespaceURI === candidate.wNs && sibling.localName === node.localName) : [];
-          component += `:${Math.max(0, siblings.indexOf(node))}`;
-        } else if (['footnote', 'endnote'].includes(node.localName)) component += `:${readWAttribute(node, 'id', candidate).value}`;
-        components.push(component);
-      }
-      node = node.parentElement;
-    }
-    return components.reverse().join('/');
-  }
-
-  function isSimpleComparisonParagraph(paragraph, candidate) {
-    const children = Array.from(paragraph.children);
-    const allowedParagraphChildren = candidate.comparisonOutput ? ['pPr', 'r'] : ['pPr', 'r', 'commentRangeStart', 'commentRangeEnd'];
-    const allowedRunChildren = candidate.comparisonOutput
-      ? ['rPr', 't', 'tab', 'br', 'cr', 'noBreakHyphen', 'softHyphen']
-      : ['rPr', 't', 'tab', 'br', 'cr', 'noBreakHyphen', 'softHyphen', 'commentReference'];
-    return children.every((child) => child.namespaceURI === candidate.wNs && allowedParagraphChildren.includes(child.localName)) &&
-      children.filter((child) => child.localName === 'r').every((run) =>
-        Array.from(run.children).every((node) => node.namespaceURI === candidate.wNs && allowedRunChildren.includes(node.localName))
-      );
-  }
-
-  function comparisonTokensFromParagraph(paragraph, candidate) {
-    const segments = [];
-    Array.from(paragraph.children).filter((child) => child.namespaceURI === candidate.wNs && child.localName === 'r').forEach((run) => {
-      const rPr = Array.from(run.children).find((child) => child.namespaceURI === candidate.wNs && child.localName === 'rPr') || null;
-      const styleKey = canonicalComparisonNode(rPr);
-      let text = '';
-      Array.from(run.children).forEach((node) => {
-        if (node.namespaceURI !== candidate.wNs || node.localName === 'rPr') return;
-        if (node.localName === 't' || node.localName === 'delText') text += node.textContent || '';
-        else if (node.localName === 'tab') text += '\t';
-        else if (node.localName === 'br' || node.localName === 'cr') text += '\n';
-        else if (node.localName === 'noBreakHyphen') text += '‑';
-        else if (node.localName === 'softHyphen') text += '­';
-      });
-      const prior = segments[segments.length - 1];
-      if (prior && prior.styleKey === styleKey) prior.text += text;
-      else segments.push({ text, styleKey, rPr });
-    });
-    const tokens = [];
-    segments.forEach((segment) => tokenizeCompareText(segment.text).forEach((text) => tokens.push({ text, styleKey: segment.styleKey, rPr: segment.rPr, richStyle: null })));
-    return tokens;
-  }
-
-  function canonicalComparisonNode(node) {
-    if (!node) return '';
-    if (node.nodeType === 3) return node.nodeValue || '';
-    if (node.nodeType !== 1) return '';
-    const attributes = Array.from(node.attributes || [])
-      .filter((attribute) => !/^(?:rsid|paraId|textId)$/i.test(attribute.localName || ''))
-      .map((attribute) => `${attribute.namespaceURI || ''}:${attribute.localName}=${attribute.value}`).sort().join('|');
-    const children = Array.from(node.childNodes || []).map(canonicalComparisonNode).join('');
-    return `<${node.namespaceURI || ''}:${node.localName}${attributes ? ` ${attributes}` : ''}>${children}</${node.localName}>`;
-  }
-
-  async function buildComparisonOutput(baseCandidate, reviews) {
-    if (!reviews.length) throw new Error('At least one changed or reviewed document is required.');
-    const base = prepareComparisonCandidate(baseCandidate, true);
-    const preparedReviews = reviews.map((review, index) => Object.assign({}, review, {
-      index,
-      author: cleanRevisionAuthor(review.author || `Reviewer ${index + 1}`),
-      prepared: prepareComparisonCandidate(review.candidate, false),
-      paragraphMap: new Map()
-    }));
-    const stats = { changedParagraphs: 0, insertedParagraphs: 0, deletedParagraphs: 0, complexParagraphs: 0, importedComments: 0, skippedComments: 0, skippedParts: 0 };
-    const tracker = { next: nextRevisionIdForCandidate(baseCandidate), date: new Date().toISOString() };
-
-    const basePaths = base.paths;
-    preparedReviews.forEach((review) => {
-      review.prepared.paths.forEach((path) => {
-        const mapped = path === review.candidate.mainPart ? baseCandidate.mainPart : path;
-        if (!basePaths.includes(mapped)) stats.skippedParts += 1;
-      });
-    });
-
-    for (const basePath of basePaths) {
-      const baseModels = base.models.get(basePath) || [];
-      const plans = preparedReviews.map((review) => {
-        const revisedPath = basePath === baseCandidate.mainPart ? review.candidate.mainPart : basePath;
-        const revisedModels = review.prepared.models.get(revisedPath) || [];
-        return { review, revisedPath, revisedModels, actions: alignParagraphs(baseModels, revisedModels) };
-      });
-      if (applyCombinedPartChanges(baseCandidate, basePath, baseModels, plans, tracker, stats)) baseCandidate.modifiedParts.add(basePath);
-    }
-
-    const commentRecords = preparedReviews.flatMap((review) => review.prepared.comments.map((comment) => ({ review, comment })));
-    if (commentRecords.length) importComparisonComments(baseCandidate, base, commentRecords, tracker, stats);
-    const blob = await buildCandidateOutputBlob(baseCandidate);
-    return { blob, stats };
-  }
-
-  function applyCombinedPartChanges(baseCandidate, path, baseModels, plans, tracker, stats) {
-    const paired = new Map();
-    const deleted = new Map();
-    const inserted = new Map();
-    let changed = false;
-
-    plans.forEach((plan) => {
-      let lastBaseIndex = -1;
-      plan.actions.forEach((action) => {
-        if (Number.isInteger(action.baseIndex)) lastBaseIndex = action.baseIndex;
-        if (action.type === 'pair') {
-          const baseModel = baseModels[action.baseIndex];
-          const revisedModel = plan.revisedModels[action.revisedIndex];
-          plan.review.paragraphMap.set(revisedModel.node, baseModel.node);
-          if (baseModel.text === revisedModel.text && (!baseModel.simple || !revisedModel.simple || baseModel.tokenSignature === revisedModel.tokenSignature)) return;
-          if (!paired.has(action.baseIndex)) paired.set(action.baseIndex, []);
-          paired.get(action.baseIndex).push({ plan, revisedModel });
-        } else if (action.type === 'delete') {
-          if (!deleted.has(action.baseIndex)) deleted.set(action.baseIndex, []);
-          deleted.get(action.baseIndex).push(plan.review);
-        } else if (action.type === 'insert') {
-          const boundary = Math.max(0, lastBaseIndex + 1);
-          if (!inserted.has(boundary)) inserted.set(boundary, []);
-          inserted.get(boundary).push({ plan, revisedModel: plan.revisedModels[action.revisedIndex] });
-        }
-      });
-    });
-
-    for (let index = 0; index < baseModels.length; index += 1) {
-      const baseModel = baseModels[index];
-      const variants = paired.get(index) || [];
-      const deletionReviews = deleted.get(index) || [];
-      if (!variants.length && !deletionReviews.length) continue;
-      changed = true;
-      const complex = !baseModel.simple || variants.some((variant) => !variant.revisedModel.simple) || deletionReviews.length > 0;
-      if (!complex) {
-        const scripts = variants.map((variant) => ({
-          author: variant.plan.review.author,
-          script: tokenDiffScript(baseModel.tokens, variant.revisedModel.tokens),
-          revisedModel: variant.revisedModel
-        })).filter((entry) => entry.script.deleted.length || entry.script.insertions.length);
-        if (scripts.length) {
-          rebuildMergedParagraph(baseModel, scripts, baseCandidate, tracker);
-          stats.changedParagraphs += 1;
-        }
-        continue;
-      }
-
-      const deletionAuthors = deletionReviews.map((review) => review.author).concat(variants.map((variant) => variant.plan.review.author));
-      markParagraphDeleted(baseModel.node, deletionAuthors, baseCandidate, tracker);
-      if (deletionReviews.length) stats.deletedParagraphs += 1;
-      if (variants.length) stats.changedParagraphs += 1;
-      stats.complexParagraphs += variants.length ? 1 : 0;
-      const variantGroups = groupParagraphVariants(variants);
-      let after = baseModel.node;
-      variantGroups.forEach((group) => {
-        const insertedNode = createInsertedParagraph(group[0].revisedModel, group.map((entry) => entry.plan.review.author), baseCandidate, tracker, baseModel.node.ownerDocument);
-        after.parentNode.insertBefore(insertedNode, after.nextSibling);
-        after = insertedNode;
-        group.forEach((entry) => entry.plan.review.paragraphMap.set(entry.revisedModel.node, insertedNode));
-      });
-    }
-
-    Array.from(inserted.keys()).sort((a, b) => a - b).forEach((boundary) => {
-      const groups = groupParagraphVariants(inserted.get(boundary));
-      groups.forEach((group) => {
-        const node = createInsertedParagraph(group[0].revisedModel, group.map((entry) => entry.plan.review.author), baseCandidate, tracker, baseCandidate.xmlDocs.get(path));
-        if (!insertParagraphAtBoundary(node, group[0].revisedModel, baseModels, boundary, baseCandidate.xmlDocs.get(path), baseCandidate)) {
-          stats.skippedParts += 1;
-          return;
-        }
-        group.forEach((entry) => entry.plan.review.paragraphMap.set(entry.revisedModel.node, node));
-        stats.insertedParagraphs += 1;
-        changed = true;
-      });
-    });
-    return changed;
-  }
-
-  function groupParagraphVariants(entries) {
-    const groups = [];
-    const bySignature = new Map();
-    entries.forEach((entry) => {
-      const model = entry.revisedModel;
-      const signature = `${model.containerKey}\u0000${model.text}\u0000${model.tokenSignature}`;
-      if (!bySignature.has(signature)) { const group = []; bySignature.set(signature, group); groups.push(group); }
-      bySignature.get(signature).push(entry);
-    });
-    return groups;
-  }
-
-  function rebuildMergedParagraph(baseModel, scripts, candidate, tracker) {
-    const deleteAuthors = Array.from({ length: baseModel.tokens.length }, () => new Set());
-    const insertions = new Map();
-    scripts.forEach((entry) => {
-      entry.script.deleted.forEach((range) => {
-        for (let index = range.start; index < range.end; index += 1) deleteAuthors[index].add(entry.author);
-      });
-      entry.script.insertions.forEach((insertion) => {
-        if (!insertions.has(insertion.at)) insertions.set(insertion.at, []);
-        insertions.get(insertion.at).push({ tokens: insertion.tokens, authors: new Set([entry.author]) });
-      });
-    });
-    insertions.forEach((values, boundary) => {
-      const uniqueInsertions = [];
-      const bySignature = new Map();
-      values.forEach((value) => {
-        const signature = value.tokens.map((token) => `${token.text}\u0000${token.styleKey || ''}`).join('\u0001');
-        const prior = bySignature.get(signature);
-        if (prior) value.authors.forEach((author) => prior.authors.add(author));
-        else { bySignature.set(signature, value); uniqueInsertions.push(value); }
-      });
-      insertions.set(boundary, uniqueInsertions);
-    });
-
-    const paragraph = baseModel.node;
-    Array.from(paragraph.children).forEach((child) => { if (!(child.namespaceURI === candidate.wNs && child.localName === 'pPr')) paragraph.removeChild(child); });
-    let pending = [];
-    let pendingKind = '';
-    let pendingAuthors = '';
-    const flush = () => {
-      if (!pending.length) return;
-      appendComparisonTokens(paragraph, pending, pendingKind, pendingAuthors ? pendingAuthors.split('\u0000') : [], candidate, tracker);
-      pending = [];
-    };
-    const queue = (tokens, kind, authors) => {
-      const authorKey = unique(authors).sort(compareValues).join('\u0000');
-      if (pending.length && (kind !== pendingKind || authorKey !== pendingAuthors)) flush();
-      pendingKind = kind; pendingAuthors = authorKey; pending.push(...tokens);
-    };
-
-    for (let index = 0; index <= baseModel.tokens.length; index += 1) {
-      (insertions.get(index) || []).forEach((insertion) => queue(insertion.tokens, 'ins', Array.from(insertion.authors)));
-      if (index === baseModel.tokens.length) break;
-      const authors = Array.from(deleteAuthors[index]);
-      queue([baseModel.tokens[index]], authors.length ? 'del' : '', authors);
-    }
-    flush();
-  }
-
-  function appendComparisonTokens(paragraph, tokens, kind, authors, candidate, tracker) {
-    if (!tokens.length) return;
-    const parent = kind ? createRevisionElement(kind, authors, candidate, tracker, paragraph.ownerDocument) : paragraph;
-    let run = null;
-    let styleKey = null;
-    tokens.forEach((token) => {
-      if (!run || token.styleKey !== styleKey) {
-        run = paragraph.ownerDocument.createElementNS(candidate.wNs, 'w:r');
-        if (token.rPr) run.appendChild(cloneWordNode(token.rPr, paragraph.ownerDocument, candidate.wNs));
-        else if (token.richStyle) {
-          const rPr = richStyleRunProperties(paragraph.ownerDocument, candidate.wNs, token.richStyle);
-          if (rPr) run.appendChild(rPr);
-        }
-        parent.appendChild(run);
-        styleKey = token.styleKey;
-      }
-      appendRunText(run, token.text, kind === 'del', candidate);
-    });
-    if (kind) paragraph.appendChild(parent);
-  }
-
-  function appendRunText(run, value, deleted, candidate) {
-    String(value || '').split(/(\t|\n)/).forEach((part) => {
-      if (!part) return;
-      if (part === '\t') run.appendChild(run.ownerDocument.createElementNS(candidate.wNs, 'w:tab'));
-      else if (part === '\n') run.appendChild(run.ownerDocument.createElementNS(candidate.wNs, 'w:br'));
-      else {
-        const text = run.ownerDocument.createElementNS(candidate.wNs, deleted ? 'w:delText' : 'w:t');
-        text.textContent = part;
-        updateXmlSpace(text, part);
-        run.appendChild(text);
-      }
-    });
-  }
-
-  function createRevisionElement(kind, authors, candidate, tracker, ownerDocument) {
-    const doc = ownerDocument || candidate.xmlDocs.get(candidate.mainPart);
-    const element = doc.createElementNS(candidate.wNs, `w:${kind}`);
-    writeWAttribute(element, 'id', String(tracker.next++), candidate);
-    writeWAttribute(element, 'author', cleanRevisionAuthor(unique(authors).sort(compareValues).join('; ')), candidate);
-    writeWAttribute(element, 'date', tracker.date, candidate);
-    return element;
-  }
-
-  function nextRevisionIdForCandidate(candidate) {
-    let maximum = 0;
-    comparisonStoryPaths(candidate).forEach((path) => {
-      const doc = candidate.xmlDocs.get(path);
-      if (!doc) return;
-      REVISION_DEFS.forEach((definition) => findWordElements(doc, definition.local, candidate).forEach((node) => {
-        const value = Number(readWAttribute(node, 'id', candidate).value);
-        if (Number.isFinite(value)) maximum = Math.max(maximum, value);
-      }));
-    });
-    return maximum + 1;
-  }
-
-  function markParagraphDeleted(paragraph, authors, candidate, tracker) {
-    const pPr = ensureParagraphProperties(paragraph, candidate);
-    const mark = ensureParagraphMarkProperties(pPr, candidate);
-    mark.appendChild(createRevisionElement('del', authors, candidate, tracker, paragraph.ownerDocument));
-    const allowedParents = new Set(['p', 'hyperlink', 'smartTag', 'customXml', 'sdtContent']);
-    const runs = findWordElements(paragraph, 'r', candidate).filter((run) =>
-      closestWordAncestor(run, 'p', candidate) === paragraph &&
-      run.parentElement && run.parentElement.namespaceURI === candidate.wNs && allowedParents.has(run.parentElement.localName) &&
-      !findWordElements(run, 'commentReference', candidate).length
-    );
-    const groups = [];
-    runs.forEach((run) => {
-      const prior = groups[groups.length - 1];
-      if (prior && prior.parent === run.parentNode && prior.last.nextSibling === run) { prior.runs.push(run); prior.last = run; }
-      else groups.push({ parent: run.parentNode, runs: [run], last: run });
-    });
-    groups.forEach((group) => {
-      const deletion = createRevisionElement('del', authors, candidate, tracker, paragraph.ownerDocument);
-      group.parent.insertBefore(deletion, group.runs[0]);
-      group.runs.forEach((run) => {
-        findWordElements(run, 't', candidate).forEach((textNode) => {
-          const replacement = run.ownerDocument.createElementNS(candidate.wNs, 'w:delText');
-          Array.from(textNode.attributes).forEach((attribute) => replacement.setAttributeNS(attribute.namespaceURI, attribute.name, attribute.value));
-          replacement.textContent = textNode.textContent;
-          textNode.parentNode.replaceChild(replacement, textNode);
-        });
-        deletion.appendChild(run);
-      });
-    });
-  }
-
-  function createInsertedParagraph(model, authors, candidate, tracker, targetDocument) {
-    const doc = targetDocument || candidate.xmlDocs.get(candidate.mainPart);
-    const paragraph = doc.createElementNS(candidate.wNs, 'w:p');
-    const sourcePPr = Array.from(model.node.children).find((child) => child.namespaceURI && child.localName === 'pPr');
-    if (sourcePPr) {
-      const cloned = cloneWordNode(sourcePPr, doc, candidate.wNs);
-      findWordElements(cloned, 'sectPr', candidate).forEach((node) => node.parentNode.removeChild(node));
-      paragraph.appendChild(cloned);
-    }
-    const tokens = model.simple ? model.tokens : fallbackComparisonTokens(model.node, model.node.ownerDocument.documentElement.namespaceURI);
-    appendComparisonTokens(paragraph, tokens.length ? tokens : [{ text: model.text, styleKey: '', rPr: null, richStyle: null }], 'ins', authors, candidate, tracker);
-    const pPr = ensureParagraphProperties(paragraph, candidate);
-    ensureParagraphMarkProperties(pPr, candidate).appendChild(createRevisionElement('ins', authors, candidate, tracker, paragraph.ownerDocument));
-    return paragraph;
-  }
-
-  function fallbackComparisonTokens(paragraph, sourceNamespace) {
-    const tokens = [];
-    Array.from(paragraph.getElementsByTagNameNS(sourceNamespace, 'r')).forEach((run) => {
-      const rPr = Array.from(run.children).find((child) => child.localName === 'rPr') || null;
-      const styleKey = canonicalComparisonNode(rPr);
-      let text = '';
-      Array.from(run.getElementsByTagNameNS(sourceNamespace, '*')).forEach((node) => {
-        if (node.localName === 't' || node.localName === 'delText') text += node.textContent || '';
-        else if (node.localName === 'tab') text += '\t';
-        else if (node.localName === 'br' || node.localName === 'cr') text += '\n';
-      });
-      tokenizeCompareText(text).forEach((value) => tokens.push({ text: value, styleKey, rPr, richStyle: null }));
-    });
-    return tokens;
-  }
-
-  function ensureParagraphProperties(paragraph, candidate) {
-    let pPr = Array.from(paragraph.children).find((child) => child.namespaceURI === candidate.wNs && child.localName === 'pPr');
-    if (!pPr) {
-      pPr = paragraph.ownerDocument.createElementNS(candidate.wNs, 'w:pPr');
-      paragraph.insertBefore(pPr, paragraph.firstChild);
-    }
-    return pPr;
-  }
-
-  function ensureParagraphMarkProperties(pPr, candidate) {
-    let rPr = Array.from(pPr.children).find((child) => child.namespaceURI === candidate.wNs && child.localName === 'rPr');
-    if (!rPr) {
-      rPr = pPr.ownerDocument.createElementNS(candidate.wNs, 'w:rPr');
-      pPr.appendChild(rPr);
-    }
-    return rPr;
-  }
-
-  function cloneWordNode(node, targetDoc, targetWordNamespace) {
-    if (node.nodeType === 3) return targetDoc.createTextNode(node.nodeValue || '');
-    if (node.nodeType !== 1) return targetDoc.createTextNode('');
-    const namespace = WML_NAMESPACES.has(node.namespaceURI) ? targetWordNamespace : node.namespaceURI;
-    const prefix = WML_NAMESPACES.has(node.namespaceURI) ? 'w' : node.prefix;
-    const cloned = targetDoc.createElementNS(namespace, prefix ? `${prefix}:${node.localName}` : node.localName);
-    Array.from(node.attributes || []).forEach((attribute) => {
-      const attributeNamespace = WML_NAMESPACES.has(attribute.namespaceURI) ? targetWordNamespace : attribute.namespaceURI;
-      const attributePrefix = WML_NAMESPACES.has(attribute.namespaceURI) ? 'w' : attribute.prefix;
-      const name = attributePrefix ? `${attributePrefix}:${attribute.localName}` : attribute.name;
-      if (attributeNamespace) cloned.setAttributeNS(attributeNamespace, name, attribute.value);
-      else cloned.setAttribute(name, attribute.value);
-    });
-    Array.from(node.childNodes || []).forEach((child) => cloned.appendChild(cloneWordNode(child, targetDoc, targetWordNamespace)));
-    return cloned;
-  }
-
-  function insertParagraphAtBoundary(node, revisedModel, baseModels, boundary, targetDoc, candidate) {
-    const next = baseModels.slice(boundary).find((model) => model.containerKey === revisedModel.containerKey && model.node.parentNode);
-    if (next) { next.node.parentNode.insertBefore(node, next.node); return true; }
-    const previous = baseModels.slice(0, boundary).reverse().find((model) => model.containerKey === revisedModel.containerKey && model.node.parentNode);
-    if (previous) { previous.node.parentNode.insertBefore(node, previous.node.nextSibling); return true; }
-    const anyNext = baseModels[boundary] || baseModels[baseModels.length - 1];
-    if (anyNext && anyNext.node.parentNode) { anyNext.node.parentNode.insertBefore(node, boundary < baseModels.length ? anyNext.node : anyNext.node.nextSibling); return true; }
-    const root = targetDoc && targetDoc.documentElement;
-    if (root) {
-      const body = candidate ? findWordElements(targetDoc, 'body', candidate)[0] : null;
-      const parent = body || root;
-      const section = candidate ? Array.from(parent.children).find((child) => child.namespaceURI === candidate.wNs && child.localName === 'sectPr') : null;
-      parent.insertBefore(node, section || null);
-      return true;
-    }
-    return false;
-  }
-
-  function importComparisonComments(baseCandidate, basePrepared, records, tracker, stats) {
-    const paragraphLocations = new WeakMap();
-    basePrepared.models.forEach((models, path) => models.forEach((model) => paragraphLocations.set(model.node, `${path}:${model.index}`)));
-    let generatedLocation = 0;
-    const locationFor = (paragraph) => {
-      if (!paragraph) return '';
-      if (!paragraphLocations.has(paragraph)) paragraphLocations.set(paragraph, `generated:${++generatedLocation}`);
-      return paragraphLocations.get(paragraph);
-    };
-    const usable = [];
-    records.forEach(({ review, comment }) => {
-      const mapped = comment.anchor ? review.paragraphMap.get(comment.anchor) : null;
-      if (!mapped) { stats.skippedComments += 1; return; }
-      usable.push({ review, comment, paragraph: mapped });
-    });
-    if (!usable.length) return;
-    const commentPackage = ensureCommentsPackage(baseCandidate);
-    const existing = new Set(basePrepared.comments.map((comment) => commentFingerprint(comment, locationFor(comment.anchor))));
-    let nextId = nextCommentId(commentPackage.doc, baseCandidate);
-    usable.forEach(({ review, comment, paragraph }) => {
-      const fingerprint = commentFingerprint(comment, locationFor(paragraph));
-      if (existing.has(fingerprint)) return;
-      if (!paragraph || !paragraph.parentNode) { stats.skippedComments += 1; return; }
-      const id = String(nextId++);
-      appendCommentDefinition(commentPackage.doc, id, comment, review.author, baseCandidate);
-      anchorCommentToParagraph(paragraph, id, baseCandidate);
-      existing.add(fingerprint);
-      stats.importedComments += 1;
-      baseCandidate.modifiedParts.add(commentPackage.path);
-      const storyPath = basePrepared.models.get(baseCandidate.mainPart)?.some((model) => model.node === paragraph)
-        ? baseCandidate.mainPart
-        : basePrepared.paths.find((path) => (basePrepared.models.get(path) || []).some((model) => model.node === paragraph));
-      if (storyPath) baseCandidate.modifiedParts.add(storyPath);
-    });
-  }
-
-  function commentFingerprint(comment, location = '') {
-    return [location, collapse(comment.author).toLocaleLowerCase(), String(comment.date || ''), collapse(comment.text), collapse(comment.on)].join('\u0000');
-  }
-
-  function ensureCommentsPackage(candidate) {
-    let path = candidate.commentParts[0];
-    let doc = path ? candidate.xmlDocs.get(path) : null;
-    if (!doc) {
-      path = 'word/comments.xml';
-      doc = parseXml(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:comments xmlns:w="${candidate.wNs}"/>`, path);
-      candidate.xmlDocs.set(path, doc);
-      candidate.xmlText.set(path, '');
-      candidate.commentParts.push(path);
-      candidate.parts.push(path);
-      candidate.entryNames.push(path);
-      candidate.entryNameSet.add(path);
-      candidate.modifiedParts.add(path);
-    }
-    ensureCommentsContentType(candidate, path);
-    ensureCommentsRelationship(candidate, path);
-    return { path, doc };
-  }
-
-  function ensureCommentsContentType(candidate, commentsPath) {
-    const path = '[Content_Types].xml';
-    const doc = candidate.xmlDocs.get(path);
-    if (!doc) throw new Error('The base document has no readable content-types part.');
-    const partName = `/${commentsPath}`;
-    const exists = Array.from(doc.getElementsByTagNameNS('*', 'Override')).some((node) => node.getAttribute('PartName') === partName);
-    if (exists) return;
-    const node = doc.createElementNS(doc.documentElement.namespaceURI, 'Override');
-    node.setAttribute('PartName', partName);
-    node.setAttribute('ContentType', 'application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml');
-    doc.documentElement.appendChild(node);
-    candidate.modifiedParts.add(path);
-  }
-
-  function ensureCommentsRelationship(candidate, commentsPath) {
-    const relsPath = relationshipsPathForPart(candidate.mainPart);
-    let doc = candidate.xmlDocs.get(relsPath);
-    if (!doc) {
-      doc = parseXml(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${REL_NS}"/>`, relsPath);
-      candidate.xmlDocs.set(relsPath, doc);
-      candidate.xmlText.set(relsPath, '');
-      candidate.entryNames.push(relsPath);
-      candidate.entryNameSet.add(relsPath);
-    }
-    const existing = relElements(doc).find((node) => /\/comments$/i.test(node.getAttribute('Type') || ''));
-    if (existing) return;
-    const used = new Set(relElements(doc).map((node) => node.getAttribute('Id') || ''));
-    let number = 1;
-    while (used.has(`rId${number}`)) number += 1;
-    const relationship = doc.createElementNS(doc.documentElement.namespaceURI || REL_NS, 'Relationship');
-    relationship.setAttribute('Id', `rId${number}`);
-    relationship.setAttribute('Type', `${candidate.strict ? 'http://purl.oclc.org/ooxml/officeDocument/relationships' : 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'}/comments`);
-    relationship.setAttribute('Target', relativePartTarget(candidate.mainPart, commentsPath));
-    doc.documentElement.appendChild(relationship);
-    candidate.modifiedParts.add(relsPath);
-  }
-
-  function relationshipsPathForPart(path) {
-    const slash = path.lastIndexOf('/');
-    const directory = slash >= 0 ? path.slice(0, slash + 1) : '';
-    const file = slash >= 0 ? path.slice(slash + 1) : path;
-    return `${directory}_rels/${file}.rels`;
-  }
-
-  function relativePartTarget(source, target) {
-    const from = source.split('/').slice(0, -1);
-    const to = target.split('/');
-    while (from.length && to.length && from[0] === to[0]) { from.shift(); to.shift(); }
-    return `${'../'.repeat(from.length)}${to.join('/')}` || to[to.length - 1] || '';
-  }
-
-  function nextCommentId(doc, candidate) {
-    let maximum = -1;
-    findWordElements(doc, 'comment', candidate).forEach((node) => {
-      const id = Number(readWAttribute(node, 'id', candidate).value);
-      if (Number.isFinite(id)) maximum = Math.max(maximum, id);
-    });
-    return maximum + 1;
-  }
-
-  function appendCommentDefinition(doc, id, comment, fallbackAuthor, candidate) {
-    const definition = doc.createElementNS(candidate.wNs, 'w:comment');
-    writeWAttribute(definition, 'id', id, candidate);
-    const author = cleanRevisionAuthor(comment.author || fallbackAuthor || 'Reviewer');
-    writeWAttribute(definition, 'author', author, candidate);
-    if (comment.date) writeWAttribute(definition, 'date', comment.date, candidate);
-    const initials = author.split(/\s+/).filter(Boolean).slice(0, 3).map((word) => Array.from(word)[0] || '').join('').toUpperCase();
-    if (initials) writeWAttribute(definition, 'initials', initials, candidate);
-    const prefix = comment.replyToId ? '[Reply to another comment] ' : '';
-    const lines = `${prefix}${comment.text || ''}`.split(/\r?\n/);
-    lines.forEach((line) => {
-      const paragraph = doc.createElementNS(candidate.wNs, 'w:p');
-      const run = doc.createElementNS(candidate.wNs, 'w:r');
-      const text = doc.createElementNS(candidate.wNs, 'w:t');
-      text.textContent = line;
-      updateXmlSpace(text, line);
-      run.appendChild(text); paragraph.appendChild(run); definition.appendChild(paragraph);
-    });
-    doc.documentElement.appendChild(definition);
-  }
-
-  function anchorCommentToParagraph(paragraph, id, candidate) {
-    const doc = paragraph.ownerDocument;
-    const start = doc.createElementNS(candidate.wNs, 'w:commentRangeStart');
-    writeWAttribute(start, 'id', id, candidate);
-    const end = doc.createElementNS(candidate.wNs, 'w:commentRangeEnd');
-    writeWAttribute(end, 'id', id, candidate);
-    const referenceRun = doc.createElementNS(candidate.wNs, 'w:r');
-    const reference = doc.createElementNS(candidate.wNs, 'w:commentReference');
-    writeWAttribute(reference, 'id', id, candidate);
-    referenceRun.appendChild(reference);
-    const pPr = Array.from(paragraph.children).find((child) => child.namespaceURI === candidate.wNs && child.localName === 'pPr');
-    paragraph.insertBefore(start, pPr ? pPr.nextSibling : paragraph.firstChild);
-    paragraph.appendChild(end);
-    paragraph.appendChild(referenceRun);
-  }
-
-  async function buildCandidateOutputBlob(candidate) {
-    const serializer = new XMLSerializer();
-    const outputZip = await JSZip.loadAsync(candidate.originalBytes, { checkCRC32: false, createFolders: false });
-    candidate.modifiedParts.forEach((path) => {
-      const doc = candidate.xmlDocs.get(path);
-      if (!doc) throw new Error(`Comparison output part ${path} is missing from memory.`);
-      outputZip.file(path, serializer.serializeToString(doc));
-    });
-    const blob = await outputZip.generateAsync({ type: 'blob', mimeType: docxMime(), compression: 'DEFLATE', compressionOptions: { level: 6 }, platform: 'DOS' });
-    const validation = await JSZip.loadAsync(await blob.arrayBuffer(), { checkCRC32: true, createFolders: false });
-    for (const required of ['[Content_Types].xml', '_rels/.rels', candidate.mainPart]) {
-      if (!validation.file(required)) throw new Error(`Comparison output is missing required part ${required}.`);
-    }
-    for (const path of candidate.modifiedParts) {
-      const file = validation.file(path);
-      if (!file) throw new Error(`Comparison output is missing changed part ${path}.`);
-      parseXml(await file.async('string'), path);
-    }
-    return blob;
-  }
-
-  function richEditorModels(editor) {
-    const safeHtml = sanitizeRichHtml(editor.innerHTML || '');
-    const container = document.createElement('div');
-    container.innerHTML = safeHtml;
-    const blocks = [];
-    const blockTags = new Set(['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'TR', 'BLOCKQUOTE']);
-
-    function appendBlock(nodes, prefix, blockElement) {
-      const segments = [];
-      if (prefix) segments.push({ text: prefix, style: {} });
-      const blockStyle = blockElement ? richStyleForElement(blockElement, {}) : {};
-      nodes.forEach((node) => collectRichSegments(node, blockStyle, segments));
-      const merged = [];
-      segments.forEach((segment) => {
-        if (!segment.text) return;
-        const key = richStyleKey(segment.style);
-        const prior = merged[merged.length - 1];
-        if (prior && prior.styleKey === key) prior.text += segment.text;
-        else merged.push({ text: segment.text, style: segment.style, styleKey: key });
-      });
-      const heading = blockElement && /^H[1-6]$/.test(blockElement.tagName) ? Number(blockElement.tagName.slice(1)) : 0;
-      if (heading) merged.forEach((segment) => { segment.style = Object.assign({}, segment.style, { bold: true, size: Math.max(22, 36 - heading * 3) }); segment.styleKey = richStyleKey(segment.style); });
-      const align = blockElement && /^(?:left|right|center|justify)$/i.test(blockElement.style.textAlign || '') ? blockElement.style.textAlign.toLowerCase() : '';
-      blocks.push({ segments: merged, text: merged.map((segment) => segment.text).join(''), align });
-    }
-
-    function processContainer(parent, listType) {
-      let pending = [];
-      const flush = () => { if (pending.length) { appendBlock(pending, '', null); pending = []; } };
-      Array.from(parent.childNodes).forEach((child, childIndex) => {
-        if (child.nodeType !== 1) { pending.push(child); return; }
-        const tag = child.tagName;
-        if (tag === 'UL' || tag === 'OL') {
-          flush();
-          Array.from(child.children).filter((item) => item.tagName === 'LI').forEach((item, index) => {
-            if (Array.from(item.children).some((element) => blockTags.has(element.tagName) || ['UL', 'OL', 'TABLE'].includes(element.tagName))) processContainer(item, tag);
-            else appendBlock(Array.from(item.childNodes), tag === 'OL' ? `${index + 1}. ` : '• ', item);
-          });
-        } else if (tag === 'TABLE') {
-          flush();
-          Array.from(child.querySelectorAll('tr')).forEach((row) => {
-            const nodes = [];
-            Array.from(row.children).filter((cell) => ['TD', 'TH'].includes(cell.tagName)).forEach((cell, index) => {
-              if (index) nodes.push(document.createTextNode('\t'));
-              nodes.push(...Array.from(cell.childNodes));
-            });
-            appendBlock(nodes, '', row);
-          });
-        } else if (blockTags.has(tag)) {
-          flush();
-          if (Array.from(child.children).some((element) => blockTags.has(element.tagName) || ['UL', 'OL', 'TABLE'].includes(element.tagName))) processContainer(child, listType);
-          else appendBlock(Array.from(child.childNodes), tag === 'LI' ? (listType === 'OL' ? `${childIndex + 1}. ` : '• ') : '', child);
-        } else pending.push(child);
-      });
-      flush();
-    }
-    processContainer(container, '');
-    return blocks.length ? blocks : [{ segments: [], text: '', align: '' }];
-  }
-
-  function collectRichSegments(node, inherited, output) {
-    if (node.nodeType === 3) { output.push({ text: node.nodeValue || '', style: inherited }); return; }
-    if (node.nodeType !== 1) return;
-    if (node.tagName === 'BR') { output.push({ text: '\n', style: inherited }); return; }
-    const style = richStyleForElement(node, inherited);
-    Array.from(node.childNodes).forEach((child) => collectRichSegments(child, style, output));
-  }
-
-  function richStyleForElement(node, inherited) {
-    const style = Object.assign({}, inherited);
-    if (['STRONG', 'B'].includes(node.tagName)) style.bold = true;
-    if (['EM', 'I'].includes(node.tagName)) style.italic = true;
-    if (node.tagName === 'U') style.underline = true;
-    if (['S', 'STRIKE'].includes(node.tagName)) style.strike = true;
-    if (node.tagName === 'SUB') style.subscript = true;
-    if (node.tagName === 'SUP') style.superscript = true;
-    const weight = node.style && node.style.fontWeight;
-    if (/^(?:bold|[6-9]00)$/i.test(weight || '')) style.bold = true;
-    if (/^(?:italic|oblique)$/i.test(node.style && node.style.fontStyle || '')) style.italic = true;
-    const decoration = node.style && (node.style.textDecorationLine || node.style.textDecoration) || '';
-    if (/underline/i.test(decoration)) style.underline = true;
-    if (/line-through/i.test(decoration)) style.strike = true;
-    const color = cssColorToHex(node.style && node.style.color);
-    const background = cssColorToHex(node.style && node.style.backgroundColor);
-    if (color) style.color = color;
-    if (background) style.background = background;
-    const family = node.style && node.style.fontFamily;
-    if (family) style.font = family.split(',')[0].replace(/["']/g, '').trim().slice(0, 80);
-    const size = richFontHalfPoints(node.style && node.style.fontSize);
-    if (size) style.size = size;
-    return style;
-  }
-
-  function richStyleKey(style) {
-    return Object.keys(style || {}).sort().map((key) => `${key}:${style[key]}`).join('|');
-  }
-
-  function cssColorToHex(value) {
-    const color = String(value || '').trim();
-    const short = color.match(/^#([0-9a-f]{3})$/i);
-    if (short) return short[1].split('').map((letter) => letter + letter).join('').toUpperCase();
-    const full = color.match(/^#([0-9a-f]{6})(?:[0-9a-f]{2})?$/i);
-    if (full) return full[1].toUpperCase();
-    const rgb = color.match(/^rgba?\(\s*(\d+)\D+(\d+)\D+(\d+)/i);
-    if (rgb) return rgb.slice(1, 4).map((number) => Math.max(0, Math.min(255, Number(number))).toString(16).padStart(2, '0')).join('').toUpperCase();
-    const named = { black: '000000', white: 'FFFFFF', red: 'FF0000', blue: '0000FF', green: '008000', yellow: 'FFFF00', gray: '808080', grey: '808080', orange: 'FFA500', purple: '800080' };
-    return named[color.toLowerCase()] || '';
-  }
-
-  function richFontHalfPoints(value) {
-    const match = String(value || '').match(/^(\d+(?:\.\d+)?)(px|pt|em|rem|%)$/i);
-    if (!match) return 0;
-    const number = Number(match[1]);
-    const unit = match[2].toLowerCase();
-    let points = number;
-    if (unit === 'px') points = number * .75;
-    else if (unit === 'em' || unit === 'rem') points = number * 11;
-    else if (unit === '%') points = number * .11;
-    return Math.max(10, Math.min(144, Math.round(points * 2)));
-  }
-
-  function richStyleRunProperties(doc, namespace, style) {
-    if (!style || !Object.keys(style).length) return null;
-    const rPr = doc.createElementNS(namespace, 'w:rPr');
-    const empty = (local) => { const node = doc.createElementNS(namespace, `w:${local}`); rPr.appendChild(node); return node; };
-    if (style.font) { const fonts = empty('rFonts'); fonts.setAttributeNS(namespace, 'w:ascii', style.font); fonts.setAttributeNS(namespace, 'w:hAnsi', style.font); }
-    if (style.bold) empty('b');
-    if (style.italic) empty('i');
-    if (style.underline) { const underline = empty('u'); underline.setAttributeNS(namespace, 'w:val', 'single'); }
-    if (style.strike) empty('strike');
-    if (style.color) { const color = empty('color'); color.setAttributeNS(namespace, 'w:val', style.color); }
-    if (style.background) { const shade = empty('shd'); shade.setAttributeNS(namespace, 'w:val', 'clear'); shade.setAttributeNS(namespace, 'w:fill', style.background); }
-    if (style.size) { const size = empty('sz'); size.setAttributeNS(namespace, 'w:val', String(style.size)); }
-    if (style.subscript || style.superscript) { const vert = empty('vertAlign'); vert.setAttributeNS(namespace, 'w:val', style.subscript ? 'subscript' : 'superscript'); }
-    return rPr;
-  }
-
-  async function buildRichTextDocx(models, title) {
-    const zip = new JSZip();
-    const xml = (value) => String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const runProperties = (style) => {
-      if (!style || !Object.keys(style).length) return '';
-      const parts = [];
-      if (style.font) parts.push(`<w:rFonts w:ascii="${xml(style.font)}" w:hAnsi="${xml(style.font)}"/>`);
-      if (style.bold) parts.push('<w:b/>');
-      if (style.italic) parts.push('<w:i/>');
-      if (style.underline) parts.push('<w:u w:val="single"/>');
-      if (style.strike) parts.push('<w:strike/>');
-      if (style.color) parts.push(`<w:color w:val="${xml(style.color)}"/>`);
-      if (style.background) parts.push(`<w:shd w:val="clear" w:fill="${xml(style.background)}"/>`);
-      if (style.size) parts.push(`<w:sz w:val="${Number(style.size)}"/><w:szCs w:val="${Number(style.size)}"/>`);
-      if (style.subscript || style.superscript) parts.push(`<w:vertAlign w:val="${style.subscript ? 'subscript' : 'superscript'}"/>`);
-      return parts.length ? `<w:rPr>${parts.join('')}</w:rPr>` : '';
-    };
-    const runContent = (text) => String(text || '').split(/(\t|\n)/).map((part) => {
-      if (!part) return '';
-      if (part === '\t') return '<w:tab/>';
-      if (part === '\n') return '<w:br/>';
-      const preserve = /^\s|\s$/.test(part) ? ' xml:space="preserve"' : '';
-      return `<w:t${preserve}>${xml(part)}</w:t>`;
-    }).join('');
-    const paragraphs = models.map((model) => {
-      const pPr = model.align ? `<w:pPr><w:jc w:val="${model.align}"/></w:pPr>` : '';
-      const runs = model.segments.length ? model.segments.map((segment) => `<w:r>${runProperties(segment.style)}${runContent(segment.text)}</w:r>`).join('') : '<w:r><w:t></w:t></w:r>';
-      return `<w:p>${pPr}${runs}</w:p>`;
-    }).join('');
-    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="${WML_TRANSITIONAL}"><w:body>${paragraphs}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`;
-    const now = new Date().toISOString();
-    zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>');
-    zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>');
-    zip.file('word/document.xml', documentXml);
-    zip.file('word/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>');
-    zip.file('word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
-    zip.file('docProps/core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="${CP_NS}" xmlns:dc="${DC_NS}" xmlns:dcterms="${DCT_NS}" xmlns:xsi="${XSI_NS}"><dc:title>${xml(title)}</dc:title><dc:creator>Comment Master</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`);
-    zip.file('docProps/app.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Comment Master</Application><AppVersion>6.3</AppVersion></Properties>');
-    return zip.generateAsync({ type: 'blob', mimeType: docxMime(), compression: 'DEFLATE', compressionOptions: { level: 6 }, platform: 'DOS' });
-  }
-
   async function exportExcel(format) {
     requireFile();
     await withDocumentBusy('Building XLSX export…', async () => {
@@ -4512,13 +3105,12 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     <div class="brand-mark" aria-hidden="true">CM</div>
     <div>
       <h1>Comment Master</h1>
-      <p>Private, browser-local DOCX review editor <span class="version">v6.3.0</span></p>
+      <p>Private, browser-local DOCX review editor <span class="version">v6.2.0</span></p>
     </div>
   </div>
   <div class="header-actions">
     <span id="privacy-pill" class="privacy-pill" title="Document contents stay in this browser. External website addresses are contacted directly for link checks.">Document local</span>
     <span id="file-pill" class="file-pill" hidden>No document</span>
-    <button class="btn compare-launch" data-action="openCompare" type="button">Compare &amp; combine</button>
     <button class="btn btn-light" data-action="open" type="button">Open DOCX</button>
     <button class="btn btn-light requires-file" data-action="undo" id="btn-undo" type="button" disabled>Undo</button>
     <button class="btn btn-primary requires-file" data-action="save" type="button" disabled>Save DOCX</button>
@@ -4532,84 +3124,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   </div>
 </div>
 
-<dialog id="compare-dialog" class="compare-dialog" aria-labelledby="compare-dialog-title">
-  <div class="compare-header">
-    <div><h2 id="compare-dialog-title">Compare and combine</h2><p>Create useful Word redlines locally, without uploading document contents.</p></div>
-    <button class="icon-btn" data-action="closeCompare" type="button" aria-label="Close compare and combine">×</button>
-  </div>
-  <nav class="compare-tabs" role="tablist" aria-label="Comparison tools">
-    <button id="compare-tab-documents" class="compare-tab active" data-compare-tab="documents" type="button" role="tab" aria-controls="compare-panel-documents" aria-selected="true">Compare documents</button>
-    <button id="compare-tab-text" class="compare-tab" data-compare-tab="text" type="button" role="tab" aria-controls="compare-panel-text" aria-selected="false" tabindex="-1">Compare text</button>
-    <button id="compare-tab-combine" class="compare-tab" data-compare-tab="combine" type="button" role="tab" aria-controls="compare-panel-combine" aria-selected="false" tabindex="-1">Combine commentary</button>
-  </nav>
-  <div class="compare-body">
-    <section id="compare-panel-documents" class="compare-panel" data-compare-panel="documents" role="tabpanel" aria-labelledby="compare-tab-documents">
-      <div class="section-heading"><div><h3>Compare two Word documents</h3><p>The output is based on the original and shows the changed version as tracked revisions.</p></div></div>
-      <div class="source-grid">
-        <fieldset class="source-card">
-          <legend>1. Original document</legend>
-          <div class="form-row"><label for="compare-original-source">Source</label><select id="compare-original-source"><option value="upload">Choose a DOCX</option><option value="current" disabled>Currently loaded document</option></select></div>
-          <div class="form-row compare-upload-row"><label for="compare-original-file">Original DOCX</label><input id="compare-original-file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
-          <p id="compare-original-note" class="source-file-note">No original selected.</p>
-        </fieldset>
-        <fieldset class="source-card">
-          <legend>2. Changed document</legend>
-          <div class="form-row"><label for="compare-changed-source">Source</label><select id="compare-changed-source"><option value="upload">Choose a DOCX</option><option value="current" disabled>Currently loaded document</option></select></div>
-          <div class="form-row compare-upload-row"><label for="compare-changed-file">Changed DOCX</label><input id="compare-changed-file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
-          <p id="compare-changed-note" class="source-file-note">No changed document selected.</p>
-        </fieldset>
-      </div>
-      <p class="compare-note">Ordinary text changes are redlined at word level. Existing tracked changes are treated as accepted text for this new comparison. Unchanged package parts remain untouched.</p>
-      <div class="compare-run-row">
-        <div class="compare-options"><div class="form-row"><label for="compare-doc-author">Revision author shown in Word</label><input id="compare-doc-author" value="Comparison" maxlength="255"></div><p id="compare-doc-result" class="comparison-result" aria-live="polite"></p></div>
-        <div class="button-row"><button class="btn btn-primary" data-action="compareDocuments" type="button">Compare and download Word redline</button></div>
-      </div>
-    </section>
-
-    <section id="compare-panel-text" class="compare-panel" data-compare-panel="text" role="tabpanel" aria-labelledby="compare-tab-text" hidden>
-      <div class="section-heading"><div><h3>Compare formatted text</h3><p>Paste or type two versions. Basic formatting such as bold, italics, underline, color, and size is retained.</p></div></div>
-      <div class="rich-compare-grid">
-        <div class="rich-card">
-          <label for="compare-text-original">1. Original text</label>
-          <div class="rich-toolbar" aria-label="Original text formatting"><button class="rich-tool" data-rich-command="bold" data-rich-editor="compare-text-original" type="button" title="Bold">B</button><button class="rich-tool" data-rich-command="italic" data-rich-editor="compare-text-original" type="button" title="Italic"><i>I</i></button><button class="rich-tool" data-rich-command="underline" data-rich-editor="compare-text-original" type="button" title="Underline"><u>U</u></button><button class="rich-tool" data-rich-command="strikeThrough" data-rich-editor="compare-text-original" type="button" title="Strikethrough"><s>S</s></button><button class="rich-tool" data-rich-command="removeFormat" data-rich-editor="compare-text-original" type="button" title="Clear formatting">Clear</button></div>
-          <div id="compare-text-original" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Paste or type the original text here"></div>
-        </div>
-        <div class="rich-card">
-          <label for="compare-text-changed">2. Changed text</label>
-          <div class="rich-toolbar" aria-label="Changed text formatting"><button class="rich-tool" data-rich-command="bold" data-rich-editor="compare-text-changed" type="button" title="Bold">B</button><button class="rich-tool" data-rich-command="italic" data-rich-editor="compare-text-changed" type="button" title="Italic"><i>I</i></button><button class="rich-tool" data-rich-command="underline" data-rich-editor="compare-text-changed" type="button" title="Underline"><u>U</u></button><button class="rich-tool" data-rich-command="strikeThrough" data-rich-editor="compare-text-changed" type="button" title="Strikethrough"><s>S</s></button><button class="rich-tool" data-rich-command="removeFormat" data-rich-editor="compare-text-changed" type="button" title="Clear formatting">Clear</button></div>
-          <div id="compare-text-changed" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Paste or type the changed text here"></div>
-        </div>
-      </div>
-      <p class="compare-note">Pasted HTML is sanitized locally. Images, scripts, remote links, and unsupported Word-only markup are omitted while readable text and common inline formatting are retained.</p>
-      <div class="compare-run-row">
-        <div class="compare-options"><div class="form-row"><label for="compare-text-author">Revision author shown in Word</label><input id="compare-text-author" value="Comparison" maxlength="255"></div><p id="compare-text-result" class="comparison-result" aria-live="polite"></p></div>
-        <div class="button-row"><button class="btn btn-primary" data-action="compareText" type="button">Compare text and download Word redline</button></div>
-      </div>
-    </section>
-
-    <section id="compare-panel-combine" class="compare-panel" data-compare-panel="combine" role="tabpanel" aria-labelledby="compare-tab-combine" hidden>
-      <div class="section-heading"><div><h3>Combine multiple reviewers</h3><p>Start with one base document, then add two or more reviewed versions of that same document.</p></div></div>
-      <fieldset class="source-card">
-        <legend>1. Base document</legend>
-        <div class="source-grid">
-          <div class="form-row"><label for="combine-base-source">Source</label><select id="combine-base-source"><option value="upload">Choose a DOCX</option><option value="current" disabled>Currently loaded document</option></select></div>
-          <div class="form-row compare-upload-row"><label for="combine-base-file">Base DOCX</label><input id="combine-base-file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
-        </div>
-        <p id="combine-base-note" class="source-file-note">No base document selected.</p>
-      </fieldset>
-      <div class="review-list-card">
-        <div class="section-heading"><div><h3>2. Reviewed versions</h3><p>Add each person's version and optionally override the reviewer name used for newly generated revisions.</p></div><div class="button-row"><label class="btn btn-light" for="combine-review-files">Add DOCX files</label><input id="combine-review-files" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden><button id="combine-add-current" class="btn btn-light" data-action="combineAddCurrent" type="button" disabled>Add current document</button></div></div>
-        <div id="combine-review-list" class="review-list"><div class="empty-review-list">No reviewed versions added yet.</div></div>
-      </div>
-      <p class="compare-note">Each reviewed version is compared independently with the base. Non-overlapping revisions are merged directly; overlapping alternatives remain separately attributed so one reviewer does not silently replace another. Comments are imported and deduplicated.</p>
-      <div class="compare-run-row">
-        <div class="compare-options"><p id="combine-result" class="comparison-result" aria-live="polite">Add at least two reviewed versions.</p></div>
-        <div class="button-row"><button class="btn btn-primary" data-action="combineCommentary" type="button">Combine and download Word document</button></div>
-      </div>
-    </section>
-  </div>
-</dialog>
-
 <main id="main-content" class="app-shell">
   <section id="landing" class="landing-card">
     <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Open a Microsoft Word DOCX file">
@@ -4621,7 +3135,6 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
     <div class="privacy-note">
       <strong>Private by design.</strong> Your document is read and modified only in this browser tab. After opening it, Comment Master contacts only the external website addresses already present in the document so it can report Live or Dead links.
     </div>
-    <div class="landing-secondary"><div><strong>Need to compare versions?</strong><span>Create a Word redline, compare formatted text, or combine several reviewers without opening a document first.</span></div><button class="btn btn-primary" data-action="openCompare" type="button">Compare or combine</button></div>
   </section>
 
   <input type="file" id="file-input" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
@@ -4828,7 +3341,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
   </section>
 </main>
 
-<footer class="app-footer">Comment Master v6.3.0 · Document processing stays in your browser</footer>
+<footer class="app-footer">Comment Master v6.2.0 · Document processing stays in your browser</footer>
 
 </body>
 </html>

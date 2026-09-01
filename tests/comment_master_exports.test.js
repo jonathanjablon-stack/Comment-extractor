@@ -17,7 +17,7 @@ function scriptContaining(text) {
 
 function testSyntaxAndUiContract() {
   scripts.forEach((script, index) => assert.doesNotThrow(() => new Function(script), `Script ${index + 1} has invalid JavaScript`));
-  assert.match(html, /<title>Comment Master v6\.2\.0<\/title>/);
+  assert.match(html, /<title>Comment Master v6\.3\.0<\/title>/);
   assert.match(html, /class="tab-btn tab-export" data-tab="export"/);
   assert.match(html, /data-action="homeStripMetadata"/);
   assert.match(html, /data-action="homeExportComments"/);
@@ -33,11 +33,11 @@ function testSyntaxAndUiContract() {
 }
 
 function loadApplicationHelpers() {
-  let application = scriptContaining("const VERSION = '6.2.0'");
+  let application = scriptContaining("const VERSION = '6.3.0'");
   const marker = "window.addEventListener('DOMContentLoaded', init, { once: true });";
   assert.ok(application.includes(marker), 'Application test hook marker is missing');
   application = application.replace(marker, `
-    window.__CM_V62_HELPERS__ = Object.freeze({
+    window.__CM_EXPORT_HELPERS__ = Object.freeze({
       editDateStamp,
       editedDocumentFilename,
       commentReportFilename,
@@ -56,7 +56,7 @@ function loadApplicationHelpers() {
     clearTimeout,
     console
   });
-  return windowObject.__CM_V62_HELPERS__;
+  return windowObject.__CM_EXPORT_HELPERS__;
 }
 
 function testFilenamesAndContext() {
@@ -155,7 +155,7 @@ async function testWordPackages() {
   testFilenamesAndContext();
   testReplyAssociation();
   await testWordPackages();
-  console.log('Comment Master v6.2.0 tests passed.');
+  console.log('Comment Master export regression tests passed.');
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;
