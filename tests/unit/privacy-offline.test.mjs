@@ -45,12 +45,28 @@ test('service worker caches only exact application assets', async () => {
 
 test('built manifest resolves every exact offline asset and contains no source archive', async () => {
   const manifest = JSON.parse(await readFile(path.join(root, 'dist/asset-manifest.json'), 'utf8'));
-  assert.equal(manifest.version, '7.0.0');
+  assert.equal(manifest.version, '7.0.1');
   assert.ok(manifest.buildId.length >= 20);
+  assert.equal(manifest.files['./asset-manifest.json'], undefined, 'the manifest cannot contain a stale or self-referential digest');
   for (const asset of [...manifest.coreAssets, ...Object.values(manifest.optionalAssets).flat()]) {
     const target = path.join(root, 'dist', asset.replace(/^\.\//, ''));
     assert.equal((await stat(target)).isFile(), true, `${asset} must be a concrete file`);
   }
+  const requiredPdfJsAssets = [
+    './vendor/pdfjs/wasm/openjpeg.wasm',
+    './vendor/pdfjs/wasm/openjpeg_nowasm_fallback.js',
+    './vendor/pdfjs/wasm/jbig2.wasm',
+    './vendor/pdfjs/wasm/jbig2_nowasm_fallback.js',
+    './vendor/pdfjs/wasm/qcms_bg.wasm',
+    './vendor/pdfjs/cmaps/Adobe-Japan1-UCS2.bcmap',
+    './vendor/pdfjs/standard_fonts/LiberationSans-Regular.ttf',
+    './vendor/pdfjs/iccs/CGATS001Compat-v2-micro.icc'
+  ];
+  for (const asset of requiredPdfJsAssets) {
+    assert.ok(manifest.coreAssets.includes(asset), `${asset} must be cached as a core offline asset`);
+    assert.ok(manifest.files[asset]?.bytes > 0, `${asset} must be recorded in the build manifest`);
+  }
+  assert.equal(manifest.coreAssets.some((asset) => /quickjs-eval/.test(asset)), false);
   const topLevel = Object.keys(manifest.files);
   assert.equal(topLevel.some((name) => /(?:tests|REPORT_v|package\.json|node_modules)/.test(name)), false);
 });

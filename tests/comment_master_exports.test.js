@@ -17,7 +17,7 @@ function scriptContaining(text) {
 
 function testSyntaxAndUiContract() {
   scripts.forEach((script, index) => assert.doesNotThrow(() => new Function(script), `Script ${index + 1} has invalid JavaScript`));
-  assert.match(html, /<title>Comment Master v7\.0\.0<\/title>/);
+  assert.match(html, /<title>Comment Master v7\.0\.1<\/title>/);
   assert.match(html, /class="tab-btn tab-export" data-tab="export"/);
   assert.match(html, /data-action="homeStripMetadata"/);
   assert.match(html, /data-action="homeExportComments"/);
@@ -33,7 +33,7 @@ function testSyntaxAndUiContract() {
 }
 
 function loadApplicationHelpers() {
-  let application = scriptContaining("const VERSION = '7.0.0'");
+  let application = scriptContaining("const VERSION = '7.0.1'");
   const marker = "window.addEventListener('DOMContentLoaded', init, { once: true });";
   assert.ok(application.includes(marker), 'Application test hook marker is missing');
   application = application.replace(marker, `
@@ -62,10 +62,10 @@ function loadApplicationHelpers() {
 function testFilenamesAndContext() {
   const helpers = loadApplicationHelpers();
   const date = new Date(2026, 8, 1, 12, 0, 0);
-  assert.equal(helpers.editDateStamp(date), '9.1.26');
-  assert.equal(helpers.editedDocumentFilename('My Original File.docx', date), 'My Original File (Edit 9.1.26).docx');
-  assert.equal(helpers.editedDocumentFilename('Case Notes.DOCX', date), 'Case Notes (Edit 9.1.26).DOCX');
-  assert.equal(helpers.commentReportFilename('My Original File.docx', date), 'My Original File (Comments 9.1.26).docx');
+  assert.equal(helpers.editDateStamp(date), '1.9.26');
+  assert.equal(helpers.editedDocumentFilename('My Original File.docx', date), 'My Original File (Edit 1.9.26).docx');
+  assert.equal(helpers.editedDocumentFilename('Case Notes.DOCX', date), 'Case Notes (Edit 1.9.26).DOCX');
+  assert.equal(helpers.commentReportFilename('My Original File.docx', date), 'My Original File (Comments 1.9.26).docx');
   assert.ok(!helpers.editedDocumentFilename('My Original File.docx', date).includes('%20'));
 
   const longContext = `${'A useful identifying phrase '.repeat(12)}🙂 ending`;

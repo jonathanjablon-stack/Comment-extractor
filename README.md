@@ -1,6 +1,6 @@
 # Comment Master
 
-Comment Master v7.0.0 is a private, browser-local document workbench for Word review, PDF work, document comparison, conversion, binders, cleanup, inspection, and batch processing.
+Comment Master v7.0.1 is a private, browser-local document workbench for Word review, PDF work, document comparison, conversion, binders, cleanup, inspection, and batch processing.
 
 The application is a static site. It does not require an installer, a local server, a browser extension, a cloud document-processing service, or a third-party account. Documents are processed in the browser and are not uploaded by Comment Master.
 
@@ -33,7 +33,7 @@ The comparison engine preserves unchanged package parts and uses minimal token c
 
 ### PDF workspace
 
-- Render pages with thumbnails, page navigation, fit-page and fit-width zoom, selectable text, search, keyboard page navigation, and scanned-document detection.
+- Render pages with thumbnails, page navigation, fit-page and fit-width zoom, selectable text, search, keyboard page navigation, scanned-document detection, and local decoder support for common scan encodings including JPEG 2000 and JBIG2.
 - Reorder pages by drag and drop, rotate, duplicate, delete, reverse, undo pending page changes, extract ranges, and split every page. Page-subset products are blocked when forms, XFA, signatures, or outlines would be silently discarded.
 - Add page numbers, headers, footers, and text watermarks.
 - Merge PDFs and create PDFs from PNG, JPEG, WebP, or GIF images.
@@ -60,14 +60,14 @@ The comparison engine preserves unchanged package parts and uses minimal token c
 | Component | Purpose | Loading and offline behavior |
 | --- | --- | --- |
 | Existing OOXML and JSZip code | DOCX inspection, editing, comparison, export, cleanup, and ZIP output | Core application code |
-| PDF.js 6.3.289 | PDF rendering, text extraction, search, and page rasterization | Core same-origin module and worker |
+| PDF.js 6.3.289 | PDF rendering, text extraction, search, page rasterization, and local JPEG 2000 and JBIG2 image decoding | Core same-origin module, worker, decoders, character maps, fonts, and color profile |
 | pdf-lib 1.17.1 | PDF page operations, forms, marks, metadata cleanup, and export | Core same-origin module |
 | Tesseract.js 7.0.0 and English trained data | English OCR | Lazy-loaded on first OCR use, then eligible for same-origin optional caching |
 | Mammoth.js 1.12.2 | Semantic DOCX to HTML and text conversion | Lazy-loaded on first applicable conversion, then eligible for optional caching |
 | Marked 18.0.11 | Markdown parsing | Core same-origin module |
 | DOMPurify 3.4.14 | Imported HTML sanitization | Core same-origin module |
 
-All production runtime assets are copied into the Pages artifact. The deployed application does not load these libraries from public CDNs.
+All production runtime assets are committed under the repository root and served directly by GitHub Pages. The deployed application does not load these libraries from public CDNs.
 
 ## Privacy and security
 
@@ -101,7 +101,7 @@ See [Privacy architecture](docs/PRIVACY.md) for the complete data-flow and cache
 
 Requirements for contributors:
 
-- Node.js 24, matching the GitHub Actions workflow
+- Node.js 24
 - npm with the committed `package-lock.json`
 
 ```bash
@@ -114,16 +114,17 @@ Useful commands:
 
 ```bash
 npm run build        # Create the static production site in dist/
+npm run build:pages  # Build and synchronize the committed root Pages runtime
 npm run test:legacy  # Established Word and export regressions
 npm run test:unit    # Core, PDF, privacy, filename, and Word v7 regressions
 npm run test:e2e     # 19 Playwright browser, privacy, offline, and responsive tests
 ```
 
-`npm run qa` remains the release contract. It performs a production build, the legacy regression suites, 29 Node unit tests, 4 dedicated privacy tests, and 19 Playwright Chromium specifications.
+`npm run qa` remains the release contract. It performs a production build, the legacy regression suites, 31 Node unit tests, 4 dedicated privacy tests, and 19 Playwright Chromium specifications.
 
-Playwright requires its matching Chromium executable. In a new development environment, prepare it with `npx playwright install chromium` before running `npm run qa` or `npm run test:e2e`. The GitHub workflow invokes the lockfile-installed Playwright CLI to install its matching browser and runner dependencies before QA. The browser suite starts the generated `dist/` site on a loopback-only static QA server and does not change the browser-only production architecture.
+Playwright requires its matching Chromium executable. In a new development environment, prepare it with `npx playwright install chromium` before running `npm run qa` or `npm run test:e2e`. The browser suite starts the generated `dist/` site on a loopback-only static QA server and does not change the browser-only production architecture.
 
-The build copies only the production entry point, workbench assets, pinned same-origin vendor files, license notices, manifest, and generated service worker into `dist/`. It also generates `asset-manifest.json` with a content-derived build ID, byte sizes, and SHA-256 values.
+The build copies only the production entry point, workbench assets, pinned same-origin vendor files, PDF.js support assets, license notices, web manifest, and generated service worker into `dist/`. It also generates `asset-manifest.json` with a content-derived build ID plus byte sizes and SHA-256 values for every other packaged runtime file. `npm run build:pages` then synchronizes the generated `assets/`, `vendor/`, service worker, and asset manifest to the repository root. GitHub Pages publishes that committed root directly from `main`; there is no custom deployment Action.
 
 See [Architecture](docs/ARCHITECTURE.md), [Deployment](docs/DEPLOYMENT.md), [Test report](TEST_REPORT.md), [Changelog](CHANGELOG.md), and [Third-party notices](THIRD_PARTY_NOTICES.md).
 

@@ -65,9 +65,13 @@ PDF external link indicators are counted structurally. Viewer rendering disables
 
 ### Runtime dependencies
 
-The production build copies pinned dependency files from the locked npm installation into `dist/vendor/`. Modules and workers import from that same deployment. Tesseract core and English data plus Mammoth are lazy-loaded from the same origin only when their features are requested.
+The production build copies pinned dependency files from the locked npm installation into `dist/vendor/`. `npm run build:pages` synchronizes that generated vendor tree and the other application runtime files to the repository root. Modules and workers import from the same GitHub Pages origin. Tesseract core and English data plus Mammoth are lazy-loaded from that origin only when their features are requested.
+
+PDF.js uses committed same-origin character maps, standard fonts, a color profile, and JPEG 2000 and JBIG2 WebAssembly decoders. PDF JavaScript evaluation remains disabled, and the optional QuickJS evaluation assets are not distributed.
 
 No library is fetched from jsDelivr, unpkg, Google, Microsoft, Adobe, or another runtime CDN.
+
+GitHub Pages publishes `main` and `/ (root)` directly. Branch publishing can make tracked, non-hidden repository files reachable as static files even when the application does not link to them. The current branch must not contain secrets, real documents, confidential fixtures, obsolete browser bundles, or archived runnable entries. Synthetic fixtures contain no user data. The service worker still caches only exact manifest-listed application assets.
 
 ## Service-worker cache policy
 
@@ -164,7 +168,7 @@ The automated regression suite includes a Word link-privacy test that installs a
 
 The Playwright suite also contains a runtime request-interception specification that opens a DOCX with an external-link canary and a PDF with active-content canaries, blocks any request outside the test-site origin, and requires an empty external-request list. A second specification inspects Cache Storage against the generated manifest and reloads the application shell offline. These browser specifications require a prepared Playwright Chromium executable and must not be reported as passed unless they run to completion.
 
-The deterministic build and Pages workflow verify that the deployed artifact contains only allowlisted files and that the service-worker placeholders and cache lists are fully generated. Browser release verification should additionally intercept requests after assets load and exercise local DOCX, PDF, OCR, redaction, conversion, and batch workflows while confirming that no document-derived request is emitted.
+The deterministic build verifies the intended application runtime, generated manifest, service-worker placeholders, and exact cache lists. `tools/sync-pages.mjs` copies that runtime to the repository root and verifies the canonical entry, web manifest, and third-party notice. Browser release verification should additionally intercept requests after assets load and exercise local DOCX, PDF, OCR, redaction, conversion, and batch workflows while confirming that no document-derived request is emitted.
 
 ## Deployment review checklist
 
@@ -172,9 +176,10 @@ Before a production release:
 
 - Run `npm ci --ignore-scripts --no-audit --fund=false` from the committed lockfile.
 - Run `npm run qa` and require a clean exit.
-- Verify the deterministic build comparison in GitHub Actions.
-- Confirm GitHub Pages deploys only `dist/`.
-- Confirm the live `asset-manifest.json` version and build ID match the workflow artifact.
+- Run `npm run build:pages` and inspect the synchronized root runtime.
+- Audit all tracked branch content for secrets, real documents, confidential fixtures, obsolete browser bundles, and archived runnable entries.
+- Confirm GitHub Pages is configured for `main` and `/ (root)` branch publishing.
+- Confirm the live `asset-manifest.json` version and build ID match the committed root manifest.
 - Inspect browser Network after application load while processing canary documents.
 - Inspect Cache Storage and confirm it contains application assets only.
 - Test the app offline after core installation and after first OCR and DOCX-conversion use.

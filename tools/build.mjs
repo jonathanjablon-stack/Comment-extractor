@@ -12,6 +12,13 @@ async function copy(source, target) {
   await cp(path.join(root, source), path.join(dist, target));
 }
 
+async function copyTree(source, target, include = () => true) {
+  const sourceRoot = path.join(root, source);
+  for (const relative of await listFiles(sourceRoot)) {
+    if (include(relative)) await copy(path.posix.join(source, relative), path.posix.join(target, relative));
+  }
+}
+
 async function listFiles(directory, prefix = '') {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];
@@ -73,6 +80,15 @@ const vendorFiles = [
 
 for (const [source, target] of vendorFiles) await copy(source, target);
 
+await copyTree('node_modules/pdfjs-dist/cmaps', 'vendor/pdfjs/cmaps');
+await copyTree('node_modules/pdfjs-dist/standard_fonts', 'vendor/pdfjs/standard_fonts');
+await copyTree('node_modules/pdfjs-dist/iccs', 'vendor/pdfjs/iccs');
+await copyTree(
+  'node_modules/pdfjs-dist/wasm',
+  'vendor/pdfjs/wasm',
+  (relative) => !['quickjs-eval.js', 'quickjs-eval.wasm'].includes(relative)
+);
+
 const coreNames = [
   'tesseract-core.wasm.js', 'tesseract-core.wasm',
   'tesseract-core-lstm.wasm.js', 'tesseract-core-lstm.wasm',
@@ -84,11 +100,25 @@ const coreNames = [
 for (const name of coreNames) await copy(`node_modules/tesseract.js-core/${name}`, `vendor/tesseract/core/${name}`);
 await copy('node_modules/tesseract.js-core/LICENSE', 'vendor/tesseract/core/LICENSE');
 
+const pdfJsSupportAssets = [];
+for (const [directory, extensions] of [
+  ['cmaps', new Set(['.bcmap'])],
+  ['standard_fonts', new Set(['.pfb', '.ttf'])],
+  ['iccs', new Set(['.icc'])],
+  ['wasm', new Set(['.wasm', '.js'])]
+]) {
+  const files = await listFiles(path.join(dist, 'vendor/pdfjs', directory));
+  pdfJsSupportAssets.push(...files
+    .filter((relative) => extensions.has(path.extname(relative)))
+    .map((relative) => `./vendor/pdfjs/${directory}/${relative}`));
+}
+
 const coreAssets = [
   './index.html', './manifest.webmanifest', './asset-manifest.json', './assets/workbench.css', './assets/workbench.js',
   './assets/workbench-core.mjs', './assets/pdf-engine.mjs', './vendor/pdfjs/pdf.mjs',
   './vendor/pdfjs/pdf.worker.mjs', './vendor/pdf-lib/pdf-lib.esm.min.js',
-  './vendor/marked/marked.esm.js', './vendor/dompurify/purify.es.mjs'
+  './vendor/marked/marked.esm.js', './vendor/dompurify/purify.es.mjs',
+  ...pdfJsSupportAssets
 ];
 
 const optionalAssets = {
@@ -106,7 +136,7 @@ for (const asset of [...coreAssets.filter((item) => item !== './asset-manifest.j
   await readFile(path.join(dist, asset.slice(2)));
 }
 
-const buildInputs = await listFiles(dist);
+const buildInputs = (await listFiles(dist)).filter((relative) => relative !== 'asset-manifest.json');
 const buildHasher = createHash('sha256');
 buildHasher.update(`comment-master-build\0${version}\0`);
 buildHasher.update(`${JSON.stringify(coreAssets)}\0${JSON.stringify(optionalAssets)}\0`);
@@ -126,7 +156,7 @@ worker = replaceRequired(worker, '__CM_OPTIONAL_ASSETS__', JSON.stringify(exactO
 await writeFile(workerPath, worker);
 
 const files = {};
-for (const relative of await listFiles(dist)) {
+for (const relative of (await listFiles(dist)).filter((item) => item !== 'asset-manifest.json')) {
   const bytes = await readFile(path.join(dist, relative));
   files[`./${relative}`] = { bytes: bytes.length, sha256: digest(bytes) };
 }

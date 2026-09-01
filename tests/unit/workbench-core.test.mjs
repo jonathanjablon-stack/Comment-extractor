@@ -29,7 +29,7 @@ function localFile(name, size = 1, type = '') {
 }
 
 test('workbench version and format detection remain stable', () => {
-  assert.equal(WORKBENCH_VERSION, '7.0.0');
+  assert.equal(WORKBENCH_VERSION, '7.0.1');
   assert.equal(extensionOf('Case Notes.DOCX'), 'docx');
   assert.equal(extensionOf('archive'), '');
   assert.equal(detectFormat('brief.DOCX'), 'docx');
@@ -42,12 +42,12 @@ test('workbench version and format detection remain stable', () => {
 });
 
 test('filenames are safe, readable, and compatible with the v6 edit convention', () => {
-  assert.equal(editDateStamp(FILE_DATE), '9.1.26');
-  assert.equal(editedFilename('My Original File.docx', FILE_DATE), 'My Original File (Edit 9.1.26).docx');
-  assert.equal(editedFilename('Case Notes.DOCX', FILE_DATE), 'Case Notes (Edit 9.1.26).DOCX');
+  assert.equal(editDateStamp(FILE_DATE), '1.9.26');
+  assert.equal(editedFilename('My Original File.docx', FILE_DATE), 'My Original File (Edit 1.9.26).docx');
+  assert.equal(editedFilename('Case Notes.DOCX', FILE_DATE), 'Case Notes (Edit 1.9.26).DOCX');
   assert.equal(
     productFilename('A report.final.docx', 'Clean/Share', 'pdf', FILE_DATE),
-    'A report.final (Clean_Share 9.1.26).pdf'
+    'A report.final (Clean_Share 1.9.26).pdf'
   );
   const cleaned = safeFilename('  Case<>:"/\\|?*\u0001   Notes  .docx  ');
   assert.doesNotMatch(cleaned, /[<>:"/\\|?*\u0000-\u001f]/);
@@ -55,7 +55,7 @@ test('filenames are safe, readable, and compatible with the v6 edit convention',
   assert.ok(cleaned.length <= 180);
   const longName = `${'Very Long Name '.repeat(20)}.docx`;
   assert.ok(safeFilename(longName).endsWith('.docx'));
-  assert.ok(editedFilename(longName, FILE_DATE).endsWith(' (Edit 9.1.26).docx'));
+  assert.ok(editedFilename(longName, FILE_DATE).endsWith(' (Edit 1.9.26).docx'));
   assert.ok(editedFilename(longName, FILE_DATE).length <= 180);
   assert.ok(!editedFilename('My File.docx', FILE_DATE).includes('%20'));
   assert.throws(() => editDateStamp('not-a-date'), /valid date/i);
@@ -65,7 +65,7 @@ test('long product filenames reserve the complete suffix and target extension', 
   const source = `${'Long Legal Matter Name '.repeat(40)}.DOCX`;
   const output = productFilename(source, 'Clean Copy', 'DOCX', FILE_DATE);
   assert.ok(output.length <= 180);
-  assert.ok(output.endsWith(' (Clean Copy 9.1.26).DOCX'));
+  assert.ok(output.endsWith(' (Clean Copy 1.9.26).DOCX'));
   assert.equal(extensionOf(output), 'docx');
   assert.match(output, /^Long Legal Matter Name/);
   assert.equal((output.match(/\.DOCX/g) || []).length, 1);

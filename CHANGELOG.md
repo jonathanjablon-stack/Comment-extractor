@@ -2,6 +2,27 @@
 
 All notable user-facing and developer-facing changes are recorded here.
 
+## 7.0.1 - 2026-09-01
+
+Comment Master 7.0.1 fixes scanned-page rendering during OCR and simplifies GitHub Pages publishing.
+
+### Fixed
+
+- Added the pinned PDF.js WebAssembly decoders required for JPEG 2000 and JBIG2 page images, preventing affected scanned PDFs from appearing blank in the viewer and OCR canvas.
+- Added the matching PDF.js character maps, standard fonts, and color profile so supported PDFs do not depend on missing or third-party runtime resources.
+- Configured every PDF.js load path to use those same-origin support directories.
+- Added a synthetic JPEG 2000 scanned-PDF fixture and a packaged-decoder regression that renders it and verifies the expected visible color and text pixels. The existing browser OCR regression continues to verify searchable PDF output.
+- Expanded the Playwright OCR scenario to open that JPEG 2000 scan, verify its visible pixels before OCR, recognize and search its text, and verify that the source image remains visible afterward.
+
+### Changed
+
+- Changed GitHub Pages publishing from a custom Actions deployment to direct branch publishing from `main` and `/ (root)`.
+- Added committed root `assets/`, `vendor/`, `service-worker.js`, and `asset-manifest.json` runtime files plus `.nojekyll`.
+- Added `npm run build:pages` and `tools/sync-pages.mjs` to build deterministically, synchronize only the intended runtime files to the repository root, and verify canonical root files.
+- Removed the custom `.github/workflows/pages.yml` build and deployment workflow. GitHub's built-in Pages publication job may still appear after a push because it publishes the configured branch.
+- Removed obsolete root-level vendor bundles and archived application entry files from the current branch because direct root publishing would expose them unnecessarily. They remain available through Git history.
+- Updated deployment, architecture, test, and third-party documentation for the committed static runtime and PDF.js decoder licenses.
+
 ## 7.0.0 - 2026-09-01
 
 Comment Master 7.0.0 expands the established Word review application into a browser-local document workbench while retaining the existing DOCX workflow.

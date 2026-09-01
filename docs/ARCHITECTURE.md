@@ -1,8 +1,8 @@
-# Comment Master v7 architecture
+# Comment Master v7.0.1 architecture
 
 ## Design constraints
 
-Comment Master is a static browser application. The production runtime has no application server, document-processing API, upload route, analytics endpoint, or required account. GitHub provides source control, CI, and static Pages hosting. The browser performs document work.
+Comment Master is a static browser application. The production runtime has no application server, document-processing API, upload route, analytics endpoint, or required account. GitHub provides source control and static Pages hosting. The browser performs document work.
 
 Version 7 keeps the mature Word implementation in the main entry file and adds a modular workbench around it. This avoids a risky rewrite of the existing OOXML behavior while allowing PDF, conversion, binder, and batch features to use separate assets.
 
@@ -17,15 +17,17 @@ Version 7 keeps the mature Word implementation in the main entry file and adds a
 | `src/workbench.css` | Version 7 shell, home, PDF, tools, dialogs, responsive behavior, focus, reduced-motion, and forced-colors styling |
 | `src/service-worker.js` | Build-templated core and optional asset caching |
 | `tools/build.mjs` | Deterministic allowlisted production assembly and asset-manifest generation |
+| `tools/sync-pages.mjs` | Copies the generated static runtime to the repository root for branch-based Pages publishing and verifies canonical root files |
 | `tools/serve.mjs` | Loopback-only static server for Playwright against the generated production artifact |
 | `manifest.webmanifest` | Install metadata for supported browsers |
 | `tests/fixtures/generate-fixtures.mjs` | Deterministic synthetic PDF and image fixtures with no real user data |
 | `tests/unit/` | v7 core, PDF, privacy, filename, and Word regression tests |
 | `tests/browser/` | Playwright browser, responsive, privacy-egress, cache-allowlist, and offline tests |
 | `playwright.config.mjs` | Single-worker Chromium configuration and generated-site test server |
-| `.github/workflows/pages.yml` | Lockfile install, build, QA, deterministic-artifact verification, and Pages deployment |
+| Root `assets/`, `vendor/`, `service-worker.js`, and `asset-manifest.json` | Committed production runtime served directly from `main` and `/ (root)` by GitHub Pages |
+| `.nojekyll` | Prevents Jekyll processing from filtering static runtime paths |
 
-The `dist/` directory is generated and is not source. GitHub Pages deploys only `dist/`.
+The `dist/` directory is ignored local build output. `npm run build:pages` synchronizes its intended runtime files to the repository root. GitHub Pages serves the committed root directly; no custom deployment workflow is required.
 
 ## Runtime composition
 
@@ -57,7 +59,7 @@ Multi-review combining compares each reviewed copy independently with the base. 
 
 ### PDF viewer and working copy
 
-PDF.js renders the current working bytes in a dedicated worker. The loader disables JavaScript evaluation, XFA, streaming, automatic fetching, and worker network fetches. Viewer rendering disables annotations so imported actions are not activated by the visual layer.
+PDF.js renders the current working bytes in a dedicated worker. Every load path supplies same-origin URLs for pinned character maps, standard fonts, the color profile, and WebAssembly image decoders. The JPEG 2000 and JBIG2 decoders are necessary for visible rendering of many image-based scans and for the canvas passed into OCR. The loader disables JavaScript evaluation, XFA, streaming, automatic fetching, and worker network fetches. Viewer rendering disables annotations so imported actions are not activated by the visual layer.
 
 The PDF state tracks:
 
@@ -136,7 +138,7 @@ Batch processing is sequential by design to limit peak memory. Each item has Rea
 | Capability | Implementation | JavaScript or WebAssembly | Lazy-loaded | Offline after cache |
 | --- | --- | --- | --- | --- |
 | Word review, comparison, clean copy | Existing OOXML code and JSZip | JavaScript | No | Yes |
-| PDF rendering and text extraction | PDF.js 6.3.289 plus PDF worker | JavaScript worker | Core asset | Yes |
+| PDF rendering and text extraction | PDF.js 6.3.289 plus its worker, character maps, fonts, color profile, and JPEG 2000/JBIG2 decoders | JavaScript worker plus WebAssembly image decoders | Core assets | Yes |
 | PDF mutation and export | pdf-lib 1.17.1 | JavaScript | Core asset | Yes |
 | OCR | Tesseract.js 7.0.0, tesseract.js-core 7.0.0, English data 1.0.0 | JavaScript worker plus WebAssembly | Yes | Yes, after first successful load |
 | DOCX semantic conversion | Mammoth.js 1.12.2 | JavaScript | Yes | Yes, after first successful load |
@@ -147,16 +149,18 @@ Pinned versions and license paths are documented in `THIRD_PARTY_NOTICES.md`.
 
 ## Build output
 
-`npm run build` removes and recreates `dist/`, then copies a fixed list of application and vendor files. It does not copy the source tree, tests, archived HTML, package manager metadata, or arbitrary repository files.
+`npm run build` removes and recreates `dist/`, then copies a fixed list of application, PDF.js support, and vendor files. It does not copy the source tree, tests, archived HTML, package manager metadata, or arbitrary repository files.
 
 The build then:
 
 1. Computes a build ID from the version, cache lists, paths, and file bytes.
 2. Replaces service-worker placeholders with the version, build ID, core allowlist, and optional allowlist.
-3. Hashes every final artifact with SHA-256.
-4. Writes `dist/asset-manifest.json` with exact paths, byte sizes, hashes, and cache groups.
+3. Hashes every packaged runtime file other than the not-yet-written manifest with SHA-256.
+4. Writes `dist/asset-manifest.json` with those exact paths, byte sizes, hashes, and cache groups.
 
-GitHub Actions runs the build twice and compares the full sorted SHA-256 listing. A difference fails deployment.
+`npm run build:pages` runs that build and then `tools/sync-pages.mjs`. The sync step replaces root `assets/` and `vendor/`, copies the generated service worker and asset manifest, verifies that root `index.html`, `manifest.webmanifest`, and `THIRD_PARTY_NOTICES.md` match the generated production versions, and creates `.nojekyll`.
+
+The synchronized root runtime is committed with its source changes. GitHub Pages is configured for branch publishing from `main` and `/ (root)`. GitHub may show its built-in publication job after a push, but the repository has no custom build or deployment Action.
 
 ## Service-worker lifecycle
 

@@ -9,11 +9,14 @@ import {
   CANARY_URL,
   FORM_DROPDOWN_CANARY,
   FORM_RADIO_CANARY,
+  JPX_SCAN_HEIGHT,
+  JPX_SCAN_WIDTH,
   PAGE_SPECS,
   SECRET_SENTINEL,
   appendPdfComment,
   corruptStartXref,
   createActiveFormPdf,
+  createJpxScanPdf,
   createOrderedPdf,
   createSolidPng
 } from '../fixtures/generate-fixtures.mjs';
@@ -114,7 +117,18 @@ async function createPageScopedPrivacyPdf() {
 test('fixture generation is byte-for-byte deterministic', async () => {
   assert.deepEqual(await createOrderedPdf(), await createOrderedPdf());
   assert.deepEqual(await createActiveFormPdf(), await createActiveFormPdf());
+  assert.deepEqual(await createJpxScanPdf(), await createJpxScanPdf());
   assert.deepEqual(createSolidPng(3, 2, [10, 20, 30, 255]), createSolidPng(3, 2, [10, 20, 30, 255]));
+});
+
+test('synthetic scan uses a real JPEG 2000 image stream', async () => {
+  const bytes = await createJpxScanPdf();
+  const raw = Buffer.from(bytes).toString('latin1');
+  assert.match(raw, /\/Filter \/JPXDecode\b/);
+  const document = await PDFDocument.load(bytes, { updateMetadata: false });
+  assert.equal(document.getPageCount(), 1);
+  assert.deepEqual(document.getPage(0).getSize(), { width: JPX_SCAN_WIDTH, height: JPX_SCAN_HEIGHT });
+  assert.equal((await engine.inspectPdfStructure(bytes)).pageCount, 1);
 });
 
 test('synthetic fixture exposes stable pages, metadata, forms, and active content', async () => {

@@ -67,7 +67,7 @@ function loadApplicationHelpers() {
   const JSZip = zipContext.window.JSZip;
   assert.ok(JSZip, 'Embedded JSZip did not load');
 
-  let application = scriptContaining("const VERSION = '7.0.0'");
+  let application = scriptContaining("const VERSION = '7.0.1'");
   const marker = "window.addEventListener('DOMContentLoaded', init, { once: true });";
   assert.ok(application.includes(marker), 'Application test-hook marker is missing');
   application = application.replace(marker, `
@@ -363,15 +363,15 @@ test('link privacy code performs no production network fetch', async () => {
 
 test('Word output filenames retain the exact local-date convention', () => {
   const date = new Date(2026, 8, 1, 12, 0, 0);
-  assert.equal(runtime.helpers.editedDocumentFilename('My Original File.docx', date), 'My Original File (Edit 9.1.26).docx');
-  assert.equal(runtime.helpers.editedDocumentFilename('Case Notes.DOCX', date), 'Case Notes (Edit 9.1.26).DOCX');
-  assert.equal(runtime.helpers.comparisonFilename('Agreement.docx', 'Compare', date), 'Agreement (Compare 9.1.26).docx');
-  assert.equal(runtime.helpers.comparisonFilename('Policy.DOCX', 'Combined Commentary', date), 'Policy (Combined Commentary 9.1.26).DOCX');
+  assert.equal(runtime.helpers.editedDocumentFilename('My Original File.docx', date), 'My Original File (Edit 1.9.26).docx');
+  assert.equal(runtime.helpers.editedDocumentFilename('Case Notes.DOCX', date), 'Case Notes (Edit 1.9.26).DOCX');
+  assert.equal(runtime.helpers.comparisonFilename('Agreement.docx', 'Compare', date), 'Agreement (Compare 1.9.26).docx');
+  assert.equal(runtime.helpers.comparisonFilename('Policy.DOCX', 'Combined Commentary', date), 'Policy (Combined Commentary 1.9.26).DOCX');
 
   const longName = `${'A'.repeat(175)}.docx`;
   const bounded = runtime.helpers.comparisonFilename(longName, 'Compare', date);
   assert.ok(bounded.length <= 180);
-  assert.match(bounded, / \(Compare 9\.1\.26\)\.docx$/);
+  assert.match(bounded, / \(Compare 1\.9\.26\)\.docx$/);
 });
 
 test('CommentMasterWord clears all prepared comparison state', () => {

@@ -1,39 +1,44 @@
-# Comment Master v7.0.0 test report
+# Comment Master v7.0.1 test report
 
 Date: 2026-09-01  
-Release contract: `npm run qa`  
+Release contracts: `npm run qa` and `npm run build:pages`
 Local runtime used for the recorded run: Node.js 24.19.0, npm 11.9.0
 
 ## Release status
 
-The production build, both legacy scripts, all 29 non-privacy Node unit tests, and all 4 dedicated privacy tests are green. Playwright discovery finds 19 Chromium specifications. Those browser specifications have not been executed for this recorded result and remain pending CI, so this report does not claim that the complete `npm run qa` contract has passed.
+Version 7.0.1 is a focused patch for local PDF.js support assets and direct branch-based GitHub Pages publishing. The production build and synchronized Pages runtime are deterministic. Both established regression scripts, all 31 Node unit tests, and all 4 dedicated privacy tests pass on the patch bytes. Playwright discovers all 19 Chromium specifications, including the JPEG 2000 OCR regression, but browser execution was not run locally. The dependency audit reports zero vulnerabilities. Live deployment and complete manual browser verification remain pending. This report does not substitute the successful v7.0.0 browser run for execution against changed v7.0.1 bytes.
 
-Manual Chrome and Edge verification is **pending**. The bounded placeholder near the end of this report must be replaced after the deployed Pages artifact is exercised. This report does not claim that browser verification is complete.
+The immediately preceding v7.0.0 baseline at commit `f8fd44c36e1b25b9b00d347be664a5c79910570e` completed the full automated suite: both established scripts passed, all 29 Node unit tests passed, all 4 dedicated privacy tests passed, and all 19 Playwright Chromium specifications passed in 29.5 seconds. That baseline is relevant regression evidence, but the current patch must also pass its local release checks.
 
-## Automated result
+## Version 7.0.1 automated result
 
-Verified local commands:
+Local release commands:
 
 ```bash
 npm run build
 npm run test:legacy
 npm run test:unit
 npm run test:privacy
+npx playwright test --list --browser=chromium
+npm audit
+npm run build:pages
 ```
 
 Result:
 
 | Stage | Result |
 | --- | --- |
-| Production static build | Passed |
+| Production static build | Passed; v7.0.1 build `aeae40724ca0f1b88dd74903` |
 | Established export regression script | Passed |
 | Established Word comparison regression script | Passed |
-| Node unit tests | 29 passed, 0 failed, 0 skipped, 0 cancelled |
+| Node unit tests | 31 passed, 0 failed, 0 skipped, 0 cancelled |
 | Dedicated privacy tests | 4 passed, 0 failed, 0 skipped, 0 cancelled |
-| Playwright browser specifications | 19 discovered; execution pending CI |
-| Overall `npm run qa` | Pending browser execution; no full-pass claim in this report |
+| Playwright browser specifications | 19 discovered; execution not run locally |
+| Dependency audit | 0 vulnerabilities |
+| Root Pages synchronization | Passed; two consecutive builds produced identical files |
+| Overall `npm run qa` | Not run because local Playwright Chromium is unavailable; all non-browser stages passed |
 
-The recorded build produced Comment Master v7.0.0 and completed the generated service-worker and asset-manifest steps without an error.
+The generated service worker, asset manifest, synchronized root runtime, and packaged PDF.js support-asset regression are confirmed for Comment Master v7.0.1.
 
 ## Automated coverage
 
@@ -93,11 +98,13 @@ The fixtures exercise:
 - an embedded-file canary;
 - JavaScript and automatic-action indicators;
 - a deliberately damaged cross-reference location that the parser can normalize;
-- a raw secret-string canary for redaction reconstruction.
+- a raw secret-string canary for redaction reconstruction;
+- a fixed JPEG 2000 scan with high-contrast image content.
 
-`tests/unit/pdf-engine.test.mjs` contains 12 tests covering:
+`tests/unit/pdf-engine.test.mjs` contains 13 tests covering:
 
 - byte-for-byte deterministic fixture generation;
+- a real JPX image stream in the synthetic scanned-PDF fixture;
 - structural inspection of metadata, forms, page sizes, annotations, links, attachments, JavaScript, actions, and catalog actions stored inside object streams;
 - merge, page reorder, duplicate page selection, rotation, extraction, split output, progress phases, and invalid page rejection;
 - Unicode binder labels rendered safely while bookmarks retain the source title;
@@ -109,7 +116,13 @@ The fixtures exercise:
 - fresh raster-page replacement without retaining the source secret canary or metadata;
 - readable normalization and lossless-rewrite outputs, result-size accounting, Blob MIME type, and friendly unreadable-PDF failure.
 
-All 12 tests passed.
+All 13 tests passed.
+
+### PDF.js decoder packaging
+
+`tests/unit/pdfjs-decoders.test.mjs` contains one rendering test. It loads the synthetic JPEG 2000 scan through the packaged OpenJPEG WebAssembly decoder in `dist/vendor/pdfjs/wasm/`, renders the page to a real canvas, and requires visible blue, dark-text, and non-white pixel ratios. This directly guards against a scanned PDF loading while its page image remains blank.
+
+The decoder packaging test passed.
 
 ### Word v7 focused regressions
 
@@ -153,7 +166,7 @@ The Word v7 link test separately evaluates the production link-inventory functio
 - two staged DOCX files prefilling Compare Documents;
 - navigable inline, original, revised, and synchronized side-by-side comparison views plus parsed redline DOCX output;
 - direct staged-DOCX handoff to Create Clean Copy;
-- local OCR of a generated image-only page into searchable output;
+- visible rendering of a synthetic JPEG 2000 scan before OCR, local recognition and search of its text, and preserved visible pixels after searchable output is created;
 - secure redaction export as a fully rasterized PDF without the approved text;
 - maximum sanitation export as a passive flattened PDF;
 - binder creation from PDF and TXT inputs with parsed page-count verification;
@@ -173,26 +186,26 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The browser suite is part of `npm run qa`. The Pages workflow invokes the lockfile-installed Playwright CLI to install its matching Chromium build plus runner dependencies, then runs the full QA command. A green CI or equivalent browser run must be recorded before these 19 specifications are reported as passed.
+The browser suite is part of `npm run qa`. The matching Chromium build must be installed locally with `npx playwright install chromium` before the full release command is run.
 
-## Build and deployment checks
+## Build and direct Pages checks
 
-The GitHub Pages workflow prepares the browser environment and adds release checks beyond the local non-browser results:
+The local release process verifies both the generated build and the branch-published root runtime:
 
 - installs only from the committed lockfile with lifecycle scripts disabled;
-- invokes the lockfile-installed Playwright CLI and installs its matching Chromium build and required runner dependencies;
+- uses the lockfile-installed Playwright runner and its matching installed Chromium build;
 - runs the complete QA contract, including all 19 browser specifications;
 - verifies required top-level production files;
 - rejects unexpected top-level artifacts and symlinks;
 - requires all service-worker template placeholders to be replaced;
-- hashes the complete `dist/` tree;
-- rebuilds the artifact and requires an identical full hash listing;
-- uploads only `dist/`;
-- deploys only from `main` after a successful build job.
+- hashes every packaged runtime file other than the manifest itself and records those exact files in `asset-manifest.json`;
+- synchronizes generated `assets/`, `vendor/`, `service-worker.js`, and `asset-manifest.json` to the repository root;
+- verifies the root entry, web manifest, and third-party notice against the generated versions;
+- verifies `.nojekyll` for direct GitHub Pages branch publishing.
 
-The local result in this report confirms the build, legacy, unit, and privacy code paths only. It does not confirm any browser assertion. Final workflow and live Pages status belong in the release handoff after the commit is pushed.
+GitHub Pages is configured to publish `main` and `/ (root)`. The repository has no custom build or deployment Action. GitHub's own branch-publication job may still appear after a push.
 
-## Manual browser verification placeholder
+## Manual browser verification
 
 Status: **Pending**
 
@@ -223,7 +236,7 @@ The release owner must replace this section with dated results for the final dep
 - Cache Storage inspection confirming that no document or arbitrary request was cached;
 - visual clipping, overlap, blank states, horizontal overflow, tiny controls, and responsive navigation.
 
-No entry in this placeholder should be treated as passed until the final report records the browser version, platform, fixture, outcome, and any defect resolution.
+No pending entry should be treated as passed until the final report records the browser version, platform, fixture, outcome, and any defect resolution.
 
 ## Test boundaries
 
@@ -240,8 +253,8 @@ The passing Node suite does not by itself establish:
 - complete accessibility of untagged source PDFs;
 - runtime network behavior of a modified browser extension or compromised browser.
 
-The 19 Playwright browser specifications are part of `npm run qa`, but their execution is pending CI for this recorded result. The mandatory manual browser verification above remains a separate release gate for this version even after automated Playwright passes.
+The 19 Playwright browser specifications are part of `npm run qa`. The mandatory manual browser verification above remains a separate release gate for this version even after automated Playwright passes.
 
 ## Conclusion
 
-The production build, both established regression scripts, all 29 current Node unit tests, and all 4 dedicated privacy tests pass. All 19 Playwright specifications are discovered, but their execution and the complete `npm run qa` result remain pending CI. Manual Chrome and Edge verification is not yet documented as complete.
+The v7.0.0 baseline completed the entire automated suite, including all 19 Playwright specifications. On v7.0.1, the deterministic build and root synchronization pass; both established regression scripts, all 31 Node unit tests, and all 4 privacy tests pass, including the packaged OpenJPEG canvas regression; all 19 browser specifications are discovered; and the dependency audit reports zero vulnerabilities. Browser execution and complete manual deployment verification remain pending and must not be described as passed.

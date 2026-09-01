@@ -5,7 +5,9 @@ import { PDFDict, PDFDocument, PDFName } from 'pdf-lib';
 
 import {
   CANARY_URL,
+  JPX_SCAN_TEXT,
   createActiveFormPdf,
+  createJpxScanPdf,
   createOrderedPdf
 } from '../fixtures/generate-fixtures.mjs';
 
@@ -18,12 +20,13 @@ const PACKAGE_REL_NS = 'http://schemas.openxmlformats.org/package/2006/relations
 let fixtures;
 
 test.beforeAll(async () => {
-  const [originalDocx, revisedDocx, privacyDocx, orderedPdf, activePdf] = await Promise.all([
+  const [originalDocx, revisedDocx, privacyDocx, orderedPdf, activePdf, jpxScanPdf] = await Promise.all([
     createDocx('The original browser QA paragraph.'),
     createDocx('The revised browser QA paragraph.'),
     createDocx('A private document link is listed without being contacted.', { externalUrl: CANARY_URL }),
     createOrderedPdf(),
-    createActiveFormPdf()
+    createActiveFormPdf(),
+    createJpxScanPdf()
   ]);
 
   fixtures = {
@@ -31,7 +34,8 @@ test.beforeAll(async () => {
     revisedDocx: upload('Browser QA Revised.docx', DOCX_MIME, revisedDocx),
     privacyDocx: upload('Browser QA Private Link.docx', DOCX_MIME, privacyDocx),
     orderedPdf: upload('Browser QA Pages.pdf', PDF_MIME, orderedPdf),
-    activePdf: upload('Browser QA Active.pdf', PDF_MIME, activePdf)
+    activePdf: upload('Browser QA Active.pdf', PDF_MIME, activePdf),
+    jpxScanPdf: upload('Browser QA JPEG 2000 Scan.pdf', PDF_MIME, jpxScanPdf)
   };
 });
 
@@ -45,7 +49,7 @@ async function openShell(page) {
   });
   await page.goto('/');
   await page.waitForFunction(() => (
-    window.CommentMasterWorkbench?.version === '7.0.0'
+    window.CommentMasterWorkbench?.version === '7.0.1'
     && typeof window.CommentMasterWord?.openFile === 'function'
   ));
   await expect(page.locator('body')).toHaveAttribute('data-route', 'home');
@@ -74,6 +78,32 @@ function upload(name, mimeType, bytes) {
     mimeType,
     buffer: Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes)
   };
+}
+
+async function canvasColorSignature(page) {
+  return page.locator('#pdf-canvas').evaluate((canvas) => {
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const pixelCount = Math.max(1, pixels.length / 4);
+    let blue = 0;
+    let dark = 0;
+    let nonWhite = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index];
+      const green = pixels[index + 1];
+      const blueChannel = pixels[index + 2];
+      if (blueChannel > 120 && blueChannel > red * 1.15 && blueChannel > green * 1.1) blue += 1;
+      if (red < 80 && green < 80 && blueChannel < 80) dark += 1;
+      if (red < 245 || green < 245 || blueChannel < 245) nonWhite += 1;
+    }
+    return {
+      width: canvas.width,
+      height: canvas.height,
+      blueRatio: blue / pixelCount,
+      darkRatio: dark / pixelCount,
+      nonWhiteRatio: nonWhite / pixelCount
+    };
+  });
 }
 
 function escapeXml(value) {
@@ -360,39 +390,32 @@ test.describe('document workspaces', () => {
 });
 
 test.describe('generated output smoke flows', () => {
-  test('OCR turns a generated image-only page into searchable local text', async ({ page }) => {
+  test('JPEG 2000 scan renders visibly and remains visible after local OCR', async ({ page }) => {
     test.setTimeout(180_000);
     await openShell(page);
 
-    const pngBytes = await page.evaluate(async () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1400;
-      canvas.height = 420;
-      const context = canvas.getContext('2d');
-      context.fillStyle = '#fff';
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      context.fillStyle = '#000';
-      context.font = 'bold 112px Arial, sans-serif';
-      context.textBaseline = 'middle';
-      context.fillText('LOCAL OCR TEST 742', 70, canvas.height / 2);
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      return Array.from(new Uint8Array(await blob.arrayBuffer()));
-    });
-    const scanned = await PDFDocument.create();
-    const image = await scanned.embedPng(Uint8Array.from(pngBytes));
-    const scannedPage = scanned.addPage([700, 210]);
-    scannedPage.drawImage(image, { x: 0, y: 0, width: 700, height: 210 });
-    const scannedFile = upload('Browser QA Scan.pdf', PDF_MIME, await scanned.save({ useObjectStreams: false }));
-
-    await page.locator('#workbench-file-input').setInputFiles(scannedFile);
+    await page.locator('#workbench-file-input').setInputFiles(fixtures.jpxScanPdf);
     await page.locator('[data-suggestion="open-pdf"]').click();
     await expect(page.locator('#pdf-loaded')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('#pdf-scan-suggestion')).toBeVisible();
+    const beforeOcr = await canvasColorSignature(page);
+    expect(beforeOcr.width).toBeGreaterThan(0);
+    expect(beforeOcr.height).toBeGreaterThan(0);
+    expect(beforeOcr.blueRatio).toBeGreaterThan(.05);
+    expect(beforeOcr.darkRatio).toBeGreaterThan(.01);
+    expect(beforeOcr.nonWhiteRatio).toBeGreaterThan(.1);
     await page.locator('[data-pdf-tab="ocr"]').click();
     await page.locator('[data-wb-action="pdf-ocr"]').click();
 
     await expect(page.locator('#pdf-action-status')).toContainText('OCR completed for 1 page', { timeout: 150_000 });
-    await expect(page.locator('#pdf-page-accessible-text')).toContainText(/LOCAL\s+OCR\s+TEST\s+742/i);
+    await expect(page.locator('#pdf-page-accessible-text')).toContainText(/JPX\s+OCR\s+TEST\s+742/i);
+    const recognizedText = (await page.locator('#pdf-page-accessible-text').textContent() || '').replace(/\s+/g, ' ').trim();
+    expect(recognizedText).toContain(JPX_SCAN_TEXT);
+    const afterOcr = await canvasColorSignature(page);
+    expect(afterOcr.blueRatio).toBeGreaterThan(.05);
+    expect(afterOcr.darkRatio).toBeGreaterThan(.01);
+    expect(afterOcr.nonWhiteRatio).toBeGreaterThan(.1);
+    expect(Math.abs(afterOcr.blueRatio - beforeOcr.blueRatio)).toBeLessThan(.02);
     await page.locator('#pdf-search').fill('OCR TEST');
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     await expect(page.locator('#pdf-search-results')).toContainText('Page 1');
@@ -620,7 +643,7 @@ test.describe('privacy and offline behavior', () => {
     if (!await page.evaluate(() => Boolean(navigator.serviceWorker.controller))) {
       await page.reload();
       await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
-      await page.waitForFunction(() => window.CommentMasterWorkbench?.version === '7.0.0');
+      await page.waitForFunction(() => window.CommentMasterWorkbench?.version === '7.0.1');
     }
 
     const cacheReport = await page.evaluate(async () => {
@@ -651,7 +674,7 @@ test.describe('privacy and offline behavior', () => {
     await context.setOffline(true);
     try {
       await page.reload({ waitUntil: 'domcontentloaded' });
-      await page.waitForFunction(() => window.CommentMasterWorkbench?.version === '7.0.0');
+      await page.waitForFunction(() => window.CommentMasterWorkbench?.version === '7.0.1');
       await expect(page.locator('#home')).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Your documents, handled locally.' })).toBeVisible();
     } finally {
