@@ -5126,7 +5126,7 @@ tbody td input { min-width: 140px; min-height: 32px; padding: 5px 7px; font-size
           <div class="form-row"><label for="batch-operation">Operation</label><select id="batch-operation"><option value="inspect">Inspect</option><option value="convert-pdf">Convert to PDF</option><option value="remove-metadata">Remove metadata</option><option value="page-numbers">Add page numbers</option><option value="watermark">Add watermark</option><option value="optimize">Lossless optimize PDF</option></select></div>
           <div class="form-row"><label for="batch-watermark">Watermark, when selected</label><input id="batch-watermark"></div>
           <div id="batch-queue" class="queue-list"></div>
-          <div class="button-row"><button class="btn btn-primary" data-wb-action="batch-run" type="button">Process files</button><button class="btn btn-light" data-wb-action="batch-download-zip" type="button" disabled>Download results ZIP</button></div>
+          <div class="button-row"><button class="btn btn-primary" data-wb-action="batch-run" type="button">Process files</button><button id="batch-download-zip" class="btn btn-light" data-wb-action="batch-download-zip" type="button" disabled>Download results ZIP</button></div>
         </section>
         <section class="tool-panel" data-tool-pane="inspect" hidden>
           <h2>Document Health Check</h2><p>Answer the practical questions: what is inside, whether review or hidden content remains, and what deserves attention.</p>

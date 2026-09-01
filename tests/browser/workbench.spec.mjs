@@ -116,9 +116,10 @@ async function createDocx(bodyText, options = {}) {
     </Relationships>`;
   const document = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <w:document xmlns:w="${W_NS}" xmlns:r="${R_NS}"><w:body>
+      <w:p><w:r><w:t>${escapeXml(bodyText)}</w:t></w:r></w:p>
       <w:p>
         <w:commentRangeStart w:id="0"/>
-        <w:r><w:t>${escapeXml(bodyText)}</w:t></w:r>
+        <w:r><w:t>Stable commented QA paragraph.</w:t></w:r>
         <w:commentRangeEnd w:id="0"/>
         <w:r><w:commentReference w:id="0"/></w:r>
       </w:p>
@@ -390,7 +391,7 @@ test.describe('generated output smoke flows', () => {
     await page.locator('[data-pdf-tab="ocr"]').click();
     await page.locator('[data-wb-action="pdf-ocr"]').click();
 
-    await expect(page.locator('#status-log')).toContainText('OCR completed for 1 page', { timeout: 150_000 });
+    await expect(page.locator('#pdf-action-status')).toContainText('OCR completed for 1 page', { timeout: 150_000 });
     await expect(page.locator('#pdf-page-accessible-text')).toContainText(/LOCAL\s+OCR\s+TEST\s+742/i);
     await page.locator('#pdf-search').fill('OCR TEST');
     await page.getByRole('button', { name: 'Search', exact: true }).click();
@@ -499,9 +500,11 @@ test.describe('generated output smoke flows', () => {
     await page.locator('#batch-operation').selectOption('inspect');
     await page.locator('[data-wb-action="batch-run"]').click();
 
-    await expect(page.locator('#batch-queue')).toContainText('Complete', { timeout: 60_000 });
+    await expect.poll(async () => page.locator('#batch-queue [data-queue-row]').evaluateAll((rows) => (
+      rows.filter((row) => /Complete/.test(row.textContent || '')).length
+    )), { timeout: 60_000 }).toBe(2);
     await expect(page.locator('#batch-download-zip')).toBeEnabled();
-    await expect(page.locator('#status-log')).toContainText('2 of 2 batch items completed');
+    await expect(page.locator('#status')).toContainText('2 of 2 batch items completed');
     const result = await downloadFrom(page, '#batch-download-zip');
     const archive = await JSZip.loadAsync(result.bytes);
     const reports = await Promise.all(Object.values(archive.files)
